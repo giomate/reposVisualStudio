@@ -1,0 +1,8 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Addin Type="Plugin">
+  <ClassId>{148013e4-dca9-401b-92a0-9b8fb9c61f27}</ClassId>
+  <ClientId>{148013e4-dca9-401b-92a0-9b8fb9c61f27}</ClientId>
+  <DisplayName>DebugPluginLocally1Plugin</DisplayName>
+  <Description>a DebugPluginLocally1Plugin</Description>
+  <Assembly>DebugPluginLocally1Plugin.dll</Assembly>
+</Addin>

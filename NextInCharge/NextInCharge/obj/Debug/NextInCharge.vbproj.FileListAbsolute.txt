@@ -1,0 +1,11 @@
+C:\Users\giova\source\repos\NextInCharge\NextInCharge\bin\Debug\NextInCharge.exe.config
+C:\Users\giova\source\repos\NextInCharge\NextInCharge\bin\Debug\NextInCharge.exe
+C:\Users\giova\source\repos\NextInCharge\NextInCharge\bin\Debug\NextInCharge.pdb
+C:\Users\giova\source\repos\NextInCharge\NextInCharge\bin\Debug\NextInCharge.xml
+C:\Users\giova\source\repos\NextInCharge\NextInCharge\obj\Debug\NextInCharge.vbprojAssemblyReference.cache
+C:\Users\giova\source\repos\NextInCharge\NextInCharge\obj\Debug\NextInCharge.Resources.resources
+C:\Users\giova\source\repos\NextInCharge\NextInCharge\obj\Debug\NextInCharge.vbproj.GenerateResource.cache
+C:\Users\giova\source\repos\NextInCharge\NextInCharge\obj\Debug\NextInCharge.vbproj.CoreCompileInputs.cache
+C:\Users\giova\source\repos\NextInCharge\NextInCharge\obj\Debug\NextInCharge.exe
+C:\Users\giova\source\repos\NextInCharge\NextInCharge\obj\Debug\NextInCharge.xml
+C:\Users\giova\source\repos\NextInCharge\NextInCharge\obj\Debug\NextInCharge.pdb

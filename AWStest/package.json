@@ -1,0 +1,11 @@
+{
+  "name": "AWStest",
+  "version": "0.0.0",
+  "description": "AWStest",
+  "author": {
+    "name": ""
+  },
+  "dependencies": {
+    "aws-sdk": "^2.339.0"
+  }
+}

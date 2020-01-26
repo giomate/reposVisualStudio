@@ -1,0 +1,14 @@
+C:\Users\giova\source\repos\CondesatorBandRolling\CondesatorBandRolling\obj\Debug\CondesatorBandRolling.vbprojAssemblyReference.cache
+C:\Users\giova\source\repos\CondesatorBandRolling\CondesatorBandRolling\obj\Debug\CondesatorBandRolling.Resources.resources
+C:\Users\giova\source\repos\CondesatorBandRolling\CondesatorBandRolling\obj\Debug\CondesatorBandRolling.StartWindow.resources
+C:\Users\giova\source\repos\CondesatorBandRolling\CondesatorBandRolling\obj\Debug\CondesatorBandRolling.vbproj.GenerateResource.cache
+C:\Users\giova\source\repos\CondesatorBandRolling\CondesatorBandRolling\obj\Debug\CondesatorBandRolling.vbproj.CoreCompileInputs.cache
+C:\Users\giova\source\repos\CondesatorBandRolling\CondesatorBandRolling\bin\Debug\CondesatorBandRolling.exe.config
+C:\Users\giova\source\repos\CondesatorBandRolling\CondesatorBandRolling\bin\Debug\CondesatorBandRolling.exe
+C:\Users\giova\source\repos\CondesatorBandRolling\CondesatorBandRolling\bin\Debug\CondesatorBandRolling.pdb
+C:\Users\giova\source\repos\CondesatorBandRolling\CondesatorBandRolling\bin\Debug\CondesatorBandRolling.xml
+C:\Users\giova\source\repos\CondesatorBandRolling\CondesatorBandRolling\obj\Debug\CondesatorBandRolling.exe
+C:\Users\giova\source\repos\CondesatorBandRolling\CondesatorBandRolling\obj\Debug\CondesatorBandRolling.xml
+C:\Users\giova\source\repos\CondesatorBandRolling\CondesatorBandRolling\obj\Debug\CondesatorBandRolling.pdb
+C:\Users\giova\source\repos\CondesatorBandRolling\CondesatorBandRolling\obj\Debug\Interop.InventorApprentice.dll
+C:\Users\giova\source\repos\CondesatorBandRolling\CondesatorBandRolling\obj\Debug\CondesatorBandRolling.vbproj.ResolveComReference.cache

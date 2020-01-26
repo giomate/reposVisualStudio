@@ -1,0 +1,4 @@
+C:\Users\giova\source\repos\ClassLibrary1\ClassLibrary1\obj\Debug\netstandard2.0\ClassLibrary1.vbprojAssemblyReference.cache
+C:\Users\giova\source\repos\ClassLibrary1\ClassLibrary1\obj\Debug\netstandard2.0\ClassLibrary1.vbproj.CoreCompileInputs.cache
+C:\Users\giova\source\repos\ClassLibrary1\ClassLibrary1\obj\Debug\netstandard2.0\ClassLibrary1.AssemblyInfoInputs.cache
+C:\Users\giova\source\repos\ClassLibrary1\ClassLibrary1\obj\Debug\netstandard2.0\ClassLibrary1.AssemblyInfo.vb

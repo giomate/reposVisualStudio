@@ -1,0 +1,191 @@
+{
+  "version": 3,
+  "targets": {
+    ".NETFramework,Version=v4.7": {
+      "Autodesk.Forge.DesignAutomation.Inventor.Utils/1.0.0-beta3": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/Autodesk.Forge.DesignAutomation.Inventor.Utils.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/Autodesk.Forge.DesignAutomation.Inventor.Utils.dll": {}
+        }
+      },
+      "Newtonsoft.Json/11.0.2": {
+        "type": "package",
+        "compile": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        }
+      }
+    },
+    ".NETFramework,Version=v4.7/win": {
+      "Autodesk.Forge.DesignAutomation.Inventor.Utils/1.0.0-beta3": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/Autodesk.Forge.DesignAutomation.Inventor.Utils.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/Autodesk.Forge.DesignAutomation.Inventor.Utils.dll": {}
+        }
+      },
+      "Newtonsoft.Json/11.0.2": {
+        "type": "package",
+        "compile": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        }
+      }
+    },
+    ".NETFramework,Version=v4.7/win-x64": {
+      "Autodesk.Forge.DesignAutomation.Inventor.Utils/1.0.0-beta3": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/Autodesk.Forge.DesignAutomation.Inventor.Utils.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/Autodesk.Forge.DesignAutomation.Inventor.Utils.dll": {}
+        }
+      },
+      "Newtonsoft.Json/11.0.2": {
+        "type": "package",
+        "compile": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        }
+      }
+    },
+    ".NETFramework,Version=v4.7/win-x86": {
+      "Autodesk.Forge.DesignAutomation.Inventor.Utils/1.0.0-beta3": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/Autodesk.Forge.DesignAutomation.Inventor.Utils.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/Autodesk.Forge.DesignAutomation.Inventor.Utils.dll": {}
+        }
+      },
+      "Newtonsoft.Json/11.0.2": {
+        "type": "package",
+        "compile": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        },
+        "runtime": {
+          "lib/net45/Newtonsoft.Json.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "Autodesk.Forge.DesignAutomation.Inventor.Utils/1.0.0-beta3": {
+      "sha512": "lguIQ+QMPibltDr/TArIfpd/T52ikaX1igvh9xVFU99Rgh8bhIkjmhFoFaq//eoUssvDyGTp1CjF8sUOrNUlRA==",
+      "type": "package",
+      "path": "autodesk.forge.designautomation.inventor.utils/1.0.0-beta3",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "autodesk.forge.designautomation.inventor.utils.1.0.0-beta3.nupkg.sha512",
+        "autodesk.forge.designautomation.inventor.utils.nuspec",
+        "lib/netstandard2.0/Autodesk.Forge.DesignAutomation.Inventor.Utils.dll"
+      ]
+    },
+    "Newtonsoft.Json/11.0.2": {
+      "sha512": "IvJe1pj7JHEsP8B8J8DwlMEx8UInrs/x+9oVY+oCD13jpLu4JbJU2WCIsMRn5C4yW9+DgkaO8uiVE5VHKjpmdQ==",
+      "type": "package",
+      "path": "newtonsoft.json/11.0.2",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE.md",
+        "lib/net20/Newtonsoft.Json.dll",
+        "lib/net20/Newtonsoft.Json.xml",
+        "lib/net35/Newtonsoft.Json.dll",
+        "lib/net35/Newtonsoft.Json.xml",
+        "lib/net40/Newtonsoft.Json.dll",
+        "lib/net40/Newtonsoft.Json.xml",
+        "lib/net45/Newtonsoft.Json.dll",
+        "lib/net45/Newtonsoft.Json.xml",
+        "lib/netstandard1.0/Newtonsoft.Json.dll",
+        "lib/netstandard1.0/Newtonsoft.Json.xml",
+        "lib/netstandard1.3/Newtonsoft.Json.dll",
+        "lib/netstandard1.3/Newtonsoft.Json.xml",
+        "lib/netstandard2.0/Newtonsoft.Json.dll",
+        "lib/netstandard2.0/Newtonsoft.Json.xml",
+        "lib/portable-net40+sl5+win8+wp8+wpa81/Newtonsoft.Json.dll",
+        "lib/portable-net40+sl5+win8+wp8+wpa81/Newtonsoft.Json.xml",
+        "lib/portable-net45+win8+wp8+wpa81/Newtonsoft.Json.dll",
+        "lib/portable-net45+win8+wp8+wpa81/Newtonsoft.Json.xml",
+        "newtonsoft.json.11.0.2.nupkg.sha512",
+        "newtonsoft.json.nuspec"
+      ]
+    }
+  },
+  "projectFileDependencyGroups": {
+    ".NETFramework,Version=v4.7": [
+      "Autodesk.Forge.DesignAutomation.Inventor.Utils >= 1.0.0-beta3",
+      "Newtonsoft.Json >= 11.0.2"
+    ]
+  },
+  "packageFolders": {
+    "C:\\Users\\giova\\.nuget\\packages\\": {}
+  },
+  "project": {
+    "version": "1.0.0",
+    "restore": {
+      "projectUniqueName": "C:\\Users\\giova\\source\\repos\\DebugPluginLocally1\\DebugPluginLocally1\\DebugPluginLocally1Plugin\\DebugPluginLocally1Plugin.csproj",
+      "projectName": "DebugPluginLocally1Plugin",
+      "projectPath": "C:\\Users\\giova\\source\\repos\\DebugPluginLocally1\\DebugPluginLocally1\\DebugPluginLocally1Plugin\\DebugPluginLocally1Plugin.csproj",
+      "packagesPath": "C:\\Users\\giova\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\giova\\source\\repos\\DebugPluginLocally1\\DebugPluginLocally1\\DebugPluginLocally1Plugin\\obj\\",
+      "projectStyle": "PackageReference",
+      "skipContentFileWrite": true,
+      "configFilePaths": [
+        "C:\\Users\\giova\\AppData\\Roaming\\NuGet\\NuGet.Config",
+        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+      ],
+      "originalTargetFrameworks": [
+        "net47"
+      ],
+      "sources": {
+        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+        "https://api.nuget.org/v3/index.json": {}
+      },
+      "frameworks": {
+        "net47": {
+          "projectReferences": {}
+        }
+      }
+    },
+    "frameworks": {
+      "net47": {
+        "dependencies": {
+          "Autodesk.Forge.DesignAutomation.Inventor.Utils": {
+            "target": "Package",
+            "version": "[1.0.0-beta3, )"
+          },
+          "Newtonsoft.Json": {
+            "target": "Package",
+            "version": "[11.0.2, )"
+          }
+        }
+      }
+    },
+    "runtimes": {
+      "win": {
+        "#import": []
+      },
+      "win-x64": {
+        "#import": []
+      },
+      "win-x86": {
+        "#import": []
+      }
+    }
+  }
+}

@@ -1,0 +1,14 @@
+C:\Users\giova\source\repos\BandRotationAssembly1\BandRotationAssembly1\obj\Debug\BandRotationAssembly1.vbprojAssemblyReference.cache
+C:\Users\giova\source\repos\BandRotationAssembly1\BandRotationAssembly1\obj\Debug\Interop.InventorThumbnailViewLib.dll
+C:\Users\giova\source\repos\BandRotationAssembly1\BandRotationAssembly1\obj\Debug\BandRotationAssembly1.vbproj.ResolveComReference.cache
+C:\Users\giova\source\repos\BandRotationAssembly1\BandRotationAssembly1\obj\Debug\BandRotationAssembly1.Resources.resources
+C:\Users\giova\source\repos\BandRotationAssembly1\BandRotationAssembly1\obj\Debug\BandRotationAssembly1.vbproj.GenerateResource.cache
+C:\Users\giova\source\repos\BandRotationAssembly1\BandRotationAssembly1\obj\Debug\BandRotationAssembly1.vbproj.CoreCompileInputs.cache
+C:\Users\giova\source\repos\BandRotationAssembly1\BandRotationAssembly1\bin\Debug\BandRotationAssembly1.exe.config
+C:\Users\giova\source\repos\BandRotationAssembly1\BandRotationAssembly1\bin\Debug\BandRotationAssembly1.exe
+C:\Users\giova\source\repos\BandRotationAssembly1\BandRotationAssembly1\bin\Debug\BandRotationAssembly1.pdb
+C:\Users\giova\source\repos\BandRotationAssembly1\BandRotationAssembly1\bin\Debug\BandRotationAssembly1.xml
+C:\Users\giova\source\repos\BandRotationAssembly1\BandRotationAssembly1\obj\Debug\BandRotationAssembly1.exe
+C:\Users\giova\source\repos\BandRotationAssembly1\BandRotationAssembly1\obj\Debug\BandRotationAssembly1.xml
+C:\Users\giova\source\repos\BandRotationAssembly1\BandRotationAssembly1\obj\Debug\BandRotationAssembly1.pdb
+C:\Users\giova\source\repos\BandRotationAssembly1\BandRotationAssembly1\obj\Debug\BandRotationAssembly1.StartRotation.resources

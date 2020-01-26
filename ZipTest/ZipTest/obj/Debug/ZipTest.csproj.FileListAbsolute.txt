@@ -1,0 +1,7 @@
+C:\Users\giova\source\repos\ZipTest\ZipTest\obj\Debug\ZipTest.csprojAssemblyReference.cache
+C:\Users\giova\source\repos\ZipTest\ZipTest\obj\Debug\ZipTest.csproj.CoreCompileInputs.cache
+C:\Users\giova\source\repos\ZipTest\ZipTest\bin\Debug\ZipTest.exe.config
+C:\Users\giova\source\repos\ZipTest\ZipTest\bin\Debug\ZipTest.exe
+C:\Users\giova\source\repos\ZipTest\ZipTest\bin\Debug\ZipTest.pdb
+C:\Users\giova\source\repos\ZipTest\ZipTest\obj\Debug\ZipTest.exe
+C:\Users\giova\source\repos\ZipTest\ZipTest\obj\Debug\ZipTest.pdb
