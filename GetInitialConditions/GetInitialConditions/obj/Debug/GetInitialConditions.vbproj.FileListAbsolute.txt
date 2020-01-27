@@ -2,6 +2,7 @@ C:\Users\giova\source\repos\GetInitialConditions\GetInitialConditions\bin\Debug\
 C:\Users\giova\source\repos\GetInitialConditions\GetInitialConditions\bin\Debug\GetInitialConditions.exe
 C:\Users\giova\source\repos\GetInitialConditions\GetInitialConditions\bin\Debug\GetInitialConditions.pdb
 C:\Users\giova\source\repos\GetInitialConditions\GetInitialConditions\bin\Debug\GetInitialConditions.xml
+C:\Users\giova\source\repos\GetInitialConditions\GetInitialConditions\obj\Debug\GetInitialConditions.vbprojAssemblyReference.cache
 C:\Users\giova\source\repos\GetInitialConditions\GetInitialConditions\obj\Debug\GetInitialConditions.Resources.resources
 C:\Users\giova\source\repos\GetInitialConditions\GetInitialConditions\obj\Debug\GetInitialConditions.vbproj.GenerateResource.cache
 C:\Users\giova\source\repos\GetInitialConditions\GetInitialConditions\obj\Debug\GetInitialConditions.vbproj.CoreCompileInputs.cache
