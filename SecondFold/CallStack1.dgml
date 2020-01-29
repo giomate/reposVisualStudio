@@ -1,62 +1,62 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <DirectedGraph DataVirtualized="True" Layout="Sugiyama" xmlns="http://schemas.microsoft.com/vs/2009/dgml">
   <Nodes>
-    <Node Id="(@1 @2 @3 Member=GetStartPoint)" Category="CodeSchema_Method" Bounds="149.271666666667,279.8,106.046666666667,25.96" CodeSchemaProperty_IsHideBySignature="True" CodeSchemaProperty_IsPublic="True" CommonLabel="GetStartPoint" Icon="CodeSchema_Method" Label="GetStartPoint" SourceLocation="(Assembly=file:///C:/Users/giova/source/repos/SecondFold/SecondFold/MicroFold.vb StartLineNumber=208 StartCharacterOffset=0 EndLineNumber=208 EndCharacterOffset=0)">
+    <Node Id="(@1 @2 @3 Member=GetStartPoint)" Category="CodeSchema_Method" Bounds="0,279.8,106.046666666667,25.96" CodeSchemaProperty_IsHideBySignature="True" CodeSchemaProperty_IsPublic="True" CommonLabel="GetStartPoint" Icon="CodeSchema_Method" Label="GetStartPoint" SourceLocation="(Assembly=file:///C:/Users/giova/source/repos/SecondFold/SecondFold/MicroFold.vb StartLineNumber=208 StartCharacterOffset=0 EndLineNumber=208 EndCharacterOffset=0)">
       <Category Ref="CallStackEntry" />
       <Category Ref="CodeSchema_SourceLocation" />
     </Node>
-    <Node Id="(@1 @2 Type=Highlithing Member=(Name=HighLighObject OverloadingParameters=[(@6 @7 Type=Object)]))" Category="CodeSchema_Method" Bounds="0,279.8,118.59,25.96" CodeSchemaProperty_IsHideBySignature="True" CodeSchemaProperty_IsPublic="True" CommonLabel="HighLighObject" Icon="CodeSchema_Method" Label="HighLighObject" SourceLocation="(Assembly=file:///C:/Users/giova/source/repos/SecondFold/SecondFold/Highlithing.vb StartLineNumber=45 StartCharacterOffset=0 EndLineNumber=45 EndCharacterOffset=0)">
+    <Node Id="(@1 @2 Type=Highlithing Member=(Name=HighLighObject OverloadingParameters=[(@6 @7 Type=Object)]))" Category="CodeSchema_Method" Bounds="364.728333333333,279.8,118.59,25.96" CodeSchemaProperty_IsHideBySignature="True" CodeSchemaProperty_IsPublic="True" CommonLabel="HighLighObject" Icon="CodeSchema_Method" Label="HighLighObject" SourceLocation="(Assembly=file:///C:/Users/giova/source/repos/SecondFold/SecondFold/Highlithing.vb StartLineNumber=45 StartCharacterOffset=0 EndLineNumber=45 EndCharacterOffset=0)">
       <Category Ref="CallStackEntry" />
       <Category Ref="CodeSchema_SourceLocation" />
     </Node>
-    <Node Id="(@1 @2 Type=SketchAdjust Member=(Name=GetDimension OverloadingParameters=[(@6 @7 Type=String)]))" Category="CodeSchema_Method" Bounds="230.735,391.72,111.12,25.96" CodeSchemaProperty_IsHideBySignature="True" CodeSchemaProperty_IsPublic="True" CommonLabel="GetDimension" Icon="CodeSchema_Method" Label="GetDimension" SourceLocation="(Assembly=file:///C:/Users/giova/source/repos/SecondFold/SecondFold/SketchAdjust.vb StartLineNumber=412 StartCharacterOffset=0 EndLineNumber=412 EndCharacterOffset=0)">
+    <Node Id="(@1 @2 Type=SketchAdjust Member=(Name=GetDimension OverloadingParameters=[(@6 @7 Type=String)]))" Category="CodeSchema_Method" Bounds="81.4633333333334,391.72,111.12,25.96" CodeSchemaProperty_IsHideBySignature="True" CodeSchemaProperty_IsPublic="True" CommonLabel="GetDimension" Icon="CodeSchema_Method" Label="GetDimension" SourceLocation="(Assembly=file:///C:/Users/giova/source/repos/SecondFold/SecondFold/SketchAdjust.vb StartLineNumber=412 StartCharacterOffset=0 EndLineNumber=412 EndCharacterOffset=0)">
       <Category Ref="CallStackEntry" />
       <Category Ref="CodeSchema_SourceLocation" />
     </Node>
-    <Node Id="@10" Category="CodeSchema_Method" Bounds="224.11,55.96,124.37,25.96" CodeSchemaProperty_IsHideBySignature="True" CodeSchemaProperty_IsPrivate="True" CommonLabel="Form1_Activated" Icon="CodeSchema_Method" Label="Form1_Activated" SourceLocation="(Assembly=file:///C:/Users/giova/source/repos/SecondFold/SecondFold/Form1.vb StartLineNumber=65 StartCharacterOffset=0 EndLineNumber=65 EndCharacterOffset=0)">
+    <Node Id="@10" Category="CodeSchema_Method" Bounds="214.838333333333,55.96,124.37,25.96" CodeSchemaProperty_IsHideBySignature="True" CodeSchemaProperty_IsPrivate="True" CommonLabel="Form1_Activated" Icon="CodeSchema_Method" Label="Form1_Activated" SourceLocation="(Assembly=file:///C:/Users/giova/source/repos/SecondFold/SecondFold/Form1.vb StartLineNumber=65 StartCharacterOffset=0 EndLineNumber=65 EndCharacterOffset=0)">
       <Category Ref="CallStackEntry" />
       <Category Ref="CodeSchema_SourceLocation" />
     </Node>
-    <Node Id="@11" Category="CodeSchema_Method" Bounds="232.75,223.84,107.09,25.96" CodeSchemaProperty_IsHideBySignature="True" CodeSchemaProperty_IsPublic="True" CommonLabel="DrawFirstLine" Icon="CodeSchema_Method" Label="DrawFirstLine" SourceLocation="(Assembly=file:///C:/Users/giova/source/repos/SecondFold/SecondFold/MicroFold.vb StartLineNumber=187 StartCharacterOffset=0 EndLineNumber=187 EndCharacterOffset=0)">
+    <Node Id="@11" Category="CodeSchema_Method" Bounds="83.4783333333334,223.84,107.09,25.96" CodeSchemaProperty_IsHideBySignature="True" CodeSchemaProperty_IsPublic="True" CommonLabel="DrawFirstLine" Icon="CodeSchema_Method" Label="DrawFirstLine" SourceLocation="(Assembly=file:///C:/Users/giova/source/repos/SecondFold/SecondFold/MicroFold.vb StartLineNumber=187 StartCharacterOffset=0 EndLineNumber=187 EndCharacterOffset=0)">
       <Category Ref="CallStackEntry" />
       <Category Ref="CodeSchema_SourceLocation" />
     </Node>
-    <Node Id="@12" Category="CodeSchema_Method" Bounds="222.761666666667,167.88,127.066666666667,25.96" CodeSchemaProperty_IsHideBySignature="True" CodeSchemaProperty_IsPublic="True" CommonLabel="MakeSecondFold" Icon="CodeSchema_Method" Label="MakeSecondFold" SourceLocation="(Assembly=file:///C:/Users/giova/source/repos/SecondFold/SecondFold/MicroFold.vb StartLineNumber=78 StartCharacterOffset=0 EndLineNumber=78 EndCharacterOffset=0)">
+    <Node Id="@12" Category="CodeSchema_Method" Bounds="213.49,167.88,127.066666666667,25.96" CodeSchemaProperty_IsHideBySignature="True" CodeSchemaProperty_IsPublic="True" CommonLabel="MakeSecondFold" Icon="CodeSchema_Method" Label="MakeSecondFold" SourceLocation="(Assembly=file:///C:/Users/giova/source/repos/SecondFold/SecondFold/MicroFold.vb StartLineNumber=83 StartCharacterOffset=0 EndLineNumber=83 EndCharacterOffset=0)">
       <Category Ref="CallStackEntry" />
       <Category Ref="CodeSchema_SourceLocation" />
     </Node>
-    <Node Id="@13" Category="CodeSchema_Method" Bounds="220.035,111.92,132.52,25.96" CodeSchemaProperty_IsHideBySignature="True" CodeSchemaProperty_IsPublic="True" CommonLabel="StarSecondDoblez" Icon="CodeSchema_Method" Label="StarSecondDoblez" SourceLocation="(Assembly=file:///C:/Users/giova/source/repos/SecondFold/SecondFold/Form1.vb StartLineNumber=82 StartCharacterOffset=0 EndLineNumber=82 EndCharacterOffset=0)">
+    <Node Id="@13" Category="CodeSchema_Method" Bounds="210.763333333333,111.92,132.52,25.96" CodeSchemaProperty_IsHideBySignature="True" CodeSchemaProperty_IsPublic="True" CommonLabel="StarSecondDoblez" Icon="CodeSchema_Method" Label="StarSecondDoblez" SourceLocation="(Assembly=file:///C:/Users/giova/source/repos/SecondFold/SecondFold/Form1.vb StartLineNumber=82 StartCharacterOffset=0 EndLineNumber=82 EndCharacterOffset=0)">
       <Category Ref="CallStackEntry" />
       <Category Ref="CodeSchema_SourceLocation" />
     </Node>
-    <Node Id="@5" Category="CodeSchema_Method" Bounds="89.9283333333333,223.84,112.733333333333,25.96" CodeSchemaProperty_IsHideBySignature="True" CodeSchemaProperty_IsPublic="True" CommonLabel="GetMinorEdge" Icon="CodeSchema_Method" Label="GetMinorEdge" SourceLocation="(Assembly=file:///C:/Users/giova/source/repos/SecondFold/SecondFold/MicroFold.vb StartLineNumber=162 StartCharacterOffset=0 EndLineNumber=162 EndCharacterOffset=0)">
+    <Node Id="@5" Category="CodeSchema_Method" Bounds="220.656666666667,223.84,112.733333333333,25.96" CodeSchemaProperty_IsHideBySignature="True" CodeSchemaProperty_IsPublic="True" CommonLabel="GetMinorEdge" Icon="CodeSchema_Method" Label="GetMinorEdge" SourceLocation="(Assembly=file:///C:/Users/giova/source/repos/SecondFold/SecondFold/MicroFold.vb StartLineNumber=162 StartCharacterOffset=0 EndLineNumber=162 EndCharacterOffset=0)">
       <Category Ref="CallStackEntry" />
       <Category Ref="CodeSchema_SourceLocation" />
     </Node>
-    <Node Id="@8" Category="CodeSchema_Method" Bounds="201.536666666667,335.76,169.516666666667,25.96" CodeSchemaProperty_IsHideBySignature="True" CodeSchemaProperty_IsPublic="True" CommonLabel="AdjustDimensionSmothly" Icon="CodeSchema_Method" Label="AdjustDimensionSmothly" SourceLocation="(Assembly=file:///C:/Users/giova/source/repos/SecondFold/SecondFold/SketchAdjust.vb StartLineNumber=293 StartCharacterOffset=0 EndLineNumber=293 EndCharacterOffset=0)">
+    <Node Id="@8" Category="CodeSchema_Method" Bounds="52.2649999999999,335.76,169.516666666667,25.96" CodeSchemaProperty_IsHideBySignature="True" CodeSchemaProperty_IsPublic="True" CommonLabel="AdjustDimensionSmothly" Icon="CodeSchema_Method" Label="AdjustDimensionSmothly" SourceLocation="(Assembly=file:///C:/Users/giova/source/repos/SecondFold/SecondFold/SketchAdjust.vb StartLineNumber=293 StartCharacterOffset=0 EndLineNumber=293 EndCharacterOffset=0)">
       <Category Ref="CallStackEntry" />
       <Category Ref="CodeSchema_SourceLocation" />
     </Node>
-    <Node Id="@9" Category="CodeSchema_Method" Bounds="317.061666666667,279.8,166.466666666667,25.96" CodeSchemaProperty_IsHideBySignature="True" CodeSchemaProperty_IsPublic="True" CommonLabel="AdjustTwoPointsSmothly" Icon="CodeSchema_Method" Label="AdjustTwoPointsSmothly" SourceLocation="(Assembly=file:///C:/Users/giova/source/repos/SecondFold/SecondFold/Sketcher3D.vb StartLineNumber=446 StartCharacterOffset=0 EndLineNumber=446 EndCharacterOffset=0)">
+    <Node Id="@9" Category="CodeSchema_Method" Bounds="167.79,279.8,166.466666666667,25.96" CodeSchemaProperty_IsHideBySignature="True" CodeSchemaProperty_IsPublic="True" CommonLabel="AdjustTwoPointsSmothly" Icon="CodeSchema_Method" Label="AdjustTwoPointsSmothly" SourceLocation="(Assembly=file:///C:/Users/giova/source/repos/SecondFold/SecondFold/Sketcher3D.vb StartLineNumber=446 StartCharacterOffset=0 EndLineNumber=446 EndCharacterOffset=0)">
       <Category Ref="CallStackEntry" />
       <Category Ref="CodeSchema_SourceLocation" />
     </Node>
-    <Node Id="ExternalCodeRootNode" Category="ExternalCallStackEntry" Bounds="239.801666666667,3.5527136788005E-15,92.9866666666667,25.96" Label="External Code">
+    <Node Id="ExternalCodeRootNode" Category="ExternalCallStackEntry" Bounds="230.53,0,92.9866666666667,25.96" Label="External Code">
       <Category Ref="CallStackEntry" />
     </Node>
   </Nodes>
   <Links>
-    <Link Source="@10" Target="@13" Category="CallStackDirectCall" Bounds="286.295013427734,81.9199981689453,0,21" />
-    <Link Source="@11" Target="(@1 @2 @3 Member=GetStartPoint)" Category="CallStackDirectCall" Bounds="229.269012451172,249.800003051758,37.5420837402344,25.0101776123047" />
-    <Link Source="@11" Target="@8" Category="CallStackDirectCall" Bounds="286.295013427734,249.800003051758,0,76.9600067138672" />
-    <Link Source="@11" Target="@9" Category="CallStackDirectCall" Bounds="312.737457275391,249.800003051758,53.0359802246094,26.0341339111328" />
-    <Link Source="@12" Target="@11" Category="CallStackDirectCall" Bounds="286.295013427734,193.839996337891,0,21" />
-    <Link Source="@12" Target="@5" Category="CallStackDirectCall" Bounds="187.125305175781,193.839996337891,66.6965026855469,26.6595458984375" />
-    <Link Source="@13" Target="@12" Category="CallStackDirectCall" Bounds="286.295013427734,137.880004882813,0,21" />
-    <Link Source="@5" Target="(@1 @2 Type=Highlithing Member=(Name=HighLighObject OverloadingParameters=[(@6 @7 Type=Object)]))" Category="CallStackDirectCall" Bounds="87.0441360473633,249.800003051758,39.0710906982422,25.1312408447266" />
-    <Link Source="@8" Target="(@1 @2 Type=SketchAdjust Member=(Name=GetDimension OverloadingParameters=[(@6 @7 Type=String)]))" Category="CallStackDirectCall" Bounds="286.295013427734,361.720001220703,0,21" />
-    <Link Source="@9" Target="@8" Category="CallStackDirectCall" Bounds="320.816558837891,305.760009765625,53.0359802246094,26.0341491699219" />
-    <Link Source="ExternalCodeRootNode" Target="@10" Category="CallStackIndirectCall" Bounds="286.295013427734,25.9599990844727,0,21" />
+    <Link Source="@10" Target="@13" Category="CallStackDirectCall" Bounds="277.023345947266,81.9199981689453,0,21" />
+    <Link Source="@11" Target="(@1 @2 @3 Member=GetStartPoint)" Category="CallStackDirectCall" Bounds="79.9973526000977,249.800003051758,37.5420608520508,25.0101776123047" />
+    <Link Source="@11" Target="@8" Category="CallStackDirectCall" Bounds="137.023330688477,249.800003051758,0,76.9600067138672" />
+    <Link Source="@11" Target="@9" Category="CallStackDirectCall" Bounds="163.465789794922,249.800003051758,53.0359802246094,26.0341339111328" />
+    <Link Source="@12" Target="@11" Category="CallStackDirectCall" Bounds="177.853637695313,193.839996337891,66.6965026855469,26.6595458984375" />
+    <Link Source="@12" Target="@5" Category="CallStackDirectCall" Bounds="277.023345947266,193.839996337891,0,21" />
+    <Link Source="@13" Target="@12" Category="CallStackDirectCall" Bounds="277.023345947266,137.880004882813,0,21" />
+    <Link Source="@5" Target="(@1 @2 Type=Highlithing Member=(Name=HighLighObject OverloadingParameters=[(@6 @7 Type=Object)]))" Category="CallStackDirectCall" Bounds="311.120178222656,249.800003051758,70.3951416015625,26.7980499267578" />
+    <Link Source="@8" Target="(@1 @2 Type=SketchAdjust Member=(Name=GetDimension OverloadingParameters=[(@6 @7 Type=String)]))" Category="CallStackDirectCall" Bounds="137.023330688477,361.720001220703,0,21" />
+    <Link Source="@9" Target="@8" Category="CallStackDirectCall" Bounds="171.544906616211,305.760009765625,53.0359649658203,26.0341491699219" />
+    <Link Source="ExternalCodeRootNode" Target="@10" Category="CallStackIndirectCall" Bounds="277.023345947266,25.9599990844727,0,21" />
   </Links>
   <Categories>
     <Category Id="CallStackDirectCall" Label="Call Stack direct call" CanBeDataDriven="True" CanLinkedNodesBeDataDriven="True" IncomingActionLabel="Call Stack direct call" OutgoingActionLabel="Call Stack direct call" />
@@ -379,7 +379,9 @@
     </Style>
   </Styles>
   <Paths>
+    <Path Id="bc68b8d5-9d37-4897-a587-7a63f9e365c5.OutputPath" Value="C:\Users\giova\source\repos\SecondFold\SecondFold\bin\Debug\SecondFold.exe" />
     <Path Id="bc68b8d5-9d37-4897-a587-7a63f9e365c5.OutputPathUri" Value="file:///C:/Users/giova/source/repos/SecondFold/SecondFold/bin/Debug/SecondFold.exe" />
+    <Path Id="FxReferenceAssemblies" Value="C:\Program Files (x86)\Reference Assemblies\Microsoft\Framework" />
     <Path Id="FxReferenceAssembliesUri" Value="file:///C:/Program Files (x86)/Reference Assemblies/Microsoft/Framework" />
   </Paths>
 </DirectedGraph>

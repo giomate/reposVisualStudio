@@ -48,7 +48,10 @@ Public Class Commands
             sk.Visible = False
 
         Next
+        For Each sk3 As Sketch3D In docu.ComponentDefinition.Sketches3D
+            sk3.Visible = False
 
+        Next
 
 
     End Sub

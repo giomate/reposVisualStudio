@@ -1,5 +1,6 @@
 ﻿Imports Inventor
 
+
 Public Class SketchAdjust
 
     Dim oApp As Inventor.Application
@@ -14,6 +15,7 @@ Public Class SketchAdjust
     Dim variables() As String = {"angulo", "techo", "gap1", "gap2", "foldez", "doblez"}
     Dim ErrorOptimizer(variables.Length) As Double
     Dim counter As Integer
+    Dim monitor As DesignMonitoring
 
     Public Structure DesignParam
         Public p As Integer
@@ -27,10 +29,11 @@ Public Class SketchAdjust
     Dim DP As DesignParam
     Dim Tr As Double
     Dim Cr As Double
-    Public Sub New(App As Inventor.Application)
-        oApp = App
+    Public Sub New(docu As Inventor.Document)
+        oApp = docu.Parent
         oDesignProjectMgr = oApp.DesignProjectManager
-        oPartDoc = oApp.ActiveDocument
+        oPartDoc = docu
+        monitor = New DesignMonitoring(oPartDoc)
         DP.Dmax = 200
         DP.Dmin = 32
         Tr = (DP.Dmax + DP.Dmin) / 4
@@ -43,6 +46,7 @@ Public Class SketchAdjust
         resolution = 100
         minRes = 16
         maxRes = 1000000
+
     End Sub
     Function UpdateDocu(d As PartDocument) As Integer
         oPartDoc = d
@@ -304,10 +308,10 @@ Public Class SketchAdjust
             If dc.Type = ObjectTypeEnum.kTwoLineAngleDimConstraint3DObject Then
                 c = 256
             Else
-                c = 64
+                c = setpoint * 32
 
             End If
-            While ((Math.Abs(delta * resolution * c)) > (setpoint / resolution))
+            While (((Math.Abs(delta * resolution * c)) > (setpoint / resolution)) And (monitor.IsSketch3dhHealthy(oSk3D)))
                 pit.Value = pit.Value * calculateGain(setpoint, name)
                 oPartDoc.Update2()
                 Debug.Print("iterating  " & pit.Name & " = " & pit.Value.ToString)
@@ -430,6 +434,82 @@ Public Class SketchAdjust
         Return obj
     End Function
 
+    Function AdjustLineLenghtSmothly(dc As LineLengthDimConstraint3D, v As Double) As Boolean
+
+        Dim dName As String
+        Dim b As Boolean = False
+
+        dName = dc.Parameter.Name
+
+        If oPartDoc.Update2() Then
+            If UpdateDocu(oPartDoc) Then
+                If AdjustDimensionSmothly(dName, v) Then
+                    b = True
+                End If
+            End If
+        End If
+
+
+
+        Return b
+    End Function
+    Function AdjustTwoLineAngleSmothly(dc As TwoLineAngleDimConstraint3D, v As Double) As Boolean
+
+        Dim dName As String
+        Dim b As Boolean = False
+
+        dName = dc.Parameter.Name
+
+        If dc.Parameter._Value > Math.PI / 2 Then
+            If AdjustDimensionSmothly(dName, Math.PI - 0.1) Then
+                b = True
+            End If
+        Else
+            If AdjustDimensionSmothly(dName, 0.1) Then
+                b = True
+            End If
+        End If
+
+
+        Return b
+    End Function
+    Function AdjustTwoPointsSmothly(dc As TwoPointDistanceDimConstraint3D, v As Double) As Boolean
+
+        Dim dName As String
+        Dim b As Boolean = False
+
+        dName = dc.Parameter.Name
+
+        If oPartDoc.Update2() Then
+            If UpdateDocu(oPartDoc) Then
+                If AdjustDimensionSmothly(dName, v) Then
+                    b = True
+                End If
+            End If
+        End If
+
+
+
+        Return b
+    End Function
+
+    Public Function AdjustDimensionConstraint3DSmothly(dc As DimensionConstraint3D, v As Double) As Boolean
+        Dim b As Boolean
+        dc.Driven = False
+        Select Case dc.Type
+            Case ObjectTypeEnum.kLineLengthDimConstraint3DObject
+
+                b = AdjustLineLenghtSmothly(dc, v)
+            Case ObjectTypeEnum.kTwoPointDistanceDimConstraint3DObject
+
+                b = AdjustTwoPointsSmothly(dc, v)
+            Case ObjectTypeEnum.kTwoLineAngleDimConstraint3DObject
+                b = AdjustTwoLineAngleSmothly(dc, v)
+            Case Else
+                b = AdjustTwoPointsSmothly(dc, v)
+        End Select
+        Return b
+    End Function
 
 
 End Class

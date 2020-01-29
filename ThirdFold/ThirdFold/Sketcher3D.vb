@@ -2,6 +2,7 @@
 Imports System
 Imports GetInitialConditions
 Imports DrawInitialSketch
+Imports DrawingMainSketch
 
 Public Class Sketcher3D
     Dim doku As PartDocument
@@ -31,7 +32,7 @@ Public Class Sketcher3D
 
         curve3D = New Curve3D(doku)
         monitor = New DesignMonitoring(doku)
-        adjuster = New SketchAdjust(app)
+        adjuster = New SketchAdjust(doku)
         tg = app.TransientGeometry
         bandLines = app.TransientObjects.CreateObjectCollection
         constructionLines = app.TransientObjects.CreateObjectCollection
@@ -178,7 +179,7 @@ Public Class Sketcher3D
                 End If
 
             Next
-            Dim l As SketchLine3D = Nothing
+            Dim l As SketchLine3D
             l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.EndPoint, optpoint, False)
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
             point3 = l.EndSketchPoint.Geometry

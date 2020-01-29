@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{BC68B8D5-9D37-4897-A587-7A63F9E365C5}</ProjectGuid>
+    <ProjectGuid>{CD655402-F8ED-4DCF-85F4-6B5A9766A0F4}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <StartupObject>SecondFold.My.MyApplication</StartupObject>
-    <RootNamespace>SecondFold</RootNamespace>
-    <AssemblyName>SecondFold</AssemblyName>
+    <StartupObject>ThirdFold.My.MyApplication</StartupObject>
+    <RootNamespace>ThirdFold</RootNamespace>
+    <AssemblyName>ThirdFold</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <MyType>WindowsForms</MyType>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
@@ -22,7 +22,7 @@
     <DefineDebug>true</DefineDebug>
     <DefineTrace>true</DefineTrace>
     <OutputPath>bin\Debug\</OutputPath>
-    <DocumentationFile>SecondFold.xml</DocumentationFile>
+    <DocumentationFile>ThirdFold.xml</DocumentationFile>
     <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -32,7 +32,7 @@
     <DefineTrace>true</DefineTrace>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DocumentationFile>SecondFold.xml</DocumentationFile>
+    <DocumentationFile>ThirdFold.xml</DocumentationFile>
     <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
   </PropertyGroup>
   <PropertyGroup>
@@ -78,7 +78,6 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Commands.vb" />
     <Compile Include="Conversions.vb" />
     <Compile Include="DesignMonitoring.vb" />
     <Compile Include="Doblador.vb" />
@@ -89,9 +88,8 @@
       <DependentUpon>Form1.vb</DependentUpon>
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Highlithing.vb" />
     <Compile Include="InventorFile.vb" />
-    <Compile Include="MicroFold.vb" />
+    <Compile Include="MacroFold.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
@@ -107,6 +105,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="Nombres.vb" />
     <Compile Include="SketchAdjust.vb" />
     <Compile Include="Sketcher3D.vb" />
   </ItemGroup>
@@ -131,6 +130,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\DrawingMainSketch\DrawingMainSketch\DrawingMainSketch.vbproj">
+      <Project>{bae1bed5-9e38-4313-b8d0-d3f884081425}</Project>
+      <Name>DrawingMainSketch</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\DrawInitialSketch\DrawInitialSketch\DrawInitialSketch.vbproj">
       <Project>{b7863e66-666c-4b20-9fcc-ef72ed8d65e4}</Project>
       <Name>DrawInitialSketch</Name>
@@ -142,6 +145,10 @@
     <ProjectReference Include="..\..\InitialFolding\InitialFolding\InitialFolding.vbproj">
       <Project>{09a23ac6-2fbe-41e5-8b1f-7917d3629f2d}</Project>
       <Name>InitialFolding</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\SecondFold\SecondFold\SecondFold.vbproj">
+      <Project>{bc68b8d5-9d37-4897-a587-7a63f9e365c5}</Project>
+      <Name>SecondFold</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />

@@ -6,7 +6,7 @@ Public Class MicroFold
     Dim doku As PartDocument
     Dim app As Application
     Dim sk3D, refSk As Sketch3D
-    Dim lines3D As SketchLines3D
+
     Dim refLine, firstLine, secondLine, thirdLine, lastLine As SketchLine3D
     Dim curve, refCurve As SketchEquationCurve3D
     Public done, healthy As Boolean
@@ -14,7 +14,7 @@ Public Class MicroFold
     Dim monitor As DesignMonitoring
 
     Public wp1, wp2, wp3 As WorkPoint
-    Public vp, point1, point2, point3 As Point
+    Public farPoint, point1, point2, point3 As Point
     Dim tg As TransientGeometry
     Dim gap1, thickness As Double
     Dim partNumber As Integer
@@ -24,6 +24,7 @@ Public Class MicroFold
     Dim mainSketch As Sketcher3D
 
     Dim pro As Profile
+    Dim direction As Vector
     Dim feature As FaceFeature
     Dim bendLine As SketchLine
     Dim compDef As SheetMetalComponentDefinition
@@ -34,6 +35,7 @@ Public Class MicroFold
     Dim folded As FoldFeature
     Dim features As SheetMetalFeatures
     Dim lamp As Highlithing
+    Dim bender As Doblador
 
     Public Sub New(docu As Inventor.Document)
         doku = docu
@@ -50,6 +52,7 @@ Public Class MicroFold
         constructionLines = app.TransientObjects.CreateObjectCollection
         lamp = New Highlithing(doku)
         thickness = compDef.Thickness._Value
+        bender = New Doblador(doku)
 
 
         done = False
@@ -75,8 +78,38 @@ Public Class MicroFold
             If GetWorkFace().SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
                 If mainSketch.DrawTrobinaCurve(GetQNumber(doku), GetSketchName(doku)).Construction Then
                     sk3D = mainSketch.sk3D
+                    curve = mainSketch.curve
                     If GetMinorEdge(workFace).GeometryType = CurveTypeEnum.kLineSegmentCurve Then
                         If DrawFirstLine().Length > 0 Then
+                            If DrawSecondLine().Length > 0 Then
+                                If DrawThirdLine().Length > 0 Then
+                                    If DrawFirstConstructionLine().Construction Then
+                                        Dim sl As SketchLine3D
+                                        sl = bandLines(1)
+                                        If bender.GetBendLine(workFace, sl).Length > 0 Then
+
+                                            sl = bandLines(2)
+                                            If bender.GetFoldingAngle(minorEdge, sl).Parameter._Value > 0 Then
+                                                comando.MakeInvisibleSketches(doku)
+                                                comando.MakeInvisibleWorkPlanes(doku)
+                                                If monitor.IsFeatureHealthy(bender.FoldBand()) Then
+                                                    doku.Save2(True)
+                                                    done = 1
+                                                    Return True
+                                                End If
+
+
+                                            End If
+
+                                        End If
+
+
+                                    End If
+
+                                End If
+
+
+                            End If
 
                         End If
 
@@ -84,8 +117,9 @@ Public Class MicroFold
 
                 End If
 
-                Return True
+
             End If
+            Return False
         Catch ex As Exception
             Debug.Print(ex.ToString())
             Return Nothing
@@ -184,8 +218,8 @@ Public Class MicroFold
             dc.Parameter._Value = mn.Length - thickness
             doku.Update2(True)
             bandLines.Add(l)
-                firstLine = l
-                lastLine = l
+            firstLine = l
+            lastLine = l
 
 
 
@@ -197,6 +231,106 @@ Public Class MicroFold
         End Try
         Return Nothing
     End Function
+
+    Function DrawSecondLine() As SketchLine3D
+        Try
+            Dim v As Vector = lastLine.Geometry.Direction.AsVector()
+            Dim p As Plane
+            Dim optpoint As Point = Nothing
+            p = tg.CreatePlane(lastLine.EndSketchPoint.Geometry, v)
+            Dim minDis As Double = 9999999999
+            For Each o As Point In p.IntersectWithCurve(curve.Geometry)
+                If o.DistanceTo(farPoint) < minDis Then
+                    minDis = o.DistanceTo(farPoint)
+                    optpoint = o
+                End If
+
+            Next
+            Dim l As SketchLine3D = Nothing
+            l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.EndPoint, optpoint, False)
+            sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
+
+            point3 = l.EndSketchPoint.Geometry
+            lastLine = l
+            bandLines.Add(l)
+            secondLine = lastLine
+
+
+            Return l
+        Catch ex As Exception
+            Debug.Print(ex.ToString())
+            Return Nothing
+        End Try
+    End Function
+    Function DrawThirdLine() As SketchLine3D
+        Try
+            direction = lastLine.Geometry.Direction.AsVector()
+            direction.ScaleBy(thickness)
+            Dim pt As Point
+            pt = firstLine.StartSketchPoint.Geometry
+            pt.TranslateBy(direction)
+            Dim l As SketchLine3D = Nothing
+            l = sk3D.SketchLines3D.AddByTwoPoints(firstLine.StartPoint, pt, False)
+            sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
+            sk3D.GeometricConstraints3D.AddParallel(l, lastLine)
+
+            lastLine = l
+            bandLines.Add(l)
+            thirdLine = lastLine
+
+
+            Return l
+        Catch ex As Exception
+            Debug.Print(ex.ToString())
+            Return Nothing
+        End Try
+    End Function
+    Function DrawFirstConstructionLine() As SketchLine3D
+        Try
+            Dim l As SketchLine3D = Nothing
+            Dim endPoint As Point
+            Dim v As Vector
+            l = sk3D.SketchLines3D.AddByTwoPoints(thirdLine.EndPoint, firstLine.EndSketchPoint.Geometry, False)
+            sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, secondLine)
+            sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
+            Dim dc As DimensionConstraint3D
+            dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+            If AdjustLineLenghtSmothly(dc, GetParameter("b")._Value / 10) Then
+                l.Construction = True
+                constructionLines.Add(l)
+
+            End If
+
+
+
+
+            lastLine = l
+            Return l
+        Catch ex As Exception
+            Debug.Print(ex.ToString())
+            Return Nothing
+        End Try
+
+    End Function
+    Function AdjustLineLenghtSmothly(dc As LineLengthDimConstraint3D, v As Double) As Boolean
+
+        Dim dName As String
+        Dim b As Boolean = False
+
+        dName = dc.Parameter.Name
+
+        If doku.Update2() Then
+            If adjuster.UpdateDocu(doku) Then
+                If adjuster.AdjustDimensionSmothly(dName, v) Then
+                    b = True
+                End If
+            End If
+        End If
+
+
+
+        Return b
+    End Function
     Function GetStartPoint() As Point
         Dim pt As Point
         Dim v As Vector
@@ -204,9 +338,11 @@ Public Class MicroFold
         If minorEdge.StartVertex.Point.DistanceTo(bendEdge.StartVertex.Point) < minorEdge.StopVertex.Point.DistanceTo(bendEdge.StartVertex.Point) Then
             pt = minorEdge.StartVertex.Point
             v = minorEdge.StartVertex.Point.VectorTo(minorEdge.StopVertex.Point)
+            farPoint = minorEdge.StopVertex.Point
         Else
             pt = minorEdge.StopVertex.Point
             v = minorEdge.StopVertex.Point.VectorTo(minorEdge.StartVertex.Point)
+            farPoint = minorEdge.StartVertex.Point
 
         End If
         'lamp.HighLighObject(pt)
@@ -218,7 +354,27 @@ Public Class MicroFold
         point1 = pt
         Return pt
     End Function
+    Public Function GetParameter(name As String) As Parameter
+        Dim p As Parameter = Nothing
+        Try
+            p = doku.ComponentDefinition.Parameters.ModelParameters.Item(name)
+        Catch ex As Exception
+            Try
+                p = doku.ComponentDefinition.Parameters.ReferenceParameters.Item(name)
+            Catch ex1 As Exception
+                Try
+                    p = doku.ComponentDefinition.Parameters.UserParameters.Item(name)
+                Catch ex2 As Exception
+                    Debug.Print(ex2.ToString())
+                    Debug.Print("Parameter not found: " & name)
+                End Try
 
+            End Try
+
+        End Try
+
+        Return p
+    End Function
 
 
 End Class
