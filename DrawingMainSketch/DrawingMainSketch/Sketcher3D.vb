@@ -4,7 +4,7 @@ Imports GetInitialConditions
 Imports DrawInitialSketch
 
 Public Class Sketcher3D
-    Dim doku As PartDocument
+    Public doku As PartDocument
     Dim app As Application
     Dim sk3D, refSk As Sketch3D
     Dim lines3D As SketchLines3D
@@ -61,14 +61,14 @@ Public Class Sketcher3D
     Public Function StartDrawingTranslated(refDoc As FindReferenceLine, q As Integer) As Sketch3D
 
         refSk = refDoc.OpenMainSketch(refDoc.oDoc)
-        refCurve = refDoc.oDoc.ComponentDefinition.Sketches3D.Item("refCurve").SketchEquationCurves3D.Item(1)
+        'refCurve = refDoc.oDoc.ComponentDefinition.Sketches3D.Item("refCurve").SketchEquationCurves3D.Item(1)
         refLine = refDoc.GetKeyLine()
 
         doku.Activate()
 
-        DrawTrobinaCurve(q)
+        refCurve = DrawTrobinaCurve(q)
         DrawInitialLine(refLine)
-        comando.TopRightView()
+        'comando.TopRightView()
         If sk3D.SketchLines3D.Count > 0 Then
 
             DrawLines()
@@ -116,11 +116,6 @@ Public Class Sketcher3D
         DrawSixthLine()
 
         DrawSeventhLine()
-
-
-
-
-
     End Sub
     Function DrawInitialLine(line As SketchLine3D) As SketchLine3D
 
@@ -196,7 +191,7 @@ Public Class Sketcher3D
             Dim endPoint As Point
             Dim v As Vector
             v = firstLine.Geometry.Direction.AsVector
-            v.ScaleBy(GetParameter("b")._Value / 10)
+            v.ScaleBy(GetParameter("b")._Value)
             endPoint = firstLine.StartSketchPoint.Geometry
             endPoint.TranslateBy(v)
             l = sk3D.SketchLines3D.AddByTwoPoints(firstLine.StartPoint, endPoint, False)

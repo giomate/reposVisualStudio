@@ -22,6 +22,7 @@ Public Class OriginSketch
     Dim comando As Commands
     Dim nombrador As Nombres
     Dim metro, gapFold As DimensionConstraint3D
+    Public ID1, ID2 As Integer
 
 
 
@@ -109,6 +110,18 @@ Public Class OriginSketch
                 point1 = firstLine.StartSketchPoint.Geometry
                 point2 = firstLine.EndSketchPoint.Geometry
                 point3 = secondLine.EndSketchPoint.Geometry
+                For Each sl As SketchLine3D In sk3D.SketchLines3D
+                    If sl.Equals(firstLine) Then
+                        ID1 = sl.AssociativeID
+
+                    Else
+
+                        If sl.Equals(secondLine) Then
+                            ID1 = sl.AssociativeID
+
+                        End If
+                        End if
+                Next
                 inputLine = firstLine
                 done = 1
             End If

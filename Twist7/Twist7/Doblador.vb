@@ -23,7 +23,7 @@ Public Class Doblador
     Dim mainSketch As OriginSketch
     Dim pro As Profile
     Dim feature As FaceFeature
-    Dim bendLine As SketchLine
+    Public bendLine As SketchLine
     Dim compDef As SheetMetalComponentDefinition
     Dim mainWorkPlane As WorkPlane
     Dim edgeBand As Edge

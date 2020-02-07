@@ -92,7 +92,7 @@
     </Compile>
     <Compile Include="Highlithing.vb" />
     <Compile Include="InventorFile.vb" />
-    <Compile Include="Twisters7.vb" />
+    <Compile Include="TwistFold7.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>

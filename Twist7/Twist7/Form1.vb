@@ -10,7 +10,7 @@ Public Class Form1
     Dim oDesignProjectMgr As DesignProjectManager
     Dim invDoc As InventorFile
 
-    Dim giro As Twisters7
+    Dim giro As TwistFold7
 
     Public Sub New()
 
@@ -56,9 +56,8 @@ Public Class Form1
 
             done = StarCuartoDoblez()
 
-            If done Then
-                Me.Close()
-            End If
+            Me.Close()
+
         Catch ex As Exception
             Debug.Print(ex.ToString())
             Debug.Print("Unable to find Document")
@@ -69,7 +68,7 @@ Public Class Form1
         Try
             If (started And (Not running)) Then
                 invDoc = New InventorFile(oApp)
-                giro = New Twisters7(invDoc.OpenSheetMetalFile("Band0.ipt"))
+                giro = New TwistFold7(invDoc.OpenSheetMetalFile("Band0.ipt"))
                 If giro.MakeFinalTwist Then
                     b = giro.done
                 End If

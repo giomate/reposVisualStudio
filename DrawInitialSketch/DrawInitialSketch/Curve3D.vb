@@ -26,9 +26,9 @@ Public Class Curve3D
         DP.p = 13
         DP.q = 31
         DP.b = 25
-        oDoc.ComponentDefinition.Parameters.ReferenceParameters.AddByValue(DP.q, UnitsTypeEnum.kUnitlessUnits, "q")
-        oDoc.ComponentDefinition.Parameters.ReferenceParameters.AddByValue(DP.p, UnitsTypeEnum.kUnitlessUnits, "p")
-        oDoc.ComponentDefinition.Parameters.ReferenceParameters.AddByValue(DP.b, UnitsTypeEnum.kMillimeterLengthUnits, "b")
+        ' oDoc.ComponentDefinition.Parameters.ReferenceParameters.AddByValue(DP.q, UnitsTypeEnum.kUnitlessUnits, "q")
+        'oDoc.ComponentDefinition.Parameters.ReferenceParameters.AddByValue(DP.p, UnitsTypeEnum.kUnitlessUnits, "p")
+        ' oDoc.ComponentDefinition.Parameters.ReferenceParameters.AddByValue(DP.b, UnitsTypeEnum.kMillimeterLengthUnits, "b")
     End Sub
     Public Function DrawTrobinaCurveAlone() As Sketch3D
         sk3D = oDoc.ComponentDefinition.Sketches3D.Add()
@@ -45,10 +45,10 @@ Public Class Curve3D
 
         sk.Edit()
         Dim r, z As String
-        Dim t As Double = 2 * Math.PI * DP.p * q / (DP.q)
+        Dim t As Double = 2 * Math.PI * q / (DP.q)
         r = String.Concat(Tr.ToString() & " + " & Cr.ToString() & "mm * cos( t * q * 1rad )")
         z = String.Concat("- " & Cr.ToString() & "mm * sin( t * q * 1rad )")
-        curve = sk.SketchEquationCurves3D.Add(CoordinateSystemTypeEnum.kCylindrical, r, " t * 1rad * p", z, -4 * Math.PI / (DP.p * 4) + t, 4 * Math.PI / (DP.p * 4) + t)
+        curve = sk.SketchEquationCurves3D.Add(CoordinateSystemTypeEnum.kCylindrical, r, " t * 1rad * p", z, -6 * Math.PI / (DP.q * 4) + t, 6 * Math.PI / (DP.q * 4) + t)
         'sk3D.SketchEquationCurves3D.Add(CoordinateSystemTypeEnum.kCylindrical, String.Concat(Tr.ToString & " + " & Cr.ToString & " * cos(" & DP.q.ToString & " * t * 1rad)"), String.Concat(" t * 1rad * " & DP.p.ToString), String.Concat("-" & Cr.ToString & " * sin(" & DP.q.ToString & " * t * 1rad)"), -4 * Math.PI / (DP.p * 4), 4 * Math.PI / (DP.p * 4))
         curve.Construction = True
         sk.ExitEdit()

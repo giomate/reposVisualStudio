@@ -80,6 +80,7 @@
   <ItemGroup>
     <Compile Include="Commands.vb" />
     <Compile Include="Conversions.vb" />
+    <Compile Include="Curves3D.vb" />
     <Compile Include="DesignMonitoring.vb" />
     <Compile Include="Doblador.vb" />
     <Compile Include="Form1.vb">
@@ -89,6 +90,7 @@
       <DependentUpon>Form1.vb</DependentUpon>
       <SubType>Form</SubType>
     </Compile>
+    <Compile Include="Highlithing.vb" />
     <Compile Include="InventorFile.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
@@ -105,6 +107,8 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="SketchAdjust.vb" />
+    <Compile Include="Sketcher1.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="My Project\Resources.resx">
