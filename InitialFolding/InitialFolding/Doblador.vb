@@ -27,7 +27,7 @@ Public Class Doblador
     Dim compDef As SheetMetalComponentDefinition
     Dim mainWorkPlane As WorkPlane
     Dim workface As Face
-    Dim edgeBand As Edge
+    Dim edgeBand, majorEdge, minorEdge, bendEdge As Edge
     Dim bendAngle As DimensionConstraint
     Dim folded As FoldFeature
 
@@ -86,7 +86,7 @@ Public Class Doblador
 
             Return False
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return False
         End Try
 
@@ -108,8 +108,11 @@ Public Class Doblador
                                     comando.MakeInvisibleSketches(doku)
                                     comando.MakeInvisibleWorkPlanes(doku)
                                     bandLines = mainSketch.bandLines
-                                    If monitor.IsFeatureHealthy(FoldBand(bandLines.Count)) Then
-                                        'doku.Save2(True)
+                                    folded = FoldBand(bandLines.Count)
+                                    folded.Name = "f1"
+                                    doku.Update2(True)
+                                    If monitor.IsFeatureHealthy(folded) Then
+                                        doku.Save2(True)
                                         done = 1
                                         Return True
                                     End If
@@ -123,7 +126,7 @@ Public Class Doblador
 
             Return False
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return False
         End Try
 
@@ -160,7 +163,7 @@ Public Class Doblador
             Return pro
 
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
 
@@ -204,7 +207,7 @@ Public Class Doblador
             Return folded
 
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
 
@@ -268,7 +271,7 @@ Public Class Doblador
             bendLine = bl
             Return bl
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
 
@@ -312,9 +315,9 @@ Public Class Doblador
             workface = maxface1
             ' lamp.HighLighFace(workFace)
 
-            Return workFace
+            Return workface
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
 
@@ -344,7 +347,7 @@ Public Class Doblador
             'lamp.HighLighObject(edgeBand)
             Return sl
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
 
@@ -361,8 +364,8 @@ Public Class Doblador
                 Try
                     p = doku.ComponentDefinition.Parameters.UserParameters.Item(name)
                 Catch ex2 As Exception
-                    Debug.Print(ex2.ToString())
-                    Debug.Print("Parameter not found: " & name)
+                    MsgBox(ex2.ToString())
+                    MsgBox("Parameter not found: " & name)
                 End Try
 
             End Try
@@ -387,7 +390,7 @@ Public Class Doblador
             Dim fl As SketchLine3D
             fl = mainSketch.bandLines.Item(4)
             sl = ps.AddByProjectingEntity(fl)
-            el = ps.AddByProjectingEntity(edgeBand)
+            el = ps.AddByProjectingEntity(GetMinorEdge())
             Dim dc As DimensionConstraint
             dc = ps.DimensionConstraints.AddTwoLineAngle(el, sl, sl.EndSketchPoint.Geometry)
             dc.Driven = True
@@ -397,10 +400,54 @@ Public Class Doblador
             Return dc
 
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
 
+    End Function
+    Function GetMajorEdge(f As Face) As Edge
+        Dim e1, e2, e3 As Edge
+        Dim maxe1, maxe2, maxe3 As Double
+        maxe1 = 0
+        maxe2 = 0
+        maxe3 = 0
+        e1 = f.Edges.Item(1)
+        e2 = e1
+        e3 = e2
+        For Each ed As Edge In f.Edges
+            If ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point) > maxe2 Then
+
+                If ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point) > maxe1 Then
+                    maxe3 = maxe2
+                    e3 = e2
+                    maxe2 = maxe1
+                    e2 = e1
+                    maxe1 = ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point)
+                    e1 = ed
+                Else
+                    maxe3 = maxe2
+                    e3 = e2
+                    maxe2 = ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point)
+                    e2 = ed
+                End If
+
+
+
+            End If
+
+        Next
+        'lamp.HighLighObject(e3)
+        ' lamp.HighLighObject(e2)
+        'lamp.HighLighObject(e1)
+        bendEdge = e3
+        minorEdge = e2
+        majorEdge = e1
+        Return e1
+    End Function
+    Function GetMinorEdge() As Edge
+        GetMajorEdge(workface)
+
+        Return minorEdge
     End Function
     Public Function FoldBand(i As Integer) As FoldFeature
         Try
@@ -410,10 +457,11 @@ Public Class Doblador
             Dim oFoldFeature As FoldFeature
             oFoldFeature = features.FoldFeatures.Add(AdjustFoldDefinition(i))
             folded = oFoldFeature
+
             Return folded
 
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
 
@@ -448,7 +496,7 @@ Public Class Doblador
 
             Return oFoldDefinition
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
 

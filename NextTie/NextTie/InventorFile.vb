@@ -3,7 +3,7 @@ Imports Inventor
 
 Public Class InventorFile
     Dim applicacion As Inventor.Application
-    Dim documento As Inventor.Document
+    Public documento As Inventor.Document
     Dim started As Boolean
     Public manager As DesignProjectManager
     Public archivador As FileManager
@@ -199,7 +199,8 @@ Public Class InventorFile
         If applicacion.Documents.Count > 0 Then
             For Each d As PartDocument In applicacion.Documents
                 If d.FullFileName = CreateFullFileName(shortname) Then
-                    d.Close(True)
+                    d.Activate()
+                    documento = d
                     Return True
                 End If
             Next

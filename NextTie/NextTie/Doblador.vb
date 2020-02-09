@@ -29,6 +29,7 @@ Public Class Doblador
     Dim edgeBand As Edge
     Dim bendAngle As DimensionConstraint
     Public folded As FoldFeature
+    Dim foldDefinition As FoldDefinition
     Dim features As SheetMetalFeatures
     Public Sub New(docu As Inventor.Document)
         doku = docu
@@ -138,6 +139,21 @@ Public Class Doblador
             Dim oFoldFeature As FoldFeature
             oFoldFeature = features.FoldFeatures.Add(AdjustFoldDefinition(i))
             folded = oFoldFeature
+
+            Return folded
+
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+    End Function
+    Public Function CorrectFold(ff As FoldFeature) As FoldFeature
+        Try
+            ff.Delete()
+            foldDefinition.IsPositiveBendSide = Not foldDefinition.IsPositiveBendSide
+
+            folded = features.FoldFeatures.Add(foldDefinition)
             Return folded
 
         Catch ex As Exception
@@ -167,10 +183,8 @@ Public Class Doblador
             End If
 
         End If
-        If Not oFoldDefinition.IsPositiveBendSide Then
-            oFoldDefinition.IsPositiveBendSide = Not oFoldDefinition.IsPositiveBendSide
-        End If
 
+        foldDefinition = oFoldDefinition
         Return oFoldDefinition
     End Function
 

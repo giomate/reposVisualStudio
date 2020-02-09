@@ -1,7 +1,7 @@
 ﻿Imports Inventor
-Imports SecondFold
-Imports ThirdFold
-Public Class MicroFold4
+Imports FifthFold
+Imports FourthFold
+Public Class MicroFold6
     Public doku As PartDocument
     Dim app As Application
     Dim sk3D, refSk As Sketch3D
@@ -32,11 +32,11 @@ Public Class MicroFold4
     Dim minorEdge, majorEdge, bendEdge As Edge
     Dim workFace, adjacentFace, nextWorkFace As Face
     Dim bendAngle As DimensionConstraint
+    Dim parallel As GeometricConstraint3D
     Dim folded As FoldFeature
     Dim features As SheetMetalFeatures
     Dim lamp As Highlithing
     Dim bender As Doblador
-    Dim parallel As GeometricConstraint3D
     Public Sub New(docu As Inventor.Document)
         doku = docu
         app = doku.Parent
@@ -58,7 +58,7 @@ Public Class MicroFold4
 
         done = False
     End Sub
-    Public Function MakeForthFold() As Boolean
+    Public Function MakeSixthFold() As Boolean
         Try
             If GetWorkFace().SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
                 If mainSketch.DrawTrobinaCurve(nombrador.GetQNumber(doku), nombrador.GetNextSketchName(doku)).Construction Then
@@ -87,7 +87,7 @@ Public Class MicroFold4
                                                 comando.MakeInvisibleWorkPlanes(doku)
                                                 folded = bender.FoldBand(bandLines.Count)
                                                 folded = CheckFoldSide(folded)
-                                                folded.Name = "f4"
+                                                folded.Name = "f6"
                                                 doku.Update2(True)
                                                 If monitor.IsFeatureHealthy(folded) Then
                                                     doku.Save2(True)
@@ -211,9 +211,6 @@ Public Class MicroFold4
             MsgBox(ex.ToString())
             Return Nothing
         End Try
-
-
-
     End Function
     Function GetNextWorkFace(ff As FoldFeature) As Face
         Try
@@ -279,9 +276,6 @@ Public Class MicroFold4
             MsgBox(ex.ToString())
             Return Nothing
         End Try
-
-
-
     End Function
     Function GetMajorEdge(f As Face) As Edge
         Dim e1, e2, e3 As Edge
@@ -353,9 +347,9 @@ Public Class MicroFold4
             End If
 
         Next
-        'lamp.HighLighObject(e3)
+        ' lamp.HighLighObject(e3)
         ' lamp.HighLighObject(e2)
-        'lamp.HighLighObject(e1)
+        ' lamp.HighLighObject(e1)
         bendEdge = e3
         minorEdge = e2
         majorEdge = e1
@@ -399,16 +393,24 @@ Public Class MicroFold4
 
     Function DrawSecondLine() As SketchLine3D
         Try
-            Dim v As Vector = lastLine.Geometry.Direction.AsVector()
+            Dim v, vmnl, vc As Vector
+            v = lastLine.Geometry.Direction.AsVector()
             Dim p As Plane
             Dim optpoint As Point = Nothing
             p = tg.CreatePlane(lastLine.EndSketchPoint.Geometry, v)
             Dim minDis As Double = 9999999999
+            Dim d As Double
+            vmnl = firstLine.StartSketchPoint.Geometry.VectorTo(farPoint)
             For Each o As Point In p.IntersectWithCurve(curve.Geometry)
-                If o.DistanceTo(farPoint) < minDis Then
-                    minDis = o.DistanceTo(farPoint)
-                    optpoint = o
+                vc = lastLine.EndSketchPoint.Geometry.VectorTo(o)
+                d = vmnl.CrossProduct(vc).Length * vc.DotProduct(vmnl)
+                If d > 0 Then
+                    If o.DistanceTo(lastLine.EndSketchPoint.Geometry) < minDis Then
+                        minDis = o.DistanceTo(lastLine.EndSketchPoint.Geometry)
+                        optpoint = o
+                    End If
                 End If
+
 
             Next
             Dim l As SketchLine3D = Nothing
@@ -430,7 +432,7 @@ Public Class MicroFold4
     Function DrawThirdLine() As SketchLine3D
         Try
             direction = lastLine.Geometry.Direction.AsVector()
-            direction.ScaleBy(thickness)
+            direction.ScaleBy(thickness * 10)
             Dim pt As Point
             pt = firstLine.StartSketchPoint.Geometry
             pt.TranslateBy(direction)
@@ -453,8 +455,8 @@ Public Class MicroFold4
     Function DrawFirstConstructionLine() As SketchLine3D
         Try
             Dim l As SketchLine3D = Nothing
-
-
+            Dim endPoint As Point
+            Dim v As Vector
             l = sk3D.SketchLines3D.AddByTwoPoints(thirdLine.EndPoint, firstLine.EndSketchPoint.Geometry, False)
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, secondLine)
             sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)

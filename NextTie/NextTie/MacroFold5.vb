@@ -3,7 +3,7 @@ Imports ThirdFold
 Imports FourthFold
 
 Public Class MacroFold5
-    Dim doku As PartDocument
+    Public doku As PartDocument
     Dim app As Application
     Dim sk3D, refSk As Sketch3D
 
@@ -16,6 +16,7 @@ Public Class MacroFold5
     Public wp1, wp2, wp3 As WorkPoint
     Public farPoint, point1, point2, point3, curvePoint As Point
     Dim tg As TransientGeometry
+    Dim initialPlane As Plane
     Dim gap1CM, thicknessCM As Double
     Dim partNumber As Integer
     Dim adjuster As SketchAdjust
@@ -32,7 +33,7 @@ Public Class MacroFold5
     Dim mainWorkPlane As WorkPlane
     Dim minorEdge, majorEdge, bendEdge, adjacentEdge As Edge
     Dim minorLine, majorLine As SketchLine3D
-    Dim workFace, adjacentFace, bendFace As Face
+    Dim workFace, adjacentFace, bendFace, nextworkFace As Face
     Dim bendAngle As DimensionConstraint
     Dim gapFold As DimensionConstraint3D
     Dim folded As FoldFeature
@@ -86,7 +87,11 @@ Public Class MacroFold5
                                     If bender.GetFoldingAngle(ed, sl).Parameter._Value > 0 Then
                                         comando.MakeInvisibleSketches(doku)
                                         comando.MakeInvisibleWorkPlanes(doku)
-                                        If monitor.IsFeatureHealthy(bender.FoldBand(bandLines.Count)) Then
+                                        folded = bender.FoldBand(bandLines.Count)
+                                        folded = CheckFoldSide(folded)
+                                        folded.Name = "f5"
+                                        doku.Update2(True)
+                                        If monitor.IsFeatureHealthy(folded) Then
                                             doku.Save2(True)
                                             done = 1
                                             Return True
@@ -108,7 +113,7 @@ Public Class MacroFold5
             End If
             Return False
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return False
         End Try
     End Function
@@ -140,7 +145,7 @@ Public Class MacroFold5
 
             End If
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return False
         End Try
     End Function
@@ -212,7 +217,7 @@ Public Class MacroFold5
                 For Each f As Face In fb.TangentiallyConnectedFaces
                     If ((Not f.Equals(workFace)) And (f.SurfaceType = SurfaceTypeEnum.kPlaneSurface)) Then
                         For Each vbf1 As Vertex In f.Vertices
-                            For Each vbf0 As Vertex In maxface2.Vertices
+                            For Each vbf0 As Vertex In bendFace.Vertices
                                 If vbf0.Equals(vbf1) Then
                                     adjacentFace = f
                                     'lamp.HighLighFace(f)
@@ -227,10 +232,10 @@ Public Class MacroFold5
             Next
 
             'lamp.HighLighFace(workFace)
-
+            initialPlane = tg.CreatePlaneByThreePoints(workFace.Vertices.Item(1).Point, workFace.Vertices.Item(2).Point, workFace.Vertices.Item(3).Point)
             Return workFace
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
 
@@ -325,7 +330,7 @@ Public Class MacroFold5
 
             Return l
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
     End Function
@@ -383,7 +388,7 @@ Public Class MacroFold5
             lastLine = l
             Return l
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
 
@@ -396,7 +401,7 @@ Public Class MacroFold5
             Dim pl As Plane
             pl = tg.CreatePlaneByThreePoints(minorLine.EndSketchPoint.Geometry, minorLine.StartSketchPoint.Geometry, majorLine.StartSketchPoint.Geometry)
             v = pl.Normal.AsVector()
-            v.ScaleBy(GetParameter("b")._Value / 10)
+            v.ScaleBy(GetParameter("b")._Value / 1)
             endPoint = firstLine.EndSketchPoint.Geometry
             endPoint.TranslateBy(v)
             ol = constructionLines(1)
@@ -405,7 +410,7 @@ Public Class MacroFold5
             gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, firstLine)
             Dim dc As DimensionConstraint3D
             dc = sk3D.DimensionConstraints3D.AddLineLength(l)
-            If adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value / 10) Then
+            If adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value / 1) Then
                 gc.Delete()
                 l.Construction = True
                 constructionLines.Add(l)
@@ -419,7 +424,7 @@ Public Class MacroFold5
             lastLine = l
             Return l
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
 
@@ -440,7 +445,7 @@ Public Class MacroFold5
 
             Return l
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
 
@@ -493,7 +498,7 @@ Public Class MacroFold5
 
             Return l
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
 
@@ -515,7 +520,7 @@ Public Class MacroFold5
 
             Return adjacentEdge
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
 
@@ -533,7 +538,7 @@ Public Class MacroFold5
             bandLines.Add(l)
             Return l
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
     End Function
@@ -570,7 +575,7 @@ Public Class MacroFold5
             bandLines.Add(l)
             Return l
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
     End Function
@@ -580,17 +585,27 @@ Public Class MacroFold5
             cl = constructionLines.Item(2)
             l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.StartPoint, firstLine.EndPoint, False)
             sk3D.GeometricConstraints3D.AddPerpendicular(l, lastLine)
-            sk3D.GeometricConstraints3D.AddEqual(l, cl)
+            Dim dc As DimensionConstraint3D
+            dc = sk3D.DimensionConstraints3D.AddLineLength(lastLine)
+            If adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 4 / 3) Then
+                dc.Delete()
+                dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+                If adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value / 1) Then
+                    dc.Delete()
+                    sk3D.GeometricConstraints3D.AddEqual(l, cl)
+
+                End If
+            End If
 
 
             lastLine = l
-                bandLines.Add(l)
-                Return l
+            bandLines.Add(l)
+            Return l
 
 
             Return Nothing
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
     End Function
@@ -606,18 +621,23 @@ Public Class MacroFold5
             sixthLine = bandLines.Item(4)
             cl3 = constructionLines.Item(3)
             dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
+            If dc.Driven Then
 
-            If adjuster.AdjustGapSmothly(gapFold, gap1CM, dc) Then
                 b = True
             Else
-                dc.Driven = True
-                gapFold.Delete()
-                gapFold = sk3D.DimensionConstraints3D.AddLineLength(cl3)
-                b = True
+                If adjuster.AdjustGapSmothly(gapFold, gap1CM, dc) Then
+                    b = True
+                Else
+                    dc.Driven = True
+                    gapFold.Delete()
+                    gapFold = sk3D.DimensionConstraints3D.AddLineLength(cl3)
+                    b = True
+                End If
             End If
+
             Return b
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
 
@@ -633,8 +653,8 @@ Public Class MacroFold5
                 Try
                     p = doku.ComponentDefinition.Parameters.UserParameters.Item(name)
                 Catch ex2 As Exception
-                    Debug.Print(ex2.ToString())
-                    Debug.Print("Parameter not found: " & name)
+                    MsgBox(ex2.ToString())
+                    MsgBox("Parameter not found: " & name)
                 End Try
 
             End Try
@@ -642,5 +662,95 @@ Public Class MacroFold5
         End Try
 
         Return p
+    End Function
+    Function GetNextWorkFace(ff As FoldFeature) As Face
+        Try
+            Dim maxArea1, maxArea2, maxArea3 As Double
+
+            Dim maxface1, maxface2, maxface3, bf As Face
+
+            maxface1 = ff.Faces.Item(1)
+            maxface2 = maxface1
+            maxface3 = maxface1
+            maxArea2 = 0
+            maxArea1 = maxArea2
+
+
+            For Each f As Face In ff.Faces
+                'lamp.HighLighFace(f)
+                If f.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
+                    'lamp.HighLighFace(f)
+                    If f.Evaluator.Area > maxArea1 Then
+                        maxArea2 = maxArea1
+                        maxface2 = maxface1
+                        maxArea1 = f.Evaluator.Area
+                        maxface1 = f
+                    Else
+                        maxface2 = f
+                    End If
+                Else
+                    maxface3 = f
+                End If
+            Next
+            maxArea1 = 0
+            maxArea2 = 0
+            maxArea3 = 0
+            bf = maxface2
+            'lamp.HighLighFace(maxface2)
+            For Each f As Face In bf.TangentiallyConnectedFaces
+
+                If f.Evaluator.Area > maxArea3 Then
+                    If f.Evaluator.Area > maxArea2 Then
+                        If f.Evaluator.Area > maxArea1 Then
+                            maxface3 = maxface2
+                            maxface2 = maxface1
+                            maxface1 = f
+                            maxArea3 = maxArea2
+                            maxArea2 = maxArea1
+                            maxArea1 = f.Evaluator.Area
+                        Else
+                            maxface3 = maxface2
+                            maxface2 = f
+                            maxArea3 = maxArea2
+                            maxArea2 = f.Evaluator.Area
+                        End If
+                    Else
+                        maxface3 = f
+                        maxArea3 = f.Evaluator.Area
+                    End If
+                End If
+            Next
+            nextWorkFace = maxface1
+            lamp.HighLighFace(maxface1)
+            Return nextWorkFace
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+
+    End Function
+    Function CheckFoldSide(ff As FoldFeature) As FoldFeature
+        Try
+            Dim v1, v2 As Vector
+            Dim pl2 As Plane
+            Dim pt2 As Point
+            Dim d As Double
+            v1 = initialPlane.Normal.AsVector
+            pt2 = GetNextWorkFace(ff).Vertices.Item(1).Point
+            pl2 = tg.CreatePlaneByThreePoints(nextworkFace.Vertices.Item(1).Point, nextworkFace.Vertices.Item(2).Point, nextworkFace.Vertices.Item(3).Point)
+            v2 = pl2.Normal.AsVector
+            d = (v1.CrossProduct(v2)).Length
+            If Math.Abs(d) < 0.01 Then
+                ff = bender.CorrectFold(ff)
+            End If
+            Return ff
+
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
     End Function
 End Class

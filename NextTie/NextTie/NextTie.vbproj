@@ -83,6 +83,7 @@
     <Compile Include="Curves3D.vb" />
     <Compile Include="DesignMonitoring.vb" />
     <Compile Include="Doblador.vb" />
+    <Compile Include="FoldingEvaluator.vb" />
     <Compile Include="Form1.vb">
       <SubType>Form</SubType>
     </Compile>
@@ -96,6 +97,7 @@
     <Compile Include="MacroFold5.vb" />
     <Compile Include="MicroFold.vb" />
     <Compile Include="MicroFold4.vb" />
+    <Compile Include="MicroFold6.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
@@ -116,8 +118,12 @@
     <Compile Include="SketchAdjust.vb" />
     <Compile Include="Sketcher3D.vb" />
     <Compile Include="TieMaker1.vb" />
+    <Compile Include="TwistFold7.vb" />
   </ItemGroup>
   <ItemGroup>
+    <EmbeddedResource Include="Form1.resx">
+      <DependentUpon>Form1.vb</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="My Project\Resources.resx">
       <Generator>VbMyResourcesResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.vb</LastGenOutput>

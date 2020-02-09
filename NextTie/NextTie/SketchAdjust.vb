@@ -9,14 +9,15 @@ Public Class SketchAdjust
     Dim oSk3D As Sketch3D
     Dim delta, gain, sp, obj, SetpointCorrector As Double
     Dim oTheta, oGap, oTecho, p, k, posible As Parameter
-    Dim resolution, maxRes, minRes As Integer
+    Dim resolution, maxRes, minRes As Double
     Dim dimension As DimensionConstraint3D
     Dim kapput, prio As Boolean
     Dim variables() As String = {"angulo", "techo", "gap1", "gap2", "foldez", "doblez"}
     Dim ErrorOptimizer(variables.Length) As Double
-    Dim counter As Integer
+    Dim counter, skcounter, errorCounter As Integer
     Dim monitor As DesignMonitoring
     Dim comando As Commands
+    Dim compDef As ComponentDefinition
 
 
     Public Structure DesignParam
@@ -35,6 +36,7 @@ Public Class SketchAdjust
         oApp = docu.Parent
         oDesignProjectMgr = oApp.DesignProjectManager
         oPartDoc = docu
+        compDef = oPartDoc.ComponentDefinition
         monitor = New DesignMonitoring(oPartDoc)
         DP.Dmax = 200
         DP.Dmin = 32
@@ -50,6 +52,8 @@ Public Class SketchAdjust
         maxRes = 1000000
         counter = 0
         comando = New Commands(oApp)
+        skcounter = 0
+        errorCounter = 0
 
     End Sub
     Function UpdateDocu(d As PartDocument) As Integer
@@ -213,6 +217,24 @@ Public Class SketchAdjust
             Dim k As Double
             delta = (setValue - p._Value) / (resolution)
             If GetDimension(name).Type = ObjectTypeEnum.kTwoLineAngleDimConstraint3DObject Then
+                k = 8
+            Else
+                k = 2
+            End If
+            gain = Math.Pow(Math.Exp(delta), 1 / k)
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            MsgBox("Fail Calculating " & p.Name)
+        End Try
+
+        Return gain
+    End Function
+    Function calculateGainForMaximun(setValue As Double, name As String) As Double
+        Try
+            p = getParameter(name)
+            Dim k As Double
+            delta = (setValue - p._Value) / (resolution)
+            If GetDimension(name).Type = ObjectTypeEnum.kTwoLineAngleDimConstraint3DObject Then
                 k = 4
             Else
                 k = 1
@@ -334,7 +356,7 @@ Public Class SketchAdjust
                 pit.Value = r
                 oPartDoc.Update2()
                 AdjustResolution(name, pit._Value)
-                Debug.Print("Adjusting " & pit.Name & " = " & pit.Value.ToString)
+                Form1.Label1.Text = "Adjusting " & pit.Name & " = " & pit.Value.ToString
                 counter = counter + 1
 
             End While
@@ -379,7 +401,7 @@ Public Class SketchAdjust
                 oPartDoc.Update2()
                 AdjustResolution(gap.Parameter.Name, pit._Value)
                 Debug.Print("iterating  " & pit.Name & " = " & pit.Value.ToString)
-
+                Form1.Label1.Text = "Adjusting " & pit.Name & " = " & pit.Value.ToString
 
             End While
 
@@ -426,7 +448,7 @@ Public Class SketchAdjust
 
             Dim b As Boolean = False
             Dim setPoint As Double = 0
-            Dim climit As Integer = 8
+            Dim climit As Integer = 32
             pit = getParameter(dc.Parameter.Name)
             calculateGainForMinimun(setPoint, dc.Parameter.Name)
             dc.Driven = False
@@ -442,19 +464,25 @@ Public Class SketchAdjust
                 oPartDoc.Update2()
                 counter = counter + 1
                 Debug.Print("iterating Number:  " & counter.ToString() & "  " & pit.Name & " = " & pit.Value.ToString)
+                Form1.Label1.Text = "Adjusting " & pit.Name & " = " & pit.Value.ToString
             End While
 
             If Not monitor.IsSketch3dhHealthy(oSk3D) Then
-                RecoveryUnhealthySketch(pit)
+                'dc.Driven = True
+                RecoveryUnhealthySketch(oSk3D)
                 If monitor.IsSketch3dhHealthy(oSk3D) Then
                     If counter < climit Then
+                        ' dc.Driven = False
                         pit.Value = pit.Value / calculateGainForMinimun(setPoint, dc.Parameter.Name)
-                        resolution = resolution * (1 + 1 / CDbl(climit))
+                        resolution = resolution * (1 + 4 / CDbl(climit))
                         GetMinimalDimension(dc)
                     Else
+
                         counter = 0
                         Return True
                     End If
+                Else
+                    RecoveryUnhealthySketch(oSk3D)
                 End If
             Else
                 Return True
@@ -465,11 +493,88 @@ Public Class SketchAdjust
 
             Return b
         Catch ex As Exception
-            comando.UndoCommand()
+            'comando.UndoCommand()
             Debug.Print(ex.ToString())
             Debug.Print("Fail adjusting " & pit.Name & " ...last value:" & pit.Value.ToString)
 
-            RecoveryUnhealthySketch(pit)
+            GetMinimalDimension(dc)
+            Return False
+
+        End Try
+
+
+    End Function
+    Public Function GetMaximalDimension(dc As DimensionConstraint3D) As Boolean
+        Dim pit As Parameter
+        Dim climit As Double = 8
+        Dim setPoint As Double = dc.Parameter._Value * (1 + 2 / climit)
+        Try
+
+            Dim b As Boolean = False
+            pit = getParameter(dc.Parameter.Name)
+            calculateGainForMaximun(setPoint, dc.Parameter.Name)
+            dc.Driven = False
+            If dc.Type = ObjectTypeEnum.kTwoLineAngleDimConstraint3DObject Then
+                SetpointCorrector = Math.Pow(resolution, 4)
+                climit = 32
+            Else
+                SetpointCorrector = 1
+
+            End If
+            While (((Math.Abs(delta * resolution) * SetpointCorrector) > (Math.Pow(10, -3) / resolution)) And (monitor.IsSketch3dhHealthy(oSk3D)) And (errorCounter < climit))
+                pit.Value = pit.Value * calculateGainForMaximun(setPoint, dc.Parameter.Name)
+                oPartDoc.Update2()
+                AdjustResolution(dc.Parameter.Name, pit._Value)
+                counter = counter + 1
+                Debug.Print("iterating Number:  " & counter.ToString() & "  " & pit.Name & " = " & pit.Value.ToString)
+                Form1.Label1.Text = "Adjusting " & pit.Name & " = " & pit.Value.ToString
+            End While
+            counter = 0
+            If Not monitor.IsSketch3dhHealthy(oSk3D) Then
+                'dc.Driven = True
+                RecoveryUnhealthySketch(oSk3D)
+                If monitor.IsSketch3dhHealthy(oSk3D) Then
+                    If errorCounter < climit Then
+                        errorCounter = errorCounter + 1
+                        ' dc.Driven = False
+                        pit.Value = pit.Value / calculateGainForMaximun(setPoint, dc.Parameter.Name)
+                        resolution = resolution * (1 + 4 / CDbl(climit))
+                        GetMaximalDimension(dc)
+                    Else
+
+                        errorCounter = 0
+                        Return True
+                    End If
+                Else
+                    RecoveryUnhealthySketch(oSk3D)
+                End If
+            Else
+                GetMaximalDimension(dc)
+
+                Return True
+            End If
+            b = True
+            Debug.Print("adjusted " & pit.Name & " = " & pit.Value.ToString)
+            Debug.Print("Resolution:  " & resolution.ToString)
+
+            Return b
+        Catch ex As Exception
+            'comando.UndoCommand()
+            Debug.Print(ex.ToString())
+            Debug.Print("Fail adjusting " & pit.Name & " ...last value:" & pit.Value.ToString)
+            RecoveryUnhealthySketch(oSk3D)
+            If errorCounter < climit Then
+                errorCounter = errorCounter + 1
+                ' dc.Driven = False
+                pit.Value = pit.Value / calculateGainForMaximun(setPoint, dc.Parameter.Name)
+                resolution = resolution * (1 + 4 / CDbl(climit))
+                GetMaximalDimension(dc)
+            Else
+
+                errorCounter = 0
+                Return True
+            End If
+
             Return False
 
         End Try
@@ -484,13 +589,43 @@ Public Class SketchAdjust
     End Function
     Function RecoveryUnhealthySketch(p As Parameter) As Parameter
         Try
-
+            oPartDoc = p.Parent
             While Not monitor.IsSketch3dhHealthy(oSk3D)
                 comando.UndoCommand()
+                oPartDoc.Update2()
+                If Not monitor.IsSketch3dhHealthy(oSk3D) Then
+                    UpdateDocu(oPartDoc)
+                    comando.UndoCommand()
+                End If
                 posible = p
 
             End While
             Return p
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            MsgBox("Fail Recovering " & p.Name & " ...last value:" & p.Value.ToString)
+            Return RecoveryUnhealthySketch(p)
+        End Try
+
+
+
+    End Function
+    Function RecoveryUnhealthySketch(sk As Sketch3D) As Sketch3D
+        Try
+            compDef = sk.Parent
+            oPartDoc = compDef.Document
+            While Not monitor.IsSketch3dhHealthy(sk)
+                comando.UndoCommand()
+                oPartDoc.Update2()
+                If (Not monitor.IsSketch3dhHealthy(sk)) And skcounter < 100 Then
+                    skcounter = skcounter + 1
+                    comando.UndoCommand()
+                    RecoveryUnhealthySketch(sk)
+                End If
+
+
+            End While
+            Return sk
         Catch ex As Exception
             MsgBox(ex.ToString())
             MsgBox("Fail Recovering " & p.Name & " ...last value:" & p.Value.ToString)
@@ -505,10 +640,10 @@ Public Class SketchAdjust
         Dim dc As DimensionConstraint3D
         dc = GetDimension(name)
         If dc.Type = ObjectTypeEnum.kTwoLineAngleDimConstraint3DObject Then
-            c = s * dc.Parameter._Value * 128
-            r = (1 / (s + Math.Pow(10, -6)) + resolution - 1) / ((counter / 128) + 1)
+            c = s * dc.Parameter._Value * 16
+            r = (1 / (s + Math.Pow(10, -6)) + resolution - 1) / ((counter / 2) + 1)
             If r < 32 Then
-                resolution = 32
+                resolution = 16
             Else
                 resolution = r
 

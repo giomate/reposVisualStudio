@@ -63,6 +63,12 @@ Public Class Nombres
         b = Regex.IsMatch(s, pattern)
         Return b
     End Function
+    Public Function Contain_F_First(s As String) As Boolean
+        Dim b As Boolean
+        Dim pattern = String.Concat("\b", "f", "\d+", "\w*")
+        b = Regex.IsMatch(s, pattern)
+        Return b
+    End Function
     Public Function GetQNumber(docu As Inventor.Document) As Integer
         Dim s() As String
         s = Strings.Split(docu.FullFileName, "Band")
@@ -82,6 +88,18 @@ Public Class Nombres
         sn = String.Concat("s" & (CInt(s(1)) + 1).ToString)
 
         Return sn
+    End Function
+    Public Function GetFeatureNumber(f As FoldFeature) As Integer
+        Dim s(), sn As String
+        Dim i As Integer = 0
+
+        If Contain_F_First(f.Name) Then
+            s = Strings.Split(f.Name, "f")
+            i = CInt(s(1))
+        End If
+
+
+        Return i
     End Function
     Public Function MakeNextFileName(docu As Document) As String
         Dim s(), sn As String
