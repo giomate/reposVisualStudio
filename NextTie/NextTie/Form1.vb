@@ -80,7 +80,10 @@ Public Class Form1
                 invDoc = New InventorFile(oApp)
                 tie1 = New TieMaker1(invDoc.OpenSheetMetalFile("Band0.ipt"))
                 If tie1.MakeNextTie().ComponentDefinition.Features.Count > 5 Then
-                    b = tie1.done
+                    If tie1.compDef.Sketches3D.Item("last").SketchLines3D.Count > 0 Then
+                        b = tie1.done
+                    End If
+
                 End If
 
             End If

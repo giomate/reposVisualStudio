@@ -166,7 +166,7 @@ Public Class Doblador
 
         features = doku.ComponentDefinition.Features
         Dim oFoldDefinition As FoldDefinition
-        If i > 4 Then
+        If i > 3 Then
 
             If bendAngle.Parameter._Value > Math.PI / 2 Then
                 oFoldDefinition = features.FoldFeatures.CreateFoldDefinition(bendLine, bendAngle.Parameter._Value)
@@ -232,7 +232,7 @@ Public Class Doblador
 
         Return p
     End Function
-    Public Function GetFoldingAngle(minorEdge As Edge, sl3D As SketchLine3D) As DimensionConstraint
+    Public Function GetFoldingAngle(mne As Edge, sl3D As SketchLine3D) As DimensionConstraint
 
         Try
             Dim ps As PlanarSketch
@@ -243,7 +243,7 @@ Public Class Doblador
             ps = doku.ComponentDefinition.Sketches.Add(wp)
             Dim sl, el As SketchLine
             sl = ps.AddByProjectingEntity(sl3D)
-            el = ps.AddByProjectingEntity(minorEdge)
+            el = ps.AddByProjectingEntity(mne)
             Dim dc As DimensionConstraint
             dc = ps.DimensionConstraints.AddTwoLineAngle(el, sl, sl.EndSketchPoint.Geometry)
             dc.Driven = True

@@ -8,13 +8,13 @@ Public Class OriginSketch
     Dim app As Application
     Public sk3D, refSk As Sketch3D
     Dim lines3D As SketchLines3D
-    Public refLine, firstLine, secondLine, thirdLine, lastLine, twistLine, inputLine As SketchLine3D
+    Public refLine, firstLine, secondLine, thirdLine, lastLine, twistLine, inputLine, doblezline, centroLine As SketchLine3D
     Public curve, refCurve As SketchEquationCurve3D
     Public done, healthy As Boolean
     Dim curve3D As Curves3D
     Dim monitor As DesignMonitoring
     Public wp1, wp2, wp3 As WorkPoint
-    Public vp, point1, point2, point3 As Point
+    Public vp, point1, point2, point3, centroPoint As Point
     Dim tg As TransientGeometry
     Dim gapFoldCM As Double
     Dim adjuster As SketchAdjust
@@ -98,11 +98,12 @@ Public Class OriginSketch
         End If
         Return sk3D
     End Function
-    Public Function DrawNextMainSketch(rl As SketchLine3D, pt As Point) As SketchLine3D
+    Public Function DrawNextMainSketch(rl As SketchLine3D, tl As SketchLine3D, fl As SketchLine3D) As SketchLine3D
 
-        twistLine = rl
+        twistLine = tl
+        doblezline = fl
         sk3D = doku.ComponentDefinition.Sketches3D.Item(doku.ComponentDefinition.Sketches3D.Count)
-        refLine = sk3D.SketchLines3D.AddByTwoPoints(twistLine.EndPoint, pt, False)
+        refLine = rl
         refLine.Construction = True
         curve = sk3D.SketchEquationCurves3D.Item(sk3D.SketchEquationCurves3D.Count)
         If refLine.Length > 0 Then
@@ -120,7 +121,7 @@ Public Class OriginSketch
                             ID1 = sl.AssociativeID
 
                         End If
-                        End if
+                    End If
                 Next
                 inputLine = firstLine
                 done = 1
@@ -172,24 +173,27 @@ Public Class OriginSketch
     End Sub
     Function DrawSingleFloatingLines() As Boolean
         Try
-            If DrawFirstFloatingLine().Length > 0 Then
-                If DrawSecondLine().Length > 0 Then
-                    If DrawFirstConstructionLine().Construction Then
-                        If DrawThirdLine().Length > 0 Then
-                            If DrawSecondConstructionLine().Construction Then
-                                If DrawFourthFloatingLine().Length > 0 Then
-                                    If DrawFifthLine().Length > 0 Then
-                                        If DrawThirdConstructionLine().Construction Then
-                                            If DrawFourthConstructionLine().Construction Then
-                                                Return True
-                                                If DrawSixthLine().Length > 0 Then
-                                                    If DrawSeventhLine().Length > 0 Then
-                                                        Return True
+            If DrawCentroLine().Length > 0 Then
+                If DrawFirstFloatingLine().Length > 0 Then
+                    If DrawSecondLine().Length > 0 Then
+                        If DrawFirstConstructionLine().Construction Then
+                            If DrawThirdLine().Length > 0 Then
+                                If DrawSecondConstructionLine().Construction Then
+                                    If DrawFourthFloatingLine().Length > 0 Then
+                                        If DrawFifthLine().Length > 0 Then
+                                            If DrawThirdConstructionLine().Construction Then
+                                                If DrawFourthConstructionLine().Construction Then
+                                                    Return True
+                                                    If DrawSixthLine().Length > 0 Then
+                                                        If DrawSeventhLine().Length > 0 Then
+                                                            Return True
+                                                        End If
                                                     End If
                                                 End If
-                                            End If
 
+                                            End If
                                         End If
+
                                     End If
 
                                 End If
@@ -201,13 +205,32 @@ Public Class OriginSketch
                     End If
 
                 End If
-
             End If
+
         Catch ex As Exception
             MsgBox(ex.ToString())
             Return Nothing
         End Try
         Return False
+    End Function
+
+    Function DrawCentroLine() As SketchLine3D
+
+        Dim l As SketchLine3D
+        Dim sp As SketchPoint3D
+        centroPoint = tg.CreatePoint(0, 0, 0)
+        sp = sk3D.SketchPoints3D.Add(centroPoint)
+        sk3D.GeometricConstraints3D.AddGround(sp)
+        l = sk3D.SketchLines3D.AddByTwoPoints(refLine.StartPoint, sp, False)
+        l.Construction = True
+
+        ' endPoint.TranslateBy(v)s Vector
+        'v = firstLine.Geometry.Direction.AsVector
+        'v.ScaleBy(GetParameter("b")._Value / 1)
+        'endPoint = firstLine.StartSketchPoint.Geometry
+        'endPoint.TranslateBy(v)
+        centroLine = l
+        Return l
     End Function
     Function DrawInitialLine(line As SketchLine3D) As SketchLine3D
 
@@ -255,19 +278,28 @@ Public Class OriginSketch
     Function DrawFirstFloatingLine() As SketchLine3D
         Try
 
-            Dim l As SketchLine3D = Nothing
-            Dim dc As DimensionConstraint3D
+            Dim l As SketchLine3D
+            ' Dim dc As DimensionConstraint3D
             Dim gc As GeometricConstraint3D
-
-
-            l = sk3D.SketchLines3D.AddByTwoPoints(refLine.StartPoint, refLine.EndSketchPoint.Geometry, False)
-            dc = sk3D.DimensionConstraints3D.AddLineLength(l)
-            dc.Parameter._Value = curve3D.DP.b / 10
+            Dim v1, v2, v3 As Vector
+            v1 = refLine.StartSketchPoint.Geometry.VectorTo(doblezline.EndSketchPoint.Geometry)
+            v2 = refLine.StartSketchPoint.Geometry.VectorTo(centroPoint)
+            v3 = v2.CrossProduct(v1)
+            v1.ScaleBy(1 / v3.Length)
+            Dim pt As Point = refLine.StartSketchPoint.Geometry
+            pt.TranslateBy(v1)
+            l = sk3D.SketchLines3D.AddByTwoPoints(refLine.StartPoint, pt, False)
+            'dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+            ' dc.Parameter._Value = curve3D.DP.b / 10
             doku.Update2(True)
             gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, twistLine)
             doku.Update2(True)
             gc.Delete()
-            metro = dc
+            doku.Update2(True)
+            gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, centroLine)
+            doku.Update2(True)
+            gc.Delete()
+            'metro = dc
             bandLines.Add(l)
             firstLine = l
             lastLine = l
@@ -298,7 +330,7 @@ Public Class OriginSketch
 
             l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.EndPoint, optpoint, False)
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
-            metro.Driven = True
+            'metro.Driven = True
             lastLine = l
             bandLines.Add(l)
             secondLine = lastLine
@@ -315,16 +347,25 @@ Public Class OriginSketch
         Try
             Dim l As SketchLine3D = Nothing
             Dim endPoint As Point
-            Dim v As Vector
-            v = firstLine.Geometry.Direction.AsVector
-            v.ScaleBy(GetParameter("b")._Value / 10)
-            endPoint = firstLine.StartSketchPoint.Geometry
-            endPoint.TranslateBy(v)
-            l = sk3D.SketchLines3D.AddByTwoPoints(firstLine.StartPoint, endPoint, False)
-            endPoint.TranslateBy(v)
-            sk3D.DimensionConstraints3D.AddLineLength(l, endPoint, False)
+            Dim dc As DimensionConstraint3D
+
+            'Dim v As Vector
+            'v = firstLine.Geometry.Direction.AsVector
+            'v.ScaleBy(GetParameter("b")._Value / 1)
+            'endPoint = firstLine.StartSketchPoint.Geometry
+            'endPoint.TranslateBy(v)
+            l = sk3D.SketchLines3D.AddByTwoPoints(firstLine.StartPoint, firstLine.EndSketchPoint.Geometry, False)
+            ' endPoint.TranslateBy(v)
+
             sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, secondLine)
+            dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+            If adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value) Then
+                dc.Parameter._Value = GetParameter("b")._Value
+
+            Else
+                dc.Driven = True
+            End If
             l.Construction = True
             constructionLines.Add(l)
 
@@ -388,14 +429,14 @@ Public Class OriginSketch
                 sk3D.GeometricConstraints3D.AddEqual(l, cl)
                 fl = bandLines.Item(4)
                 sk3D.GeometricConstraints3D.AddCoincident(fl.EndPoint, curve)
-                l.Construction = True
-
-                constructionLines.Add(l)
-
-                lastLine = l
-                Return l
+            Else
+                dc.Driven = True
             End If
-            Return Nothing
+            l.Construction = True
+            constructionLines.Add(l)
+            lastLine = l
+            Return l
+
         Catch ex As Exception
             MsgBox(ex.ToString())
             Return Nothing
@@ -406,8 +447,8 @@ Public Class OriginSketch
         Try
             Dim l As SketchLine3D = Nothing
             Dim pl As SketchLine3D = Nothing
-            pl = sk3D.SketchLines3D.Item(sk3D.SketchLines3D.Count - 1)
-            l = sk3D.SketchLines3D.AddByTwoPoints(pl.EndPoint, firstLine.StartPoint, False)
+            'pl = sk3D.SketchLines3D.Item(sk3D.SketchLines3D.Count - 1)
+            l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.EndPoint, firstLine.StartPoint, False)
             thirdLine = l
             bandLines.Add(l)
 

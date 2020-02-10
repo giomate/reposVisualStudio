@@ -35,7 +35,7 @@ Public Class TieMaker1
     Dim feature As FaceFeature
     Dim cutfeature As CutFeature
     Dim bendLine, cutLine As SketchLine
-    Dim compDef As SheetMetalComponentDefinition
+    Public compDef As SheetMetalComponentDefinition
     Dim mainWorkPlane As WorkPlane
     Dim minorEdge, majorEdge, bendEdge, adjacentEdge, cutEdge1, cutEdge2, CutEsge3 As Edge
     Dim minorLine, majorLine, cutLine3D, kante3D, tante3D As SketchLine3D
@@ -106,7 +106,7 @@ Public Class TieMaker1
             End If
 
 
-            Return Nothing
+            Return doku
         Catch ex As Exception
 
             MsgBox(ex.ToString())
@@ -146,6 +146,7 @@ Public Class TieMaker1
                 Case 5
                     doblez6 = New MicroFold6(doblez5.doku)
                     If doblez6.MakeSixthFold() Then
+                        manager.Update(doblez6.doku)
                         If manager.IsReadyForLastFold() Then
                             comando.MakeInvisibleSketches(doku)
                             MakeRestTie(10)
@@ -156,16 +157,21 @@ Public Class TieMaker1
 
                     End If
                 Case 6
+                    manager.Update(doblez6.doku)
                     If manager.IsReadyForLastFold() Then
                         comando.MakeInvisibleSketches(doku)
                         MakeRestTie(10)
                     Else
                         comando.MakeInvisibleSketches(doku)
-                        doblez7 = New MacroFold5(doblez4.doku)
+                        doblez7 = New MacroFold5(doblez6.doku)
                         If doblez7.MakeFifthFold() Then
                             doku = doblez7.doku
                             MakeRestTie(10)
                         End If
+                    End If
+                Case 7
+                    If giro.MakeFinalTwist() Then
+                        Return doku
                     End If
 
                 Case 10
@@ -176,7 +182,7 @@ Public Class TieMaker1
                 Case Else
                     Return doku
             End Select
-            Return Nothing
+            Return doku
         Catch ex As Exception
             MsgBox(ex.ToString())
             Return Nothing
@@ -204,7 +210,10 @@ Public Class TieMaker1
                 doblez5 = New MacroFold5(doblez4.doku)
             Case 6
                 CreateFoldObjects(i - 1)
-                doblez6 = New MicroFold6(doblez4.doku)
+                doblez6 = New MicroFold6(doblez5.doku)
+            Case 7
+                CreateFoldObjects(i - 1)
+                giro = New TwistFold7(doblez6.doku)
             Case Else
                 Return doku
         End Select

@@ -8,3 +8,4 @@ C:\Users\giova\source\repos\GetInitialConditions\GetInitialConditions\obj\Debug\
 C:\Users\giova\source\repos\GetInitialConditions\GetInitialConditions\obj\Debug\GetInitialConditions.exe
 C:\Users\giova\source\repos\GetInitialConditions\GetInitialConditions\obj\Debug\GetInitialConditions.xml
 C:\Users\giova\source\repos\GetInitialConditions\GetInitialConditions\obj\Debug\GetInitialConditions.pdb
+C:\Users\giova\source\repos\GetInitialConditions\GetInitialConditions\obj\Debug\GetInitialConditions.vbprojAssemblyReference.cache

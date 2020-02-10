@@ -362,7 +362,7 @@ Public Class SketchAdjust
             End While
             counter = 0
             If Not monitor.IsSketch3dhHealthy(oSk3D) Then
-                RecoveryUnhealthySketch(pit)
+                RecoveryUnhealthySketch(oSk3D)
                 Return False
             Else
                 b = True
@@ -448,7 +448,7 @@ Public Class SketchAdjust
 
             Dim b As Boolean = False
             Dim setPoint As Double = 0
-            Dim climit As Integer = 32
+            Dim climit As Integer = 8
             pit = getParameter(dc.Parameter.Name)
             calculateGainForMinimun(setPoint, dc.Parameter.Name)
             dc.Driven = False
@@ -459,32 +459,36 @@ Public Class SketchAdjust
                 SetpointCorrector = 1
 
             End If
-            While (((Math.Abs(delta * resolution) * SetpointCorrector) > (Math.Pow(10, -3) / resolution)) And (monitor.IsSketch3dhHealthy(oSk3D)) And counter < climit)
+            While (((Math.Abs(delta * resolution) * SetpointCorrector) > (Math.Pow(10, -3) / resolution)) And (monitor.IsSketch3dhHealthy(oSk3D)) And (errorCounter < climit) And (counter < climit * 8))
                 pit.Value = pit.Value * calculateGainForMinimun(setPoint, dc.Parameter.Name)
                 oPartDoc.Update2()
+                AdjustResolution(dc.Parameter.Name, pit._Value)
                 counter = counter + 1
                 Debug.Print("iterating Number:  " & counter.ToString() & "  " & pit.Name & " = " & pit.Value.ToString)
                 Form1.Label1.Text = "Adjusting " & pit.Name & " = " & pit.Value.ToString
             End While
-
+            counter = 0
             If Not monitor.IsSketch3dhHealthy(oSk3D) Then
                 'dc.Driven = True
                 RecoveryUnhealthySketch(oSk3D)
                 If monitor.IsSketch3dhHealthy(oSk3D) Then
-                    If counter < climit Then
+                    If errorCounter < climit Then
+                        errorCounter = errorCounter + 1
                         ' dc.Driven = False
                         pit.Value = pit.Value / calculateGainForMinimun(setPoint, dc.Parameter.Name)
                         resolution = resolution * (1 + 4 / CDbl(climit))
                         GetMinimalDimension(dc)
                     Else
 
-                        counter = 0
+                        errorCounter = 0
                         Return True
                     End If
                 Else
                     RecoveryUnhealthySketch(oSk3D)
                 End If
             Else
+                errorCounter = 0
+
                 Return True
             End If
             b = True
@@ -496,7 +500,7 @@ Public Class SketchAdjust
             'comando.UndoCommand()
             Debug.Print(ex.ToString())
             Debug.Print("Fail adjusting " & pit.Name & " ...last value:" & pit.Value.ToString)
-
+            errorCounter = errorCounter + 1
             GetMinimalDimension(dc)
             Return False
 
@@ -516,7 +520,7 @@ Public Class SketchAdjust
             dc.Driven = False
             If dc.Type = ObjectTypeEnum.kTwoLineAngleDimConstraint3DObject Then
                 SetpointCorrector = Math.Pow(resolution, 4)
-                climit = 32
+                climit = 4
             Else
                 SetpointCorrector = 1
 
@@ -549,9 +553,15 @@ Public Class SketchAdjust
                     RecoveryUnhealthySketch(oSk3D)
                 End If
             Else
-                GetMaximalDimension(dc)
+                If errorCounter < climit Then
+                    GetMaximalDimension(dc)
+                Else
+                    errorCounter = 0
+                    Return True
+                End If
 
-                Return True
+
+
             End If
             b = True
             Debug.Print("adjusted " & pit.Name & " = " & pit.Value.ToString)
@@ -650,7 +660,7 @@ Public Class SketchAdjust
             End If
 
         Else
-            c = s * dc.Parameter._Value * 32
+            c = s * dc.Parameter._Value * 16
             r = (1 / (s + Math.Pow(10, -6)) + resolution - 1) / (counter + 1)
             If r < 4 Then
                 resolution = 4
@@ -780,16 +790,21 @@ Public Class SketchAdjust
         Dim b As Boolean = False
 
         dName = dc.Parameter.Name
-
-        If dc.Parameter._Value > Math.PI / 2 Then
-            If AdjustDimensionSmothly(dName, v) Then
-                b = True
-            End If
-        Else
-            If AdjustDimensionSmothly(dName, v) Then
-                b = True
+        If oPartDoc.Update2() Then
+            If UpdateDocu(oPartDoc) Then
+                If dc.Parameter._Value > Math.PI / 2 Then
+                    If AdjustDimensionSmothly(dName, v) Then
+                        b = True
+                    End If
+                Else
+                    If AdjustDimensionSmothly(dName, v) Then
+                        b = True
+                    End If
+                End If
             End If
         End If
+
+
 
 
         Return b

@@ -9,3 +9,4 @@ C:\Users\giova\source\repos\DrawInitialSketch\DrawInitialSketch\obj\Debug\DrawIn
 C:\Users\giova\source\repos\DrawInitialSketch\DrawInitialSketch\obj\Debug\DrawInitialSketch.exe
 C:\Users\giova\source\repos\DrawInitialSketch\DrawInitialSketch\obj\Debug\DrawInitialSketch.xml
 C:\Users\giova\source\repos\DrawInitialSketch\DrawInitialSketch\obj\Debug\DrawInitialSketch.pdb
+C:\Users\giova\source\repos\DrawInitialSketch\DrawInitialSketch\obj\Debug\DrawInitialSketch.vbprojAssemblyReference.cache
