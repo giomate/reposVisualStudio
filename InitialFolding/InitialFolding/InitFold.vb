@@ -2,7 +2,7 @@
 Imports DrawingMainSketch
 Imports GetInitialConditions
 Imports DrawInitialSketch
-Public Class Doblador
+Public Class InitFold
     Public doku As PartDocument
     Dim app As Application
     Dim sk3D, refSk As Sketch3D
@@ -20,7 +20,7 @@ Public Class Doblador
     Dim adjuster As SketchAdjust
     Dim bandLines, constructionLines As ObjectCollection
     Dim comando As Commands
-    Dim mainSketch As Sketcher1
+    Dim mainSketch As InitSketcher
     Dim pro As Profile
     Dim feature As FaceFeature
     Dim bendLine As SketchLine
@@ -43,7 +43,7 @@ Public Class Doblador
         monitor = New DesignMonitoring(doku)
         adjuster = New SketchAdjust(doku)
         medico = New DesignDoctor(doku)
-        mainSketch = New Sketcher1(doku)
+        mainSketch = New InitSketcher(doku)
         lamp = New Highlithing(doku)
         tg = app.TransientGeometry
         bandLines = app.TransientObjects.CreateObjectCollection

@@ -3,7 +3,7 @@ Imports System
 Imports GetInitialConditions
 Imports DrawInitialSketch
 
-Public Class Sketcher1
+Public Class InitSketcher
     Dim doku As PartDocument
     Dim app As Application
     Public sk3D, refSk As Sketch3D
@@ -703,10 +703,18 @@ Public Class Sketcher1
                         tc.Delete()
                     End If
                     dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
+                    dc.Driven = True
                     If adjuster.AdjustGapSmothly(gapFold, gapFoldCM, dc) Then
                         b = True
                     Else
-                        dc.Driven = True
+                        gapFold.Driven = True
+                        dc.Driven = False
+
+                        Try
+                            adjuster.AdjustDimensionConstraint3DSmothly(dc, Math.PI - limit)
+                        Catch ex As Exception
+
+                        End Try
                         gapFold.Delete()
                         gapFold = sk3D.DimensionConstraints3D.AddLineLength(cl2)
                         b = True
@@ -721,12 +729,18 @@ Public Class Sketcher1
                         dc.Driven = True
                         gapFold.Delete()
                         gapFold = sk3D.DimensionConstraints3D.AddLineLength(cl2)
+                        Try
+                            adjuster.AdjustDimensionConstraint3DSmothly(dc, Math.PI - limit)
+                        Catch ex As Exception
+
+                        End Try
+
                         b = True
                     End If
 
                     b = True
                 End If
-                gapFold.Driven = True
+                'gapFold.Driven = True
                 b = True
             End If
 

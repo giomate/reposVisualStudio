@@ -64,9 +64,9 @@ Public Class Form1
     Private Sub Form1_Activated(sender As Object, e As EventArgs) Handles Me.Activated
         Try
 
-            ' done = MakeNextTie()
+            done = MakeNextTie()
 
-            ' Me.Close()
+            Me.Close()
 
         Catch ex As Exception
             MsgBox(ex.ToString())

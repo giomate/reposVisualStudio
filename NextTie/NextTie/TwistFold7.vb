@@ -14,7 +14,7 @@ Public Class TwistFold7
     Dim monitor As DesignMonitoring
 
     Public wp1, wp2, wp3 As WorkPoint
-    Public farPoint, point1, point2, point3, curvePoint As Point
+    Public farPoint, point1, point2, point3, curvePoint, startPoint As Point
     Dim tg As TransientGeometry
     Dim initialPlane As Plane
     Dim gap1CM, thicknessCM As Double
@@ -841,30 +841,53 @@ Public Class TwistFold7
         Return e4
     End Function
     Function GetStartPoint() As Point
+        Try
+            Dim vbl, v As Vector
+            Dim bl As SketchLine3D
 
-        Dim vbl, v As Vector
-        Dim bl As SketchLine3D
+            bl = sk3D.Include(bendEdge)
 
-        bl = sk3D.Include(bendEdge)
+            vbl = bl.Geometry.Direction.AsVector
+            Dim ps, pe As Plane
+            Dim pt As Point = Nothing
+            ps = tg.CreatePlane(bl.StartSketchPoint.Geometry, vbl)
+            Dim minDis As Double = 9999999999
+            Dim minEdge As Double = minDis
+            pe = tg.CreatePlane(bl.EndSketchPoint.Geometry, vbl)
+            If pe.IntersectWithCurve(curve.Geometry).Count > 0 Then
+                For Each o As Point In pe.IntersectWithCurve(curve.Geometry)
 
-        vbl = bl.Geometry.Direction.AsVector
-        Dim ps, pe As Plane
-        Dim pt As Point = Nothing
-        ps = tg.CreatePlane(bl.StartSketchPoint.Geometry, vbl)
-        Dim minDis As Double = 9999999999
-        Dim minEdge As Double = minDis
-        pe = tg.CreatePlane(bl.EndSketchPoint.Geometry, vbl)
+                    If o.DistanceTo(bl.EndSketchPoint.Geometry) < minDis Then
+                        minDis = o.DistanceTo(bl.EndSketchPoint.Geometry)
+                        pt = o
+                        For Each ed As Edge In workFace.Edges
+                            If ed.Equals(bendEdge) Then
+                            Else
+                                If ed.GetClosestPointTo(o).DistanceTo(bl.EndSketchPoint.Geometry) < bl.Length + thicknessCM Then
+                                    If ed.GetClosestPointTo(o).DistanceTo(o) < minEdge Then
+                                        minEdge = ed.GetClosestPointTo(o).DistanceTo(o)
+                                        followEdge = leadingEdge
+                                        leadingEdge = ed
+                                    Else
+                                        followEdge = ed
+                                    End If
 
-        For Each o As Point In pe.IntersectWithCurve(curve.Geometry)
-            If o.DistanceTo(bl.EndSketchPoint.Geometry) < minDis Then
-                minDis = o.DistanceTo(bl.EndSketchPoint.Geometry)
-                pt = o
+                                End If
+                            End If
+
+
+                        Next
+                    End If
+                Next
+            Else
+                Dim o As Point = bl.EndSketchPoint.Geometry
                 For Each ed As Edge In workFace.Edges
                     If ed.Equals(bendEdge) Then
                     Else
                         If ed.GetClosestPointTo(o).DistanceTo(bl.EndSketchPoint.Geometry) < bl.Length + thicknessCM Then
                             If ed.GetClosestPointTo(o).DistanceTo(o) < minEdge Then
                                 minEdge = ed.GetClosestPointTo(o).DistanceTo(o)
+                                followEdge = leadingEdge
                                 leadingEdge = ed
                             Else
                                 followEdge = ed
@@ -876,53 +899,130 @@ Public Class TwistFold7
 
                 Next
             End If
-        Next
-        'lamp.HighLighObject(leadingEdge)
-        'lamp.HighLighObject(followEdge)
-        minEdge = 9999999999
-        For Each o As Point In ps.IntersectWithCurve(curve.Geometry)
-            If o.DistanceTo(bl.StartSketchPoint.Geometry) < minDis Then
-                minDis = o.DistanceTo(bl.StartSketchPoint.Geometry)
-                pt = o
-                For Each ed As Edge In workFace.Edges
-                    If ed.Equals(bendEdge) Then
-                    Else
-                        If ed.GetClosestPointTo(o).DistanceTo(bl.StartSketchPoint.Geometry) < bl.Length + thicknessCM Then
-                            If ed.GetClosestPointTo(o).DistanceTo(o) < minEdge Then
-                                minEdge = ed.GetClosestPointTo(o).DistanceTo(o)
-                                leadingEdge = ed
-                            Else
-                                followEdge = ed
-                            End If
+            Try
+                lamp.HighLighObject(leadingEdge)
 
+                lamp.HighLighObject(followEdge)
+                minEdge = 9999999999
+
+                If ps.IntersectWithCurve(curve.Geometry).Count > 0 Then
+                    For Each o As Point In ps.IntersectWithCurve(curve.Geometry)
+                        If o.DistanceTo(bl.StartSketchPoint.Geometry) < minDis Then
+                            minDis = o.DistanceTo(bl.StartSketchPoint.Geometry)
+                            pt = o
+                            For Each ed As Edge In workFace.Edges
+                                If ed.Equals(bendEdge) Then
+                                Else
+                                    If ed.GetClosestPointTo(o).DistanceTo(bl.StartSketchPoint.Geometry) < bl.Length + gap1CM Then
+                                        If ed.GetClosestPointTo(o).DistanceTo(o) < minEdge Then
+                                            minEdge = ed.GetClosestPointTo(o).DistanceTo(o)
+                                            followEdge = leadingEdge
+                                            leadingEdge = ed
+                                        Else
+                                            followEdge = ed
+                                        End If
+
+                                    End If
+                                End If
+                            Next
                         End If
-                    End If
-                Next
+                    Next
+                Else
+                    Dim o As Point = bl.StartSketchPoint.Geometry
+                    For Each ed As Edge In workFace.Edges
+                        If ed.Equals(bendEdge) Then
+                        Else
+                            If ed.GetClosestPointTo(o).DistanceTo(bl.StartSketchPoint.Geometry) < bl.Length + gap1CM Then
+                                If ed.GetClosestPointTo(o).DistanceTo(o) < minEdge Then
+                                    minEdge = ed.GetClosestPointTo(o).DistanceTo(o)
+                                    followEdge = leadingEdge
+                                    leadingEdge = ed
+                                Else
+                                    followEdge = ed
+                                End If
+
+                            End If
+                        End If
+                    Next
+                End If
+
+                lamp.HighLighObject(leadingEdge)
+                lamp.HighLighObject(followEdge)
+            Catch ex As Exception
+                bl.Delete()
+                leadingEdge = GetLeadingEdge()
+            End Try
+
+            lamp.HighLighObject(leadingEdge)
+            lamp.HighLighObject(followEdge)
+
+
+            If leadingEdge.StartVertex.Point.DistanceTo(pt) < leadingEdge.StopVertex.Point.DistanceTo(pt) Then
+                pt = leadingEdge.StartVertex.Point
+                v = leadingEdge.StartVertex.Point.VectorTo(leadingEdge.StopVertex.Point)
+                farPoint = leadingEdge.StopVertex.Point
+            Else
+                pt = leadingEdge.StopVertex.Point
+                v = leadingEdge.StopVertex.Point.VectorTo(leadingEdge.StartVertex.Point)
+                farPoint = leadingEdge.StartVertex.Point
+
             End If
-        Next
-        ' lamp.HighLighObject(leadingEdge)
-        'lamp.HighLighObject(followEdge)
+            'lamp.HighLighObject(pt)
+            'lamp.HighLighObject(leadingEdge)
+            v.AsUnitVector.AsVector()
+            v.ScaleBy(thicknessCM * 5 / 10)
+            pt.TranslateBy(v)
+            'lamp.HighLighObject(pt)
+            Try
+                bl.Construction = True
+            Catch ex As Exception
+                ' MsgBox(ex.ToString())
+            End Try
+
+            point1 = pt
+            Return pt
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+        End Try
+
+    End Function
+    Function GetLeadingEdge() As Edge
+        Try
+            Dim bl As SketchLine3D
+            Dim pt As Point
+            Dim minDis As Double = 9999999999
+            Dim minEdge As Double = minDis
+            bl = sk3D.Include(bendEdge)
+            For Each o As Point In initialPlane.IntersectWithCurve(curve.Geometry)
+                If o.DistanceTo(bl.EndSketchPoint.Geometry) < minDis Then
+                    minDis = o.DistanceTo(bendEdge.GetClosestPointTo(o))
+                    pt = o
+                    For Each ed As Edge In workFace.Edges
+                        If ed.Equals(bendEdge) Then
+                        Else
+                            If ed.GetClosestPointTo(o).DistanceTo(bendEdge.GetClosestPointTo(o)) < bl.Length + thicknessCM Then
+                                If ed.GetClosestPointTo(o).DistanceTo(o) < minEdge Then
+                                    minEdge = ed.GetClosestPointTo(o).DistanceTo(o)
+                                    followEdge = leadingEdge
+                                    leadingEdge = ed
+                                Else
+                                    followEdge = ed
+                                End If
+
+                            End If
+                        End If
 
 
-        If leadingEdge.StartVertex.Point.DistanceTo(pt) < leadingEdge.StopVertex.Point.DistanceTo(pt) Then
-            pt = leadingEdge.StartVertex.Point
-            v = leadingEdge.StartVertex.Point.VectorTo(leadingEdge.StopVertex.Point)
-            farPoint = leadingEdge.StopVertex.Point
-        Else
-            pt = leadingEdge.StopVertex.Point
-            v = leadingEdge.StopVertex.Point.VectorTo(leadingEdge.StartVertex.Point)
-            farPoint = leadingEdge.StartVertex.Point
+                    Next
+                End If
+            Next
+            bl.Construction = True
 
-        End If
-        'lamp.HighLighObject(pt)
-        'lamp.HighLighObject(leadingEdge)
-        v.AsUnitVector.AsVector()
-        v.ScaleBy(thicknessCM * 5 / 10)
-        pt.TranslateBy(v)
-        'lamp.HighLighObject(pt)
-        bl.Construction = True
-        point1 = pt
-        Return pt
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+        Return leadingEdge
     End Function
     Function DrawFirstLine() As SketchLine3D
         Try
@@ -972,7 +1072,7 @@ Public Class TwistFold7
             vmjl = firstLine.EndSketchPoint.Geometry.VectorTo(farPoint)
             ' l = sk3D.SketchLines3D.AddByTwoPoints(firstLine.EndPoint, farPoint, False)dmm
             For Each o As Point In p.IntersectWithCurve(curve.Geometry)
-                If o.DistanceTo(firstLine.EndSketchPoint.Geometry) < curvas3D.Cr / 10 Then
+                If o.DistanceTo(firstLine.EndSketchPoint.Geometry) < curvas3D.Cr / 4 Then
 
                     vc = firstLine.EndSketchPoint.Geometry.VectorTo(o)
                     d = vc.CrossProduct(vmjl).Length * vc.DotProduct(vmjl)
@@ -1186,20 +1286,49 @@ Public Class TwistFold7
     End Function
     Function DrawThirdLine() As SketchLine3D
         Try
-            Dim l, cl4, cl3, bl2 As SketchLine3D
+            Dim l, cl4, cl3, bl2, cl1 As SketchLine3D
             Dim ac As DimensionConstraint3D
             Dim dc, dc2 As DimensionConstraint3D
-            Dim gc As GeometricConstraint3D
+            Dim gc, cc As GeometricConstraint3D
             bl2 = bandLines.Item(2)
             cl4 = constructionLines.Item(4)
             cl3 = constructionLines.Item(3)
+            cl1 = constructionLines.Item(1)
             l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.StartPoint, cl4.EndPoint, False)
 
 
             gapVertex.Driven = False
             If adjuster.GetMinimalDimension(gapVertex) Then
-                gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, bl2)
-                gc.Delete()
+                gapVertex.Driven = True
+                Try
+                    gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, bl2)
+                Catch ex As Exception
+                    Try
+                        gc.Delete()
+                    Catch ex3 As Exception
+
+                    End Try
+
+                    dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, bl2)
+                    Try
+                        adjuster.AdjustDimensionConstraint3DSmothly(dc, Math.PI / 2)
+                    Catch ex1 As Exception
+
+                    End Try
+                    dc.Delete()
+                    Try
+                        gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, bl2)
+                    Catch ex2 As Exception
+
+                    End Try
+
+                End Try
+                Try
+                    gc.Delete()
+                Catch ex As Exception
+
+                End Try
+
                 ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(bl2, l)
 
                 If adjuster.AdjustDimensionConstraint3DSmothly(ac, ac.Parameter._Value * 5 / 4) Then
@@ -1212,25 +1341,54 @@ Public Class TwistFold7
                 ac.Delete()
                 'gc = sk3D.GeometricConstraints3D.AddCollinear(l, bl2)
                 ' gc.Delete()
-                'dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, cl4)
-                ' If adjuster.AdjustDimensionConstraint3DSmothly(dc, Math.PI / 2) Then
-                'dc.Driven = True
+                dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, cl4)
+                cc = sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, cl3)
+                Try
+                    adjuster.AdjustDimensionConstraint3DSmothly(dc, Math.PI / 2)
+                Catch ex As Exception
+                    dc.Driven = True
+                End Try
+                dc.Delete()
+                'cc.Delete()
                 gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, cl4)
-                    sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, cl3)
-                    dc2 = sk3D.DimensionConstraints3D.AddLineLength(l)
+                'sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, cl3)
+                dc2 = sk3D.DimensionConstraints3D.AddLineLength(l)
                 If adjuster.AdjustDimensionConstraint3DSmothly(dc2, GetParameter("b")._Value * 2) Then
                 Else
                     dc.Driven = True
-                    End If
+                End If
+                Try
                     dc2.Delete()
                     gc.Delete()
+                Catch ex As Exception
+
+                End Try
+
+
+                Try
+                    gapVertex.Driven = False
+                    Try
+                        adjuster.GetMinimalDimension(gapVertex)
+                    Catch ex As Exception
+
+                    End Try
+                Catch ex As Exception
+                    gapVertex.Delete()
+                    gapVertex = sk3D.DimensionConstraints3D.AddLineLength(cl1)
+                    Try
+                        adjuster.GetMinimalDimension(gapVertex)
+                    Catch ex5 As Exception
+
+                    End Try
+                End Try
+
                 '  End If
                 ' dc.Delete()
             Else
 
 
 
-                gapVertex.Driven = True
+                    gapVertex.Driven = True
 
             End If
 

@@ -43,6 +43,7 @@ Public Class FoldingEvaluator
         foldFeatures = sheetFeatures.FoldFeatures
         comando = New Commands(app)
 
+
         done = False
     End Sub
     Public Sub Update(docu As Inventor.Document)
@@ -58,7 +59,8 @@ Public Class FoldingEvaluator
     End Sub
     Public Function IsReadyForLastFold() As Boolean
         Try
-            If GetCrucialAngle().Parameter._Value > Math.PI / 2 Then
+
+            If GetCrucialAngle().Parameter._Value > (Math.PI / 2) * 148 / 157 Then
                 Return True
             Else
                 Return False
@@ -140,31 +142,23 @@ Public Class FoldingEvaluator
     Function GetCrucialAngle() As DimensionConstraint3D
         Try
             Dim dc1, dc2, a As DimensionConstraint3D
-            sk3D = DrawEvaluationSketch()
-            dc2 = sk3D.DimensionConstraints3D.AddLineLength(secondLine)
-            adjuster.UpdateDocu(doku)
-            If adjuster.GetMinimalDimension(dc2) Then
-
-                dc2.Delete()
-                dc1 = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
-                If adjuster.GetMinimalDimension(dc1) Then
-                    dc1.Driven = True
-                    a = sk3D.DimensionConstraints3D.AddTwoLineAngle(secondLine, thirdLine)
-                    crucialAngle = a
-                Else
-                    dc1.Delete()
-                    a = sk3D.DimensionConstraints3D.AddTwoLineAngle(secondLine, thirdLine)
-                    crucialAngle = a
-
+            Try
+                If compDef.Sketches3D.Item("crucialAngle").DimensionConstraints3D.Count > 0 Then
+                    sk3D = compDef.Sketches3D.Item("crucialAngle")
+                    crucialAngle = GetDimensionConstraint("crucialAngle")
                 End If
+                Return crucialAngle
+            Catch ex As Exception
+                sk3D = DrawEvaluationSketch()
+                sk3D.Name = "crucialAngle"
+                dc2 = sk3D.DimensionConstraints3D.AddLineLength(secondLine)
+                adjuster.UpdateDocu(doku)
+                If adjuster.GetMinimalDimension(dc2) Then
 
-            Else
-                dc1 = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
-                If adjuster.GetMinimalDimension(dc1) Then
-                    dc1.Delete()
-                    dc2 = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
-                    If adjuster.GetMinimalDimension(dc2) Then
-                        dc2.Driven = True
+                    dc2.Delete()
+                    dc1 = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
+                    If adjuster.GetMinimalDimension(dc1) Then
+                        dc1.Driven = True
                         a = sk3D.DimensionConstraints3D.AddTwoLineAngle(secondLine, thirdLine)
                         crucialAngle = a
                     Else
@@ -173,17 +167,36 @@ Public Class FoldingEvaluator
                         crucialAngle = a
 
                     End If
-                Else
-                    dc1.Delete()
-                    a = sk3D.DimensionConstraints3D.AddTwoLineAngle(secondLine, thirdLine)
-                    crucialAngle = a
-                End If
-                Return Nothing
-            End If
 
-            Return a
+                Else
+                    dc1 = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
+                    If adjuster.GetMinimalDimension(dc1) Then
+                        dc1.Delete()
+                        dc2 = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
+                        If adjuster.GetMinimalDimension(dc2) Then
+                            dc2.Driven = True
+                            a = sk3D.DimensionConstraints3D.AddTwoLineAngle(secondLine, thirdLine)
+                            crucialAngle = a
+                        Else
+                            dc1.Delete()
+                            a = sk3D.DimensionConstraints3D.AddTwoLineAngle(secondLine, thirdLine)
+                            crucialAngle = a
+
+                        End If
+                    Else
+                        dc1.Delete()
+                        a = sk3D.DimensionConstraints3D.AddTwoLineAngle(secondLine, thirdLine)
+                        crucialAngle = a
+                    End If
+                    Return Nothing
+                End If
+                crucialAngle.Parameter.Name = "crucialAngle"
+                Return a
+
+            End Try
+
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
 
@@ -200,5 +213,12 @@ Public Class FoldingEvaluator
 
         Return Nothing
     End Function
-
+    Function GetDimensionConstraint(name As String) As DimensionConstraint3D
+        For Each dimension In sk3D.DimensionConstraints3D
+            If dimension.Parameter.Name = name Then
+                Return dimension
+            End If
+        Next
+        Return Nothing
+    End Function
 End Class

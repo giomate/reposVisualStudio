@@ -395,18 +395,18 @@ Public Class SketchAdjust
 
         Try
             calculateGain(setpoint, gap.Parameter.Name)
-            SetpointCorrector = AdjustResolution(gap.Parameter.Name, setpoint) * 8
-            While (((Math.Abs(delta * resolution * SetpointCorrector)) > (setpoint / resolution)) And (monitor.IsSketch3dhHealthy(oSk3D)) And (Not IsLastAngleOk(angle)))
-                pit.Value = pit.Value * Math.Pow(calculateGain(setpoint, gap.Parameter.Name), 1 / 8)
+            SetpointCorrector = AdjustResolution(gap.Parameter.Name, setpoint) * 4
+            While (((Math.Abs(delta * resolution * SetpointCorrector)) > (setpoint / resolution)) And (monitor.IsSketch3dhHealthy(oSk3D)) And (Not IsLastAngleOk(angle)) And (counter < Math.Pow(4 * 4, 4)))
+                pit.Value = pit.Value * Math.Pow(calculateGain(setpoint, gap.Parameter.Name), 1 / 4)
                 oPartDoc.Update2()
                 AdjustResolution(gap.Parameter.Name, pit._Value)
                 Debug.Print("iterating  " & pit.Name & " = " & pit.Value.ToString)
                 Form1.Label1.Text = "Adjusting " & pit.Name & " = " & pit.Value.ToString
-
+                counter = counter + 1
             End While
-
+            counter = 0
             If Not monitor.IsSketch3dhHealthy(oSk3D) Then
-                RecoveryUnhealthySketch(pit)
+                RecoveryUnhealthySketch(oSk3D)
                 Return False
             Else
                 If ((Math.Abs(delta * resolution * SetpointCorrector)) > (setpoint / resolution)) Then
@@ -433,7 +433,7 @@ Public Class SketchAdjust
             MsgBox(ex.ToString())
             MsgBox("Fail adjusting " & pit.Name & " ...last value:" & pit.Value.ToString)
 
-            RecoveryUnhealthySketch(pit)
+            RecoveryUnhealthySketch(oSk3D)
             Return False
 
         End Try
@@ -592,7 +592,8 @@ Public Class SketchAdjust
 
     End Function
     Function IsLastAngleOk(ac As DimensionConstraint3D) As Boolean
-        If (ac.Parameter._Value < 0.05 Or ac.Parameter._Value > (Math.PI - 0.05)) Then
+        Dim limit As Double = 0.06
+        If (ac.Parameter._Value < limit Or ac.Parameter._Value > (Math.PI - limit)) Then
             Return True
         End If
         Return False

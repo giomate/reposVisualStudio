@@ -1,8 +1,5 @@
 ﻿Imports Inventor
-Imports GetInitialConditions
-Imports DrawingMainSketch
-Imports InitialFolding
-Imports Twist7
+
 
 
 Public Class TieMaker1
@@ -16,7 +13,7 @@ Public Class TieMaker1
 
     Dim monitor As DesignMonitoring
     Dim invDoc As InventorFile
-    Dim mainSketch As DrawingMainSketch.Sketcher3D
+
     Dim trobinaCurve As Curves3D
 
     Public wp1, wp2, wp3 As WorkPoint
@@ -52,7 +49,7 @@ Public Class TieMaker1
     Dim edgeColl As EdgeCollection
     Dim twistPlane As WorkPlane
     Dim refDoc As FindReferenceLine
-    Dim doblez1 As InitialFolding.Doblador
+    Dim doblez1 As InitFold
     Dim doblez2 As MicroFold
     Dim doblez3 As MacroFold
     Dim doblez4 As MicroFold4
@@ -184,7 +181,7 @@ Public Class TieMaker1
             End Select
             Return doku
         Catch ex As Exception
-            MsgBox(ex.ToString())
+
             Return Nothing
         End Try
 
@@ -192,7 +189,7 @@ Public Class TieMaker1
     Function CreateFoldObjects(i As Integer) As PartDocument
         Select Case i
             Case 1
-                doblez1 = New InitialFolding.Doblador(doku)
+                doblez1 = New InitFold(doku)
                 Return doku
             Case 2
                 CreateFoldObjects(i - 1)
@@ -222,7 +219,7 @@ Public Class TieMaker1
     Function GetInitialConditions() As Integer
         Try
             Dim q As Integer = 0
-            doblez1 = New InitialFolding.Doblador(invDoc.CreateSheetMetalFile(nombrador.MakeNextFileName(refDoc.oDoc)))
+            doblez1 = New InitFold(invDoc.CreateSheetMetalFile(nombrador.MakeNextFileName(refDoc.oDoc)))
             doku = doblez1.doku
             trobinaCurve = New Curves3D(doblez1.doku)
             trobinaCurve.DefineTrobinaParameters(doku)

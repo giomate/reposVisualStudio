@@ -81,8 +81,10 @@
     <Compile Include="Commands.vb" />
     <Compile Include="Conversions.vb" />
     <Compile Include="Curves3D.vb" />
+    <Compile Include="DesignDoctor.vb" />
     <Compile Include="DesignMonitoring.vb" />
     <Compile Include="Doblador.vb" />
+    <Compile Include="FindReferenceLine.vb" />
     <Compile Include="FoldingEvaluator.vb" />
     <Compile Include="Form1.vb">
       <SubType>Form</SubType>
@@ -92,6 +94,8 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Highlithing.vb" />
+    <Compile Include="InitFold.vb" />
+    <Compile Include="InitSketcher.vb" />
     <Compile Include="InventorFile.vb" />
     <Compile Include="MacroFold.vb" />
     <Compile Include="MacroFold5.vb" />
@@ -142,28 +146,6 @@
       <LastGenOutput>Settings.Designer.vb</LastGenOutput>
     </None>
     <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\DrawingMainSketch\DrawingMainSketch\DrawingMainSketch.vbproj">
-      <Project>{bae1bed5-9e38-4313-b8d0-d3f884081425}</Project>
-      <Name>DrawingMainSketch</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\GetInitialConditions\GetInitialConditions\GetInitialConditions.vbproj">
-      <Project>{3a2d046a-ff71-4a42-93dc-087e6f12045e}</Project>
-      <Name>GetInitialConditions</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\InitialFolding\InitialFolding\InitialFolding.vbproj">
-      <Project>{09a23ac6-2fbe-41e5-8b1f-7917d3629f2d}</Project>
-      <Name>InitialFolding</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\SecondFold\SecondFold\SecondFold.vbproj">
-      <Project>{bc68b8d5-9d37-4897-a587-7a63f9e365c5}</Project>
-      <Name>SecondFold</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Twist7\Twist7\Twist7.vbproj">
-      <Project>{a217e8e9-ff63-47dc-a4e3-b5588262b411}</Project>
-      <Name>Twist7</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
 </Project>

@@ -364,7 +364,7 @@ Public Class MicroFold4
     Function DrawFirstLine() As SketchLine3D
         Try
 
-            Dim l, minorLine, majorLine As SketchLine3D
+            Dim l As SketchLine3D
             minorLine = sk3D.Include(minorEdge)
             majorLine = sk3D.Include(majorEdge)
             l = sk3D.SketchLines3D.AddByTwoPoints(GetStartPoint(), majorEdge.GetClosestPointTo(GetStartPoint()))
@@ -414,7 +414,19 @@ Public Class MicroFold4
             Dim l As SketchLine3D = Nothing
             l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.EndPoint, optpoint, False)
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
-
+            Dim dc As DimensionConstraint3D
+            dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(firstLine, minorLine)
+            If adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 9 / 10) Then
+            Else
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 11 / 12)
+            End If
+            dc.Delete()
+            dc = sk3D.DimensionConstraints3D.AddLineLength(firstLine)
+            If adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 7 / 6) Then
+            Else
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 9 / 8)
+            End If
+            dc.Delete()
             point3 = l.EndSketchPoint.Geometry
             lastLine = l
             bandLines.Add(l)
@@ -459,6 +471,12 @@ Public Class MicroFold4
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, secondLine)
             sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
             Dim dc, ac As DimensionConstraint3D
+            dc = sk3D.DimensionConstraints3D.AddLineLength(firstLine)
+            If adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 4 / 3) Then
+            Else
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 5 / 4)
+            End If
+            dc.Delete()
             dc = sk3D.DimensionConstraints3D.AddLineLength(l)
             If AdjustLineLenghtSmothly(dc, GetParameter("b")._Value / 1) Then
                 l.Construction = True

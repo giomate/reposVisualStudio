@@ -13,7 +13,7 @@ Public Class Form1
     Dim started, running, done As Boolean
     Dim oDesignProjectMgr As DesignProjectManager
     Dim invDoc As InventorFile
-    Dim doblez As Doblador
+    Dim doblez As InitFold
     Dim refDoc As FindReferenceLine
 
 
@@ -82,7 +82,7 @@ Public Class Form1
         Try
             If (started And (Not running)) Then
                 invDoc = New InventorFile(oApp)
-                doblez = New Doblador(invDoc.CreateSheetMetalFile("Band0.ipt"))
+                doblez = New InitFold(invDoc.CreateSheetMetalFile("Band0.ipt"))
                 refDoc = New FindReferenceLine(invDoc.openFile("BandFoldingIteration0.ipt"))
                 doblez.MakeFirstFold(refDoc)
 

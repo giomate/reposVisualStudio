@@ -24,18 +24,18 @@ Public Class MacroFold5
     Dim comando As Commands
     Dim mainSketch As Sketcher3D
     Dim nombrador As Nombres
-
+    Dim curvas3D As Curves3D
     Dim pro As Profile
     Dim direction As Vector
     Dim feature As FaceFeature
     Dim bendLine As SketchLine
     Dim compDef As SheetMetalComponentDefinition
     Dim mainWorkPlane As WorkPlane
-    Dim minorEdge, majorEdge, bendEdge, adjacentEdge As Edge
+    Dim minorEdge, majorEdge, bendEdge, adjacentEdge, leadingEdge, followEdge As Edge
     Dim minorLine, majorLine As SketchLine3D
     Dim workFace, adjacentFace, bendFace, nextworkFace As Face
     Dim bendAngle As DimensionConstraint
-    Dim gapFold As DimensionConstraint3D
+    Dim gapFold, gapVertex As DimensionConstraint3D
     Dim folded As FoldFeature
     Dim features As SheetMetalFeatures
     Dim lamp As Highlithing
@@ -58,6 +58,7 @@ Public Class MacroFold5
         gap1CM = 3 / 10
         bender = New Doblador(doku)
         nombrador = New Nombres(doku)
+        curvas3D = New Curves3D(doku)
 
 
         done = False
@@ -156,17 +157,13 @@ Public Class MacroFold5
 
             Dim maxface1, maxface2, maxface3 As Face
 
-
-            maxface2 = compDef.Bends.Item(compDef.Bends.Count).BackFaces.Item(1)
-            maxface1 = maxface2
+            maxface1 = compDef.Features.Item(compDef.Features.Count).Faces.Item(1)
+            maxface2 = maxface1
             maxArea2 = 0
             maxArea1 = maxArea2
 
 
-
-
-
-            For Each f As Face In compDef.Bends.Item(compDef.Bends.Count).BackFaces
+            For Each f As Face In compDef.Features.Item(compDef.Features.Count).Faces
                 'lamp.HighLighFace(f)
                 If f.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
                     'lamp.HighLighFace(f)
@@ -175,7 +172,6 @@ Public Class MacroFold5
                         maxface2 = maxface1
                         maxArea1 = f.Evaluator.Area
                         maxface1 = f
-
                     Else
                         maxface2 = f
                     End If
@@ -188,7 +184,6 @@ Public Class MacroFold5
             maxArea3 = 0
             workFace = maxface3
             adjacentFace = maxface3
-            bendFace = maxface2
             'lamp.HighLighFace(maxface2)
             For Each f As Face In maxface2.TangentiallyConnectedFaces
 
@@ -213,22 +208,19 @@ Public Class MacroFold5
                     End If
                 End If
             Next
-            For Each fb As Face In compDef.Bends.Item(compDef.Bends.Count - 1).BackFaces
-                For Each f As Face In fb.TangentiallyConnectedFaces
-                    If ((Not f.Equals(workFace)) And (f.SurfaceType = SurfaceTypeEnum.kPlaneSurface)) Then
-                        For Each vbf1 As Vertex In f.Vertices
-                            For Each vbf0 As Vertex In bendFace.Vertices
-                                If vbf0.Equals(vbf1) Then
-                                    adjacentFace = f
-                                    'lamp.HighLighFace(f)
+            For Each f As Face In compDef.Features.Item(compDef.Features.Count - 1).Faces
+                For Each ft As Face In maxface2.TangentiallyConnectedFaces
+                    If ft.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                        If ft.Equals(f) Then
 
-                                End If
-                            Next
-                        Next
+                            adjacentFace = f
+                            'lamp.HighLighFace(f)
+
+                        End If
 
                     End If
-
                 Next
+
             Next
 
             'lamp.HighLighFace(workFace)
@@ -282,25 +274,87 @@ Public Class MacroFold5
         Return e1
     End Function
     Function GetStartPoint() As Point
-        Dim pt As Point
-        Dim v As Vector
+        Dim vbl, v As Vector
+        Dim bl As SketchLine3D
 
-        If majorEdge.StartVertex.Point.DistanceTo(bendEdge.StartVertex.Point) < majorEdge.StopVertex.Point.DistanceTo(bendEdge.StartVertex.Point) Then
-            pt = majorEdge.StartVertex.Point
-            v = majorEdge.StartVertex.Point.VectorTo(majorEdge.StopVertex.Point)
-            farPoint = majorEdge.StopVertex.Point
+        bl = sk3D.Include(bendEdge)
+
+        vbl = bl.Geometry.Direction.AsVector
+        Dim ps, pe As Plane
+        Dim pt As Point = Nothing
+        ps = tg.CreatePlane(bl.StartSketchPoint.Geometry, vbl)
+        Dim minDis As Double = 9999999999
+        Dim minEdge As Double = minDis
+        pe = tg.CreatePlane(bl.EndSketchPoint.Geometry, vbl)
+
+        For Each o As Point In pe.IntersectWithCurve(curve.Geometry)
+            If o.DistanceTo(bl.EndSketchPoint.Geometry) < minDis Then
+                minDis = o.DistanceTo(bl.EndSketchPoint.Geometry)
+                pt = o
+                For Each ed As Edge In workFace.Edges
+                    If ed.Equals(bendEdge) Then
+                    Else
+                        If ed.GetClosestPointTo(o).DistanceTo(bl.EndSketchPoint.Geometry) < bl.Length + gap1CM Then
+                            If ed.GetClosestPointTo(o).DistanceTo(o) < minEdge Then
+                                minEdge = ed.GetClosestPointTo(o).DistanceTo(o)
+                                followEdge = leadingEdge
+                                leadingEdge = ed
+                            Else
+                                followEdge = ed
+                            End If
+
+                        End If
+                    End If
+
+
+                Next
+            End If
+        Next
+        lamp.HighLighObject(leadingEdge)
+        lamp.HighLighObject(followEdge)
+        minEdge = 9999999999
+        For Each o As Point In ps.IntersectWithCurve(curve.Geometry)
+            If o.DistanceTo(bl.StartSketchPoint.Geometry) < minDis Then
+                minDis = o.DistanceTo(bl.StartSketchPoint.Geometry)
+                pt = o
+                For Each ed As Edge In workFace.Edges
+                    If ed.Equals(bendEdge) Then
+                    Else
+                        If ed.GetClosestPointTo(o).DistanceTo(bl.StartSketchPoint.Geometry) < bl.Length + gap1CM Then
+                            If ed.GetClosestPointTo(o).DistanceTo(o) < minEdge Then
+                                minEdge = ed.GetClosestPointTo(o).DistanceTo(o)
+                                followEdge = leadingEdge
+                                leadingEdge = ed
+                            Else
+                                followEdge = ed
+                            End If
+
+                        End If
+                    End If
+                Next
+            End If
+        Next
+        lamp.HighLighObject(leadingEdge)
+        lamp.HighLighObject(followEdge)
+
+
+        If leadingEdge.StartVertex.Point.DistanceTo(pt) < leadingEdge.StopVertex.Point.DistanceTo(pt) Then
+            pt = leadingEdge.StartVertex.Point
+            v = leadingEdge.StartVertex.Point.VectorTo(leadingEdge.StopVertex.Point)
+            farPoint = leadingEdge.StopVertex.Point
         Else
-            pt = majorEdge.StopVertex.Point
-            v = majorEdge.StopVertex.Point.VectorTo(majorEdge.StartVertex.Point)
-            farPoint = majorEdge.StartVertex.Point
+            pt = leadingEdge.StopVertex.Point
+            v = leadingEdge.StopVertex.Point.VectorTo(leadingEdge.StartVertex.Point)
+            farPoint = leadingEdge.StartVertex.Point
 
         End If
         'lamp.HighLighObject(pt)
-
+        'lamp.HighLighObject(leadingEdge)
         v.AsUnitVector.AsVector()
         v.ScaleBy(thicknessCM * 5 / 10)
         pt.TranslateBy(v)
         'lamp.HighLighObject(pt)
+        bl.Construction = True
         point1 = pt
         Return pt
     End Function
@@ -308,9 +362,10 @@ Public Class MacroFold5
         Try
 
             Dim l As SketchLine3D
-            minorLine = sk3D.Include(minorEdge)
-            majorLine = sk3D.Include(majorEdge)
-            l = sk3D.SketchLines3D.AddByTwoPoints(GetStartPoint(), minorEdge.GetClosestPointTo(GetStartPoint()))
+            Dim pt As Point = GetStartPoint()
+            minorLine = sk3D.Include(followEdge)
+            majorLine = sk3D.Include(leadingEdge)
+            l = sk3D.SketchLines3D.AddByTwoPoints(pt, followEdge.GetClosestPointTo(pt))
 
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, majorLine)
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, minorLine)
@@ -343,19 +398,26 @@ Public Class MacroFold5
             Dim p As Plane
             Dim optpoint As Point = Nothing
             p = tg.CreatePlane(firstLine.EndSketchPoint.Geometry, v)
-            Dim minDis, d As Double
-            Dim maxDis As Double = 0
+            Dim d As Double
+            Dim minDis As Double = 999999999999999
             Dim vc, vmjl As Vector
             vmjl = firstLine.EndSketchPoint.Geometry.VectorTo(farPoint)
-            ' l = sk3D.SketchLines3D.AddByTwoPoints(firstLine.EndPoint, farPoint, False)
+            ' l = sk3D.SketchLines3D.AddByTwoPoints(firstLine.EndPoint, farPoint, False)dmm
             For Each o As Point In p.IntersectWithCurve(curve.Geometry)
-                vc = firstLine.EndSketchPoint.Geometry.VectorTo(o)
-                d = vc.CrossProduct(vmjl).Length * vc.DotProduct(vmjl)
-                'l = sk3D.SketchLines3D.AddByTwoPoints(firstLine.EndPoint, o, False)
-                If d > maxDis Then
-                    maxDis = d
-                    optpoint = o
+                If o.DistanceTo(firstLine.EndSketchPoint.Geometry) < curvas3D.Cr / 4 Then
+
+                    vc = firstLine.EndSketchPoint.Geometry.VectorTo(o)
+                    d = vc.CrossProduct(vmjl).Length * vc.DotProduct(vmjl)
+                    If d > 0 Then
+                        'l = sk3D.SketchLines3D.AddByTwoPoints(firstLine.EndPoint, o, False)
+                        If d < minDis Then
+                            minDis = d
+                            optpoint = o
+                        End If
+                    End If
+
                 End If
+
 
             Next
             l = sk3D.SketchLines3D.AddByTwoPoints(firstLine.EndPoint, optpoint, False)
@@ -365,27 +427,33 @@ Public Class MacroFold5
             dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(l.StartPoint, l.EndPoint)
             If adjuster.AdjustDimensionConstraint3DSmothly(dc, thicknessCM / 3) Then
 
-                dc.Driven = True
-                v = firstLine.StartSketchPoint.Geometry.VectorTo(farPoint).AsUnitVector.AsVector
-                v.ScaleBy(-thicknessCM * 5)
-                l.StartSketchPoint.MoveBy(v)
-                dc.Driven = False
-                If adjuster.AdjustDimensionConstraint3DSmothly(dc, thicknessCM / 3) Then
-                    l.Construction = True
-                    constructionLines.Add(l)
-                End If
+
             Else
                 dc.Delete()
-                dc = sk3D.DimensionConstraints3D.AddLineLength(l)
-                l.Construction = True
-                constructionLines.Add(l)
+                dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(l.StartPoint, l.EndPoint)
+                adjuster.GetMinimalDimension(dc)
 
             End If
+            dc.Driven = True
+            v = firstLine.StartSketchPoint.Geometry.VectorTo(farPoint).AsUnitVector.AsVector
+            v.ScaleBy(thicknessCM * 5)
+            l.StartSketchPoint.MoveBy(v)
+            dc.Driven = False
+            If adjuster.AdjustDimensionConstraint3DSmothly(dc, thicknessCM / 3) Then
+            Else
+                dc.Delete()
+                dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(l.StartPoint, l.EndPoint)
+                adjuster.GetMinimalDimension(dc)
 
-
+            End If
+            dc.Delete()
+            gapVertex = sk3D.DimensionConstraints3D.AddTwoPointDistance(l.StartPoint, l.EndPoint)
+            l.Construction = True
+            constructionLines.Add(l)
 
 
             lastLine = l
+
             Return l
         Catch ex As Exception
             MsgBox(ex.ToString())
@@ -435,9 +503,11 @@ Public Class MacroFold5
             Dim l, ol As SketchLine3D
             ol = constructionLines(2)
             l = sk3D.SketchLines3D.AddByTwoPoints(ol.EndSketchPoint.Geometry, firstLine.StartPoint, False)
+            gapVertex.Driven = True
             Dim gc As GeometricConstraint3D
             gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, ol)
             gc = sk3D.GeometricConstraints3D.AddCoincident(ol.EndPoint, l)
+            gapVertex.Driven = False
             lastLine = l
             bandLines.Add(l)
             secondLine = lastLine
@@ -474,7 +544,7 @@ Public Class MacroFold5
             dc2 = sk3D.DimensionConstraints3D.AddLineLength(ol)
             If dc2.Parameter._Value < dc1.Parameter._Value Then
                 l.Delete()
-                If adjuster.AdjustDimensionConstraint3DSmothly(dc2, gap1CM * 3) Then
+                If adjuster.AdjustDimensionConstraint3DSmothly(dc2, gap1CM * 2) Then
                     gapFold = dc2
                     ol.Construction = True
                     constructionLines.Add(ol)
@@ -485,7 +555,7 @@ Public Class MacroFold5
             Else
                 ol.Delete()
 
-                If adjuster.AdjustDimensionConstraint3DSmothly(dc1, gap1CM * 3) Then
+                If adjuster.AdjustDimensionConstraint3DSmothly(dc1, gap1CM * 2) Then
                     gapFold = dc1
                     l.Construction = True
                     constructionLines.Add(l)
@@ -587,7 +657,7 @@ Public Class MacroFold5
             sk3D.GeometricConstraints3D.AddPerpendicular(l, lastLine)
             Dim dc As DimensionConstraint3D
             dc = sk3D.DimensionConstraints3D.AddLineLength(lastLine)
-            If adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 4 / 3) Then
+            If adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 5 / 4) Then
                 dc.Delete()
                 dc = sk3D.DimensionConstraints3D.AddLineLength(l)
                 If adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value / 1) Then
@@ -621,11 +691,8 @@ Public Class MacroFold5
             sixthLine = bandLines.Item(4)
             cl3 = constructionLines.Item(3)
             dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
-            If dc.Driven Then
 
-                b = True
-            Else
-                If adjuster.AdjustGapSmothly(gapFold, gap1CM, dc) Then
+            If adjuster.AdjustGapSmothly(gapFold, gap1CM, dc) Then
                     b = True
                 Else
                     dc.Driven = True
@@ -633,7 +700,7 @@ Public Class MacroFold5
                     gapFold = sk3D.DimensionConstraints3D.AddLineLength(cl3)
                     b = True
                 End If
-            End If
+
 
             Return b
         Catch ex As Exception

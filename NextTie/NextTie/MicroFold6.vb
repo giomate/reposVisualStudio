@@ -33,6 +33,7 @@ Public Class MicroFold6
     Dim workFace, adjacentFace, nextWorkFace As Face
     Dim bendAngle As DimensionConstraint
     Dim parallel As GeometricConstraint3D
+    Dim tiltAngle As DimensionConstraint3D
     Dim folded As FoldFeature
     Dim features As SheetMetalFeatures
     Dim lamp As Highlithing
@@ -69,34 +70,36 @@ Public Class MicroFold6
                             If DrawSecondLine().Length > 0 Then
                                 If DrawThirdLine().Length > 0 Then
                                     If DrawFirstConstructionLine().Construction Then
-                                        Dim sl As SketchLine3D
-                                        sl = bandLines(1)
-                                        If bender.GetBendLine(workFace, sl).Length > 0 Then
+                                        If IsTiltAngleOk() Then
+                                            Dim sl As SketchLine3D
+                                            sl = bandLines(1)
+                                            If bender.GetBendLine(workFace, sl).Length > 0 Then
+                                                sl = bandLines(2)
+                                                Dim ed As Edge
+                                                ed = GetMajorEdge(workFace)
+                                                If bandLines.Count > 4 Then
+                                                    ed = majorEdge
+                                                Else
+                                                    ed = minorEdge
+                                                End If
+                                                If bender.GetFoldingAngle(ed, sl).Parameter._Value > 0 Then
+                                                    comando.MakeInvisibleSketches(doku)
+                                                    comando.MakeInvisibleWorkPlanes(doku)
+                                                    folded = bender.FoldBand(bandLines.Count)
+                                                    folded = CheckFoldSide(folded)
+                                                    folded.Name = "f6"
+                                                    doku.Update2(True)
+                                                    If monitor.IsFeatureHealthy(folded) Then
+                                                        doku.Save2(True)
+                                                        done = 1
+                                                        Return True
+                                                    End If
 
-                                            sl = bandLines(2)
-                                            Dim ed As Edge
-                                            ed = GetMajorEdge(workFace)
-                                            If bandLines.Count > 4 Then
-                                                ed = majorEdge
-                                            Else
-                                                ed = minorEdge
-                                            End If
 
-                                            If bender.GetFoldingAngle(ed, sl).Parameter._Value > 0 Then
-                                                comando.MakeInvisibleSketches(doku)
-                                                comando.MakeInvisibleWorkPlanes(doku)
-                                                folded = bender.FoldBand(bandLines.Count)
-                                                folded = CheckFoldSide(folded)
-                                                folded.Name = "f6"
-                                                doku.Update2(True)
-                                                If monitor.IsFeatureHealthy(folded) Then
-                                                    doku.Save2(True)
-                                                    done = 1
-                                                    Return True
                                                 End If
 
-
                                             End If
+
 
                                         End If
 
@@ -358,7 +361,7 @@ Public Class MicroFold6
     Function DrawFirstLine() As SketchLine3D
         Try
 
-            Dim l, minorLine, majorLine As SketchLine3D
+            Dim l As SketchLine3D
             minorLine = sk3D.Include(minorEdge)
             majorLine = sk3D.Include(majorEdge)
             l = sk3D.SketchLines3D.AddByTwoPoints(GetStartPoint(), majorEdge.GetClosestPointTo(GetStartPoint()))
@@ -416,7 +419,21 @@ Public Class MicroFold6
             Dim l As SketchLine3D = Nothing
             l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.EndPoint, optpoint, False)
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
-
+            Dim dc As DimensionConstraint3D
+            dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(firstLine, minorLine)
+            If adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 9 / 10) Then
+            Else
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 11 / 12)
+            End If
+            dc.Delete()
+            dc = sk3D.DimensionConstraints3D.AddLineLength(firstLine)
+            If adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 7 / 6) Then
+            Else
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 9 / 8)
+            End If
+            dc.Delete()
+            tiltAngle = sk3D.DimensionConstraints3D.AddTwoLineAngle(firstLine, minorLine)
+            tiltAngle.Driven = True
             point3 = l.EndSketchPoint.Geometry
             lastLine = l
             bandLines.Add(l)
@@ -434,12 +451,16 @@ Public Class MicroFold6
             direction = lastLine.Geometry.Direction.AsVector()
             direction.ScaleBy(thickness * 10)
             Dim pt As Point
+            Dim climit As Integer = 0
             pt = firstLine.StartSketchPoint.Geometry
             pt.TranslateBy(direction)
             Dim l As SketchLine3D = Nothing
             l = sk3D.SketchLines3D.AddByTwoPoints(firstLine.StartPoint, pt, False)
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
-            parallel = sk3D.GeometricConstraints3D.AddParallel(l, lastLine)
+            TryParallel(l)
+
+
+
 
             lastLine = l
             bandLines.Add(l)
@@ -449,6 +470,7 @@ Public Class MicroFold6
             Return l
         Catch ex As Exception
             MsgBox(ex.ToString())
+            parallel.driven = True
             Return Nothing
         End Try
     End Function
@@ -463,43 +485,94 @@ Public Class MicroFold6
             Dim dc, ac As DimensionConstraint3D
             dc = sk3D.DimensionConstraints3D.AddLineLength(l)
             If AdjustLineLenghtSmothly(dc, GetParameter("b")._Value / 1) Then
-                l.Construction = True
-                constructionLines.Add(l)
-                lastLine = l
-                Return l
+                dc.Parameter._Value = GetParameter("b")._Value
             Else
                 dc.Driven = True
-                parallel.Delete()
+                Try
+                    parallel.Delete()
+                Catch ex As Exception
+
+                End Try
+
                 dc.Driven = False
                 If adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value) Then
                     ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(thirdLine, l)
                     If adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2) Then
-                        ac.Delete()
-                        parallel = sk3D.GeometricConstraints3D.AddParallel(thirdLine, secondLine)
-                        l.Construction = True
-                        constructionLines.Add(l)
-                        lastLine = l
-                        Return l
                     Else
                         ac.Driven = True
-                        l.Construction = True
-                        constructionLines.Add(l)
-                        lastLine = l
-                        Return l
-
                     End If
+                    ac.Delete()
                 Else
                     dc.Driven = True
-                    Return Nothing
+
                 End If
+                TryParallel(thirdLine)
+
 
             End If
-            Return Nothing
+
+            l.Construction = True
+            constructionLines.Add(l)
+            lastLine = l
+            Return l
         Catch ex As Exception
             MsgBox(ex.ToString())
             Return Nothing
         End Try
 
+    End Function
+    Function IsTiltAngleOk() As Boolean
+        Try
+            doku.Update2()
+
+            If tiltAngle.Parameter._Value > (4 * Math.PI / 6) Then
+                Try
+                    parallel.Delete()
+                    adjuster.AdjustDimensionConstraint3DSmothly(tiltAngle, Math.PI / 2)
+                    Return True
+                Catch ex As Exception
+                    Return adjuster.AdjustDimensionConstraint3DSmothly(tiltAngle, Math.PI / 2)
+
+                End Try
+            Else
+                Return True
+
+            End If
+
+        Catch ex As Exception
+
+        End Try
+
+        Return 0
+    End Function
+    Function TryParallel(l As SketchLine3D) As GeometricConstraint3D
+        Try
+
+            parallel = sk3D.GeometricConstraints3D.AddParallel(l, secondLine)
+            Return parallel
+        Catch ex As Exception
+
+            Dim ac1 As DimensionConstraint3D
+            Dim cl As SketchLine3D
+            cl = sk3D.SketchLines3D.AddByTwoPoints(firstLine.StartPoint, farPoint)
+            Dim gc As GeometricConstraint3D
+            gc = sk3D.GeometricConstraints3D.AddParallel(cl, secondLine)
+            ac1 = sk3D.DimensionConstraints3D.AddTwoLineAngle(cl, l)
+            If ac1.Parameter._Value < Math.PI / 2 Then
+                If adjuster.GetMinimalDimension(ac1) Then
+                Else
+                    ac1.Driven = True
+                End If
+            Else
+                If adjuster.GetMaximalDimension(ac1) Then
+                Else
+                    ac1.Driven = True
+                End If
+            End If
+            cl.Construction = True
+
+            Return ac1
+        End Try
     End Function
     Function AdjustLineLenghtSmothly(dc As LineLengthDimConstraint3D, v As Double) As Boolean
 

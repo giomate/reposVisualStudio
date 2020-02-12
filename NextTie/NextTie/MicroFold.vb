@@ -5,7 +5,7 @@ Public Class MicroFold
     Dim app As Application
     Dim sk3D, refSk As Sketch3D
 
-    Dim refLine, firstLine, secondLine, thirdLine, lastLine As SketchLine3D
+    Dim refLine, firstLine, secondLine, thirdLine, lastLine, majorLine, minorLine As SketchLine3D
     Dim curve, refCurve As SketchEquationCurve3D
     Public done, healthy As Boolean
 
@@ -305,21 +305,21 @@ Public Class MicroFold
     Function DrawFirstLine() As SketchLine3D
         Try
 
-            Dim l, mn, mj As SketchLine3D
-            mn = sk3D.Include(minorEdge)
-            mj = sk3D.Include(majorEdge)
+            Dim l As SketchLine3D
+            minorLine = sk3D.Include(minorEdge)
+            majorLine = sk3D.Include(majorEdge)
             l = sk3D.SketchLines3D.AddByTwoPoints(GetStartPoint(), majorEdge.GetClosestPointTo(GetStartPoint()))
 
-            sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, mn)
-            sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, mj)
+            sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, minorLine)
+            sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, majorLine)
             Dim dc As DimensionConstraint3D
-            If farPoint.DistanceTo(mn.EndSketchPoint.Geometry) < gap1CM Then
-                dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(l.StartPoint, mn.EndPoint)
+            If farPoint.DistanceTo(minorLine.EndSketchPoint.Geometry) < gap1CM Then
+                dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(l.StartPoint, minorLine.EndPoint)
             Else
-                dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(l.StartPoint, mn.StartPoint)
+                dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(l.StartPoint, minorLine.StartPoint)
             End If
 
-            dc.Parameter._Value = mn.Length - thickness
+            dc.Parameter._Value = minorLine.Length - thickness
             doku.Update2(True)
             bandLines.Add(l)
             firstLine = l
@@ -353,7 +353,13 @@ Public Class MicroFold
             Dim l As SketchLine3D = Nothing
             l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.EndPoint, optpoint, False)
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
-
+            Dim dc As DimensionConstraint3D
+            dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+            If adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 3 / 4) Then
+            Else
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 4 / 5)
+            End If
+            dc.Delete()
             point3 = l.EndSketchPoint.Geometry
             lastLine = l
             bandLines.Add(l)
@@ -398,6 +404,13 @@ Public Class MicroFold
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, secondLine)
             sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
             Dim dc, ac As DimensionConstraint3D
+
+            dc = sk3D.DimensionConstraints3D.AddLineLength(firstLine)
+            If adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 4 / 3) Then
+            Else
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 5 / 4)
+            End If
+            dc.Delete()
             dc = sk3D.DimensionConstraints3D.AddLineLength(l)
             If AdjustLineLenghtSmothly(dc, GetParameter("b")._Value / 1) Then
                 l.Construction = True

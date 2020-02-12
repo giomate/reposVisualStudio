@@ -130,19 +130,5 @@
     </None>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\DrawInitialSketch\DrawInitialSketch\DrawInitialSketch.vbproj">
-      <Project>{b7863e66-666c-4b20-9fcc-ef72ed8d65e4}</Project>
-      <Name>DrawInitialSketch</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\GetInitialConditions\GetInitialConditions\GetInitialConditions.vbproj">
-      <Project>{3a2d046a-ff71-4a42-93dc-087e6f12045e}</Project>
-      <Name>GetInitialConditions</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\InitialFolding\InitialFolding\InitialFolding.vbproj">
-      <Project>{09a23ac6-2fbe-41e5-8b1f-7917d3629f2d}</Project>
-      <Name>InitialFolding</Name>
-    </ProjectReference>
-  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
 </Project>
