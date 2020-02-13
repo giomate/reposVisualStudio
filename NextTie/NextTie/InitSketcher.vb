@@ -142,7 +142,7 @@ Public Class InitSketcher
         refLine = refDoc.GetKeyLine()
         doku.Activate()
 
-        curve = DrawTrobinaCurve(q)
+        curve = DrawTrobinaCurveFitted(q)
         DrawInitialLine(refLine)
         refLine.Construction = True
         If refLine.Length > 0 Then
@@ -288,11 +288,29 @@ Public Class InitSketcher
 
         Return DrawTrobinaCurve(q, "s0")
     End Function
+    Function DrawTrobinaCurveFitted(q As Integer, s As Integer) As SketchEquationCurve3D
+
+
+        Return DrawTrobinaCurve(q, "s0", s)
+    End Function
+    Function DrawTrobinaCurveFitted(q As Integer) As SketchEquationCurve3D
+
+
+        Return DrawTrobinaCurve(q, "s0", 0)
+    End Function
     Function DrawTrobinaCurve(q As Integer, s As String) As SketchEquationCurve3D
 
         sk3D = doku.ComponentDefinition.Sketches3D.Add()
         sk3D.Name = s
         curve = curve3D.DrawTrobinaCurve(sk3D, q)
+        sk3D.GeometricConstraints3D.AddGround(curve)
+        Return curve
+    End Function
+    Function DrawTrobinaCurve(q As Integer, s As String, f As Integer) As SketchEquationCurve3D
+
+        sk3D = doku.ComponentDefinition.Sketches3D.Add()
+        sk3D.Name = s
+        curve = curve3D.DrawTrobinaCurve(sk3D, q, f)
         sk3D.GeometricConstraints3D.AddGround(curve)
         Return curve
     End Function

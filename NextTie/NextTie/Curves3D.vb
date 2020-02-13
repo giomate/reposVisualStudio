@@ -50,9 +50,16 @@ Public Class Curves3D
         Return DrawTrobinaCurve(sk, 0)
     End Function
     Public Function DrawTrobinaCurve(sk As Sketch3D, q As Integer) As SketchEquationCurve3D
+        Dim fn As Integer
+        Dim s() As String
+        s = Strings.Split(sk.Name)
+        fn = CInt(s(1))
+        Return DrawTrobinaCurve(sk, q, 1.0, fn)
+    End Function
+    Public Function DrawTrobinaCurve(sk As Sketch3D, q As Integer, f As Integer) As SketchEquationCurve3D
 
 
-        Return DrawTrobinaCurve(sk, q, 1.0)
+        Return DrawTrobinaCurve(sk, q, 1.0, f)
     End Function
     Public Function DrawTrobinaCurve(sk As Sketch3D, q As Integer, d As Double) As SketchEquationCurve3D
 
@@ -62,6 +69,22 @@ Public Class Curves3D
         r = String.Concat(Tr.ToString() & " + " & Cr.ToString() & "mm * cos( t * q * 1rad )")
         z = String.Concat("- " & Cr.ToString() & "mm * sin( t * q * 1rad )")
         curve = sk.SketchEquationCurves3D.Add(CoordinateSystemTypeEnum.kCylindrical, r, " t * 1rad * p", z, -4 * Math.PI / (DP.p * 4) * d + t, 4 * Math.PI / (DP.p * 4) * d + t)
+        curve.Construction = True
+        sk.ExitEdit()
+
+        Return curve
+    End Function
+    Public Function DrawTrobinaCurve(sk As Sketch3D, q As Integer, d As Double, f As Integer) As SketchEquationCurve3D
+        Dim g As Integer = 0
+        If f > 5 Then
+            g = 2
+        End If
+        sk.Edit()
+        Dim r, z As String
+        Dim t As Double = 2 * Math.PI * (q / (DP.q))
+        r = String.Concat(Tr.ToString() & " + " & Cr.ToString() & "mm * cos( t * q * 1rad )")
+        z = String.Concat("- " & Cr.ToString() & "mm * sin( t * q * 1rad )")
+        curve = sk.SketchEquationCurves3D.Add(CoordinateSystemTypeEnum.kCylindrical, r, " t * 1rad * p", z, (f - 2) * Math.PI / (DP.p * 8) * d + t, (f + 4 + g) * Math.PI / (DP.p * 8) * d + t)
         curve.Construction = True
         sk.ExitEdit()
 

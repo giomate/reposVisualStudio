@@ -72,11 +72,21 @@ Public Class MicroFold
 
         Return sn
     End Function
+    Function GetFoldNumber(sn As String) As Integer
+        Dim s() As String
+
+        s = Strings.Split(sn, "s")
+
+
+        Return CInt(s(1))
+    End Function
 
     Public Function MakeSecondFold() As Boolean
         Try
+            Dim sn As String
             If GetWorkFace().SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
-                If mainSketch.DrawTrobinaCurve(GetQNumber(doku), GetSketchName(doku)).Construction Then
+                sn = GetSketchName(doku)
+                If mainSketch.DrawTrobinaCurve(GetQNumber(doku), sn).Construction Then
                     sk3D = mainSketch.sk3D
                     curve = mainSketch.curve
                     If GetMinorEdge(workFace).GeometryType = CurveTypeEnum.kLineSegmentCurve Then

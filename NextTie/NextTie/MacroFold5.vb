@@ -683,7 +683,7 @@ Public Class MacroFold5
         Try
             Dim fourLine, sixthLine, cl3 As SketchLine3D
             Dim dc As TwoLineAngleDimConstraint3D
-            Dim limit As Double = 0.1
+            Dim limit As Double = 0.08
 
             Dim b As Boolean = False
 
@@ -692,10 +692,10 @@ Public Class MacroFold5
             cl3 = constructionLines.Item(3)
             dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
 
-            If adjuster.AdjustGapSmothly(gapFold, gap1CM, dc) Then
-                    b = True
-                Else
-                    dc.Driven = True
+            If adjuster.AdjustGapLimitSmothly(gapFold, gap1CM, dc, limit) Then
+                b = True
+            Else
+                dc.Driven = True
                     gapFold.Delete()
                     gapFold = sk3D.DimensionConstraints3D.AddLineLength(cl3)
                     b = True

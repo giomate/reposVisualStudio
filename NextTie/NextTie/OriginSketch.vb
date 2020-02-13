@@ -404,15 +404,18 @@ Public Class OriginSketch
     End Function
     Function DrawFourthConstructionLine() As SketchLine3D
         Try
+            Dim c As Integer
             Dim l, fl As SketchLine3D
             Dim ol, cl As SketchLine3D
             Dim dc As TwoPointDistanceDimConstraint3D
-            Dim dc2 As DimensionConstraint3D
+            Dim dc2, dcbl1, dcbl4 As DimensionConstraint3D
+            Dim gc As GeometricConstraint3D
             ol = bandLines.Item(4)
             cl = constructionLines.Item(3)
             l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.EndSketchPoint.Geometry, ol.StartSketchPoint.Geometry, False)
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, curve)
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, ol)
+            fl = bandLines.Item(4)
             dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(l.EndPoint, cl.EndPoint)
             If AdjustTwoPointsSmothly(dc, 1 / 10) Then
                 dc2 = sk3D.DimensionConstraints3D.AddLineLength(l)
@@ -426,9 +429,40 @@ Public Class OriginSketch
                     dc2.Driven = True
                 End If
                 sk3D.GeometricConstraints3D.AddPerpendicular(l, ol)
-                sk3D.GeometricConstraints3D.AddEqual(l, cl)
-                fl = bandLines.Item(4)
-                sk3D.GeometricConstraints3D.AddCoincident(fl.EndPoint, curve)
+                Try
+                    sk3D.GeometricConstraints3D.AddEqual(l, cl)
+                Catch ex As Exception
+                    Try
+                        dcbl1 = sk3D.DimensionConstraints3D.AddLineLength(firstLine)
+                        dcbl4 = sk3D.DimensionConstraints3D.AddLineLength(fl)
+                        Try
+                            While Math.Abs(fl.Length - 2 * firstLine.Length) > gapFoldCM And c < 128
+                                adjuster.AdjustDimensionConstraint3DSmothly(dcbl1, fl.Length / 2)
+                                c = c + 1
+                            End While
+                        Catch ex4 As Exception
+                            dcbl1.Driven = True
+                            dcbl4.Driven = True
+                        End Try
+
+                        dcbl4.Delete()
+
+                        dcbl1.Delete()
+                    Catch ex2 As Exception
+                        dcbl1.Driven = True
+                        dcbl4.Driven = True
+                    End Try
+                    Try
+                        'gc = sk3D.GeometricConstraints3D.AddCoincident(fl.EndPoint, curve)
+                        'gc.Delete()
+                        gc = sk3D.GeometricConstraints3D.AddEqual(l, cl)
+                    Catch ex3 As Exception
+                        gc.Delete()
+                    End Try
+                End Try
+
+
+                gc = sk3D.GeometricConstraints3D.AddCoincident(fl.EndPoint, curve)
             Else
                 dc.Driven = True
             End If

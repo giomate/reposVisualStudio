@@ -10,7 +10,7 @@ Public Class Form1
     Dim oDesignProjectMgr As DesignProjectManager
     Dim invDoc As InventorFile
 
-    Dim tie1 As TieMaker1
+    Dim tie1, tie0, nextTie As TieMaker1
 
     Public Sub New()
 
@@ -85,6 +85,42 @@ Public Class Form1
                     End If
 
                 End If
+
+            End If
+            Return b
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return False
+        End Try
+
+    End Function
+    Public Function KeepMakingTies() As Boolean
+        Dim b As Boolean = True
+        Dim q As Integer
+        Try
+            If (started And (Not running)) Then
+                invDoc = New InventorFile(oApp)
+                tie0 = New TieMaker1(invDoc.OpenSheetMetalFile("Band0.ipt"))
+
+                nextTie = New TieMaker1(tie0.FindLastTie())
+                q = tie0.qLastTie
+                While (q < tie0.trobinaCurve.DP.q And b)
+                    If nextTie.MakeNextTie().ComponentDefinition.Features.Count > 5 Then
+                        If nextTie.compDef.Sketches3D.Item("last").SketchLines3D.Count > 0 Then
+                            b = nextTie.done
+                            If b Then
+                                oDoc = nextTie.doku
+                                oDoc.Update2(True)
+                                oDoc.Save2(True)
+                                tie0 = nextTie
+                                nextTie = New TieMaker1(tie0.FindLastTie())
+                                q = tie0.qLastTie
+                            End If
+                        End If
+
+                    End If
+                End While
+
 
             End If
             Return b

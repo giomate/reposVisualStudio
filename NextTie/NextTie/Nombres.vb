@@ -76,6 +76,13 @@ Public Class Nombres
 
         Return CInt(s(0)) + 1
     End Function
+    Public Function GetFileNumber(fullname As String) As Integer
+        Dim s() As String
+        s = Strings.Split(fullname, "Band")
+        s = Strings.Split(s(1), ".ipt")
+
+        Return CInt(s(0))
+    End Function
     Public Function GetNextSketchName(docu As Inventor.Document) As String
         Dim s(), sn As String
         Dim i As Integer = 0

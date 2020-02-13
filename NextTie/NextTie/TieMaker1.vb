@@ -1,9 +1,13 @@
 ﻿Imports Inventor
 
-
+Imports System
+Imports System.IO
+Imports System.Text
+Imports System.IO.Directory
 
 Public Class TieMaker1
     Public doku As PartDocument
+    Public projectManager As DesignProjectManager
     Dim app As Application
     Dim sk3D, refSk As Sketch3D
 
@@ -14,16 +18,16 @@ Public Class TieMaker1
     Dim monitor As DesignMonitoring
     Dim invDoc As InventorFile
 
-    Dim trobinaCurve As Curves3D
+    Public trobinaCurve As Curves3D
 
     Public wp1, wp2, wp3 As WorkPoint
     Public farPoint, point1, point2, point3, curvePoint As Point
     Dim tg As TransientGeometry
     Dim gap1CM, thicknessCM As Double
-    Dim partNumber, qNext As Integer
+    Public partNumber, qNext, qLastTie As Integer
     Dim bandLines, constructionLines As ObjectCollection
     Dim comando As Commands
-    Dim nombrador As Nombres
+    Public nombrador As Nombres
     Dim nextSketch As OriginSketch
     Dim cutProfile As Profile
 
@@ -59,13 +63,14 @@ Public Class TieMaker1
     Dim manager As FoldingEvaluator
     Dim giro As TwistFold7
     Dim arrayFunctions As Collection
+    Dim fullFileNames As String()
     Public Sub New(docu As Inventor.Document)
         doku = docu
         app = doku.Parent
         comando = New Commands(app)
         monitor = New DesignMonitoring(doku)
         invDoc = New InventorFile(app)
-
+        projectManager = app.DesignProjectManager
 
         compDef = doku.ComponentDefinition
         features = compDef.Features
@@ -101,7 +106,9 @@ Public Class TieMaker1
             Else
                 MakeRestTie(i)
             End If
-
+            If compDef.Sketches3D.Item("last").SketchLines3D.Count > 0 Then
+                done = True
+            End If
 
             Return doku
         Catch ex As Exception
@@ -247,5 +254,21 @@ Public Class TieMaker1
             Return Nothing
         End Try
 
+    End Function
+    Public Function FindLastTie() As PartDocument
+        Dim max As Integer = 0
+        Dim ltn As String
+        Dim lastTie As PartDocument
+        fullFileNames = Directory.GetFiles(projectManager.ActiveDesignProject.WorkspacePath, "*.ipt")
+        For Each s As String In fullFileNames
+            If nombrador.GetFileNumber(s) > max Then
+                max = nombrador.GetFileNumber(s)
+                ltn = s
+
+            End If
+        Next
+        lastTie = invDoc.OpenFullFileName(ltn)
+        qLastTie = nombrador.GetQNumber(lastTie)
+        Return lastTie
     End Function
 End Class
