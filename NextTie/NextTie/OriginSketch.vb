@@ -62,7 +62,7 @@ Public Class OriginSketch
         wp1 = ref.StartSketchPoint.Geometry
         wp3 = ref.EndSketchPoint.Geometry
         sk3D = doku.ComponentDefinition.Sketches3D.Add()
-        sk3D.Name = "s0"
+        sk3D.Name = "s1"
         curve = curve3D.DrawTrobinaCurve(sk3D)
 
         DrawInitialLine(refLine)
@@ -241,7 +241,7 @@ Public Class OriginSketch
     Function DrawTrobinaCurve(q As Integer) As SketchEquationCurve3D
 
 
-        Return DrawTrobinaCurve(q, "s0")
+        Return DrawTrobinaCurve(q, "s1")
     End Function
     Function DrawTrobinaCurve(q As Integer, s As String) As SketchEquationCurve3D
 
@@ -282,12 +282,12 @@ Public Class OriginSketch
             ' Dim dc As DimensionConstraint3D
             Dim gc As GeometricConstraint3D
             Dim v1, v2, v3 As Vector
-            v1 = refLine.StartSketchPoint.Geometry.VectorTo(doblezline.EndSketchPoint.Geometry)
-            v2 = refLine.StartSketchPoint.Geometry.VectorTo(centroPoint)
-            v3 = v2.CrossProduct(v1)
-            v1.ScaleBy(1 / v3.Length)
+            v1 = doblezline.Geometry.Direction.AsVector
+            v2 = twistLine.Geometry.Direction.AsVector
+            v3 = v1.CrossProduct(v2)
+            v3.AsUnitVector.AsVector.ScaleBy(GetParameter("b")._Value)
             Dim pt As Point = refLine.StartSketchPoint.Geometry
-            pt.TranslateBy(v1)
+            pt.TranslateBy(v3)
             l = sk3D.SketchLines3D.AddByTwoPoints(refLine.StartPoint, pt, False)
             'dc = sk3D.DimensionConstraints3D.AddLineLength(l)
             ' dc.Parameter._Value = curve3D.DP.b / 10
@@ -503,11 +503,14 @@ Public Class OriginSketch
             v2 = secondLine.EndSketchPoint.Geometry.VectorTo(secondLine.StartSketchPoint.Geometry)
             v3 = v1.CrossProduct(v2).AsUnitVector().AsVector()
             v3.ScaleBy(gapFoldCM)
+            If sk3D.Name = "s9" Then
+                ' v3.ScaleBy(-1)
+            End If
             endPoint = secondLine.StartSketchPoint.Geometry
             endPoint.TranslateBy(v3)
             l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.StartSketchPoint.Geometry, endPoint, False)
             endPoint.TranslateBy(v3)
-            gapFold = sk3D.DimensionConstraints3D.AddLineLength(l, endPoint, False)
+            gapFold = sk3D.DimensionConstraints3D.AddLineLength(l)
 
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, secondLine)
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, firstLine)
@@ -560,9 +563,21 @@ Public Class OriginSketch
         Try
             Dim l, pl As SketchLine3D
             Dim gc As GeometricConstraint3D
+            Dim ac As DimensionConstraint3D
             pl = thirdLine
             l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.EndPoint, pl.StartPoint, False)
-            gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, pl)
+            Try
+                gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, pl)
+            Catch ex As Exception
+                ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, pl)
+                Try
+                    adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2)
+                Catch ex2 As Exception
+                    ac.Driven = True
+                End Try
+                ac.Driven = True
+                gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, pl)
+            End Try
             doku.Update2(True)
             gc.Delete()
             lastLine = l

@@ -56,7 +56,7 @@ Public Class Doblador
 
             sk3D = mainSketch.StartDrawingTranslated(refDoc, 1)
             If mainSketch.done Then
-                doku.ComponentDefinition.Sketches3D.Item("s0").Visible = False
+                doku.ComponentDefinition.Sketches3D.Item("s1").Visible = False
                 If DrawBandStripe().Count > 0 Then
                     If MakeStartingFace(pro).GetHashCode > 0 Then
 

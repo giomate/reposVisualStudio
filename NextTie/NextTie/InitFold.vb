@@ -19,24 +19,30 @@ Public Class InitFold
     Dim bandLines, constructionLines, bigFaces As ObjectCollection
     Dim comando As Commands
     Dim mainSketch As InitSketcher
-    Dim pro As Profile
+    Dim faceProfile As Profile
     Dim feature As FaceFeature
+    Dim foldFeature As FoldFeature
     Dim bendLine As SketchLine
     Dim compDef As SheetMetalComponentDefinition
     Dim mainWorkPlane As WorkPlane
-    Dim workface As Face
+    Dim workface, cutFace As Face
     Dim edgeBand, majorEdge, minorEdge, bendEdge As Edge
     Dim bendAngle As DimensionConstraint
     Dim folded As FoldFeature
-
-    Dim features As SheetMetalFeatures
+    Dim cutFeature As CutFeature
+    Dim faceFeature As FaceFeature
+    Dim corte As Cortador
+    Dim sheetMetalFeatures As SheetMetalFeatures
+    Dim foldFeatures As FoldFeatures
     Dim lamp As Highlithing
+    Dim bender As Doblador
     Public Sub New(docu As Inventor.Document)
         doku = docu
         app = doku.Parent
         comando = New Commands(app)
         compDef = doku.ComponentDefinition
-        features = compDef.Features
+        sheetMetalFeatures = compDef.Features
+        foldFeatures = sheetMetalFeatures.FoldFeatures
         curve3D = New Curves3D(doku)
         monitor = New DesignMonitoring(doku)
         adjuster = New SketchAdjust(doku)
@@ -55,33 +61,46 @@ Public Class InitFold
     Public Function MakeFirstFold(refDoc As FindReferenceLine) As Boolean
         Dim b As Boolean
         Try
+            Try
+                cutFeature = MakeInitCut()
+            Catch ex As Exception
+                sk3D = mainSketch.StartDrawingTranslated(refDoc, 1)
+                If mainSketch.done Then
+                    doku.ComponentDefinition.Sketches3D.Item("s1").Visible = False
+                    If DrawBandStripe().Count > 0 Then
+                        bender = New Doblador(doku)
+                        If MakeStartingFace(faceProfile).GetHashCode > 0 Then
+                            If GetBendLine().Length > 0 Then
+                                mainWorkPlane.Visible = False
+                                If GetFoldingAngle().Parameter._Value > 0 Then
+
+                                    comando.MakeInvisibleSketches(doku)
+                                    comando.MakeInvisibleWorkPlanes(doku)
+                                    foldFeature = FoldBand()
+                                    If monitor.IsFeatureHealthy(foldFeature) Then
+                                        cutFeature = MakeInitCut()
+                                        If monitor.IsFeatureHealthy(cutFeature) Then
+                                            doku.Save2(True)
+                                            done = 1
+                                            Return True
+                                        End If
 
 
-            sk3D = mainSketch.StartDrawingTranslated(refDoc, 1)
-            If mainSketch.done Then
-                doku.ComponentDefinition.Sketches3D.Item("s0").Visible = False
-                If DrawBandStripe().Count > 0 Then
-                    If MakeStartingFace(pro).GetHashCode > 0 Then
-                        If GetBendLine().Length > 0 Then
-                            mainWorkPlane.Visible = False
-                            If GetFoldingAngle().Parameter._Value > 0 Then
-                                comando.MakeInvisibleSketches(doku)
-                                comando.MakeInvisibleWorkPlanes(doku)
-                                If monitor.IsFeatureHealthy(FoldBand()) Then
-                                    doku.Save2(True)
-                                    done = 1
-                                    Return True
+                                    End If
+
+
                                 End If
-
 
                             End If
 
                         End If
-
                     End If
-                End If
 
-            End If
+                End If
+            End Try
+
+
+
 
             Return False
         Catch ex As Exception
@@ -90,38 +109,58 @@ Public Class InitFold
         End Try
 
     End Function
+    Function MakeInitCut() As CutFeature
+        foldFeature = foldFeatures.Item(1)
+        If monitor.IsFeatureHealthy(foldFeature) Then
+            corte = New Cortador(doku)
+            cutFace = corte.GetInitCutFace(foldFeature)
+            firstLine = compDef.Sketches3D.Item("s1").SketchLines3D.Item(2)
+            cutFeature = corte.CutInitFace(firstLine)
+            cutFeature.Name = "initCut"
+        End If
+        Return cutFeature
+    End Function
     Public Function MakeFirstFold(refDoc As FindReferenceLine, q As Integer) As Boolean
         Dim b As Boolean
         Try
+            Try
+                foldFeature = foldFeatures.Item(1)
+                cutFeature = MakeInitCut()
+            Catch ex As Exception
 
-
-            sk3D = mainSketch.DrawMainSketch(refDoc, q)
-            If mainSketch.done Then
-                doku.ComponentDefinition.Sketches3D.Item("s0").Visible = False
-                If DrawBandStripe().Count > 0 Then
-                    If MakeStartingFace(pro).GetHashCode > 0 Then
-                        If GetWorkFace().Evaluator.Area > 0 Then
-                            If GetBendLine(workface, mainSketch.thirdLine).Length > 0 Then
-                                mainWorkPlane.Visible = False
-                                If GetFoldingAngle().Parameter._Value > 0 Then
-                                    comando.MakeInvisibleSketches(doku)
-                                    comando.MakeInvisibleWorkPlanes(doku)
-                                    bandLines = mainSketch.bandLines
-                                    folded = FoldBand(bandLines.Count)
-                                    folded.Name = "f1"
-                                    doku.Update2(True)
-                                    If monitor.IsFeatureHealthy(folded) Then
-                                        doku.Save2(True)
-                                        done = 1
-                                        Return True
+                sk3D = mainSketch.DrawMainSketch(refDoc, q)
+                If mainSketch.done Then
+                    doku.ComponentDefinition.Sketches3D.Item("s1").Visible = False
+                    If DrawBandStripe().Count > 0 Then
+                        If MakeStartingFace(faceProfile).GetHashCode > 0 Then
+                            If GetWorkFace().Evaluator.Area > 0 Then
+                                If GetBendLine(workface, mainSketch.thirdLine).Length > 0 Then
+                                    mainWorkPlane.Visible = False
+                                    If GetFoldingAngle().Parameter._Value > 0 Then
+                                        comando.MakeInvisibleSketches(doku)
+                                        comando.MakeInvisibleWorkPlanes(doku)
+                                        bandLines = mainSketch.bandLines
+                                        folded = FoldBand(bandLines.Count)
+                                        folded.Name = "f1"
+                                        doku.Update2(True)
+                                        If monitor.IsFeatureHealthy(folded) Then
+                                            cutFeature = MakeInitCut()
+                                            If monitor.IsFeatureHealthy(cutFeature) Then
+                                                doku.Save2(True)
+                                                done = 1
+                                                Return True
+                                            End If
+                                        End If
                                     End If
                                 End If
                             End If
                         End If
                     End If
                 End If
+            End Try
 
-            End If
+
+
 
             Return False
         Catch ex As Exception
@@ -130,6 +169,7 @@ Public Class InitFold
         End Try
 
     End Function
+
     Function DrawBandStripe() As Profile
         Dim ps As PlanarSketch
 
@@ -146,20 +186,21 @@ Public Class InitFold
             ln = ps.AddByProjectingEntity(mainSketch.bandLines.Item(2))
             v = ln.Geometry.Direction.AsVector
             v.ScaleBy(-3 / 10)
-            p1.MoveBy(v)
-            l2d = ps.SketchLines.AddByTwoPoints(p1, p2.Geometry)
+
+            p2.MoveBy(v)
+            l2d = ps.SketchLines.AddByTwoPoints(p1.Geometry, p2)
             ps.GeometricConstraints.AddPerpendicular(l2d, ln)
             Dim dc As DimensionConstraint
-            dc = ps.DimensionConstraints.AddTwoPointDistance(p1, l2d.EndSketchPoint, DimensionOrientationEnum.kAlignedDim, p2.Geometry)
+            dc = ps.DimensionConstraints.AddTwoPointDistance(l2d.StartSketchPoint, l2d.EndSketchPoint, DimensionOrientationEnum.kAlignedDim, p2.Geometry)
             dc.Parameter._Value = GetParameter("b")._Value / 1
             v.Normalize()
             v.ScaleBy(-50)
             p3.MoveBy(v)
-            r = ps.SketchLines.AddAsThreePointRectangle(p1.Geometry, l2d.EndSketchPoint.Geometry, p3.Geometry)
+            r = ps.SketchLines.AddAsThreePointRectangle(l2d.StartSketchPoint.Geometry, l2d.EndSketchPoint.Geometry, p3.Geometry)
 
-            pro = ps.Profiles.AddForSolid
+            faceProfile = ps.Profiles.AddForSolid
 
-            Return pro
+            Return faceProfile
 
         Catch ex As Exception
             MsgBox(ex.ToString())
@@ -481,11 +522,14 @@ Public Class InitFold
     End Function
     Public Function FoldBand(i As Integer) As FoldFeature
         Try
-
+            compDef = doku.ComponentDefinition
+            sheetMetalFeatures = compDef.Features
+            foldFeatures = sheetMetalFeatures.FoldFeatures
 
 
             Dim oFoldFeature As FoldFeature
-            oFoldFeature = features.FoldFeatures.Add(AdjustFoldDefinition(i))
+
+            oFoldFeature = foldFeatures.Add(AdjustFoldDefinition(i))
             folded = oFoldFeature
 
             Return folded
@@ -498,14 +542,14 @@ Public Class InitFold
     End Function
     Function AdjustFoldDefinition(i As Integer) As FoldDefinition
         Try
-            features = doku.ComponentDefinition.Features
+          
             Dim oFoldDefinition As FoldDefinition
             If i > 4 Then
 
                 If bendAngle.Parameter._Value > Math.PI / 2 Then
-                    oFoldDefinition = features.FoldFeatures.CreateFoldDefinition(bendLine, bendAngle.Parameter._Value)
+                    oFoldDefinition = foldFeatures.CreateFoldDefinition(bendLine, bendAngle.Parameter._Value)
                 Else
-                    oFoldDefinition = features.FoldFeatures.CreateFoldDefinition(bendLine, Math.PI - bendAngle.Parameter._Value)
+                    oFoldDefinition = foldFeatures.CreateFoldDefinition(bendLine, Math.PI - bendAngle.Parameter._Value)
                 End If
 
                 If Not oFoldDefinition.IsPositiveBendSide Then
@@ -514,10 +558,10 @@ Public Class InitFold
                 End If
             Else
                 If bendAngle.Parameter._Value > Math.PI / 2 Then
-                    oFoldDefinition = features.FoldFeatures.CreateFoldDefinition(bendLine, Math.PI - bendAngle.Parameter._Value)
+                    oFoldDefinition = foldFeatures.CreateFoldDefinition(bendLine, Math.PI - bendAngle.Parameter._Value)
                 Else
 
-                    oFoldDefinition = features.FoldFeatures.CreateFoldDefinition(bendLine, bendAngle.Parameter._Value)
+                    oFoldDefinition = foldFeatures.CreateFoldDefinition(bendLine, bendAngle.Parameter._Value)
                 End If
                 If oFoldDefinition.IsPositiveBendSide Then
                     oFoldDefinition.IsPositiveBendSide = Not oFoldDefinition.IsPositiveBendSide

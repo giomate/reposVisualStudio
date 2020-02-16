@@ -26,7 +26,7 @@ Public Class FindReferenceLine
     End Function
     Public Function OpenMainSketch(docu As PartDocument) As Sketch3D
         oDoc = docu
-        sk3D = oDoc.ComponentDefinition.Sketches3D.Item("s0")
+        sk3D = oDoc.ComponentDefinition.Sketches3D.Item("s1")
         Return sk3D
     End Function
     Public Function OpenMainSketch() As Sketch3D

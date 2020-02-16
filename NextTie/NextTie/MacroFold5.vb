@@ -37,7 +37,7 @@ Public Class MacroFold5
     Dim bendAngle As DimensionConstraint
     Dim gapFold, gapVertex As DimensionConstraint3D
     Dim folded As FoldFeature
-    Dim features As SheetMetalFeatures
+    Dim sheetMetalFeatures As SheetMetalFeatures
     Dim lamp As Highlithing
     Dim bender As Doblador
     Public Sub New(docu As Inventor.Document)
@@ -49,7 +49,7 @@ Public Class MacroFold5
 
         mainSketch = New Sketcher3D(doku)
         compDef = doku.ComponentDefinition
-        features = compDef.Features
+        sheetMetalFeatures = compDef.Features
         tg = app.TransientGeometry
         bandLines = app.TransientObjects.CreateObjectCollection
         constructionLines = app.TransientObjects.CreateObjectCollection
@@ -90,7 +90,14 @@ Public Class MacroFold5
                                         comando.MakeInvisibleWorkPlanes(doku)
                                         folded = bender.FoldBand(bandLines.Count)
                                         folded = CheckFoldSide(folded)
-                                        folded.Name = "f5"
+                                        Try
+                                            If monitor.IsFeatureHealthy(sheetMetalFeatures.FoldFeatures.Item("f5")) Then
+                                                folded.Name = "f7"
+                                            End If
+                                        Catch ex As Exception
+                                            folded.Name = "f5"
+                                        End Try
+
                                         doku.Update2(True)
                                         If monitor.IsFeatureHealthy(folded) Then
                                             doku.Save2(True)
@@ -163,7 +170,7 @@ Public Class MacroFold5
             maxArea1 = maxArea2
 
 
-            For Each f As Face In compDef.Features.Item(compDef.Features.Count).Faces
+            For Each f As Face In sheetMetalFeatures.FoldFeatures.Item(sheetMetalFeatures.FoldFeatures.Count).Faces
                 'lamp.HighLighFace(f)
                 If f.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
                     'lamp.HighLighFace(f)
@@ -208,13 +215,13 @@ Public Class MacroFold5
                     End If
                 End If
             Next
-            For Each f As Face In compDef.Features.Item(compDef.Features.Count - 1).Faces
+            For Each f As Face In sheetMetalFeatures.FoldFeatures.Item(sheetMetalFeatures.FoldFeatures.Count - 1).Faces
                 For Each ft As Face In maxface2.TangentiallyConnectedFaces
                     If ft.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
                         If ft.Equals(f) Then
 
                             adjacentFace = f
-                            'lamp.HighLighFace(f)
+                            lamp.HighLighFace(f)
 
                         End If
 
@@ -274,89 +281,77 @@ Public Class MacroFold5
         Return e1
     End Function
     Function GetStartPoint() As Point
-        Dim vbl, v As Vector
-        Dim bl As SketchLine3D
+        Try
 
-        bl = sk3D.Include(bendEdge)
+            Dim pt As Point
+            Dim v As Vector
 
-        vbl = bl.Geometry.Direction.AsVector
-        Dim ps, pe As Plane
-        Dim pt As Point = Nothing
-        ps = tg.CreatePlane(bl.StartSketchPoint.Geometry, vbl)
-        Dim minDis As Double = 9999999999
-        Dim minEdge As Double = minDis
-        pe = tg.CreatePlane(bl.EndSketchPoint.Geometry, vbl)
-
-        For Each o As Point In pe.IntersectWithCurve(curve.Geometry)
-            If o.DistanceTo(bl.EndSketchPoint.Geometry) < minDis Then
-                minDis = o.DistanceTo(bl.EndSketchPoint.Geometry)
-                pt = o
-                For Each ed As Edge In workFace.Edges
-                    If ed.Equals(bendEdge) Then
-                    Else
-                        If ed.GetClosestPointTo(o).DistanceTo(bl.EndSketchPoint.Geometry) < bl.Length + gap1CM Then
-                            If ed.GetClosestPointTo(o).DistanceTo(o) < minEdge Then
-                                minEdge = ed.GetClosestPointTo(o).DistanceTo(o)
-                                followEdge = leadingEdge
-                                leadingEdge = ed
-                            Else
-                                followEdge = ed
-                            End If
-
-                        End If
-                    End If
+            leadingEdge = GetLeadingEdge()
+            pt = point1
 
 
-                Next
+            If leadingEdge.StartVertex.Point.DistanceTo(pt) < leadingEdge.StopVertex.Point.DistanceTo(pt) Then
+                pt = leadingEdge.StartVertex.Point
+                v = leadingEdge.StartVertex.Point.VectorTo(leadingEdge.StopVertex.Point)
+                farPoint = leadingEdge.StopVertex.Point
+            Else
+                pt = leadingEdge.StopVertex.Point
+                v = leadingEdge.StopVertex.Point.VectorTo(leadingEdge.StartVertex.Point)
+                farPoint = leadingEdge.StartVertex.Point
+
             End If
-        Next
-        lamp.HighLighObject(leadingEdge)
-        lamp.HighLighObject(followEdge)
-        minEdge = 9999999999
-        For Each o As Point In ps.IntersectWithCurve(curve.Geometry)
-            If o.DistanceTo(bl.StartSketchPoint.Geometry) < minDis Then
-                minDis = o.DistanceTo(bl.StartSketchPoint.Geometry)
-                pt = o
-                For Each ed As Edge In workFace.Edges
-                    If ed.Equals(bendEdge) Then
-                    Else
-                        If ed.GetClosestPointTo(o).DistanceTo(bl.StartSketchPoint.Geometry) < bl.Length + gap1CM Then
-                            If ed.GetClosestPointTo(o).DistanceTo(o) < minEdge Then
-                                minEdge = ed.GetClosestPointTo(o).DistanceTo(o)
-                                followEdge = leadingEdge
-                                leadingEdge = ed
-                            Else
-                                followEdge = ed
+            'lamp.HighLighObject(pt)
+            lamp.HighLighObject(leadingEdge)
+            lamp.HighLighObject(followEdge)
+            v.AsUnitVector.AsVector()
+            v.ScaleBy(thicknessCM * 5 / 10)
+            pt.TranslateBy(v)
+            'lamp.HighLighObject(pt)
+
+            point1 = pt
+            Return pt
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+    End Function
+    Function GetLeadingEdge() As Edge
+        Try
+            Dim bl As SketchLine3D
+            Dim pt As Point
+            Dim minDis As Double = 9999999999
+            Dim minEdge As Double = minDis
+            bl = sk3D.Include(bendEdge)
+            For Each o As Point In initialPlane.IntersectWithCurve(curve.Geometry)
+                If o.DistanceTo(bl.EndSketchPoint.Geometry) < minDis Then
+                    minDis = o.DistanceTo(bendEdge.GetClosestPointTo(o))
+                    pt = o
+                    For Each ed As Edge In workFace.Edges
+                        If ed.Equals(bendEdge) Then
+                        Else
+                            If ed.GetClosestPointTo(o).DistanceTo(bendEdge.GetClosestPointTo(o)) < bl.Length + gap1CM * 2 Then
+                                If ed.GetClosestPointTo(o).DistanceTo(o) < minEdge Then
+                                    minEdge = ed.GetClosestPointTo(o).DistanceTo(o)
+                                    followEdge = leadingEdge
+                                    leadingEdge = ed
+                                Else
+                                    followEdge = ed
+                                End If
+
                             End If
-
                         End If
-                    End If
-                Next
-            End If
-        Next
-        lamp.HighLighObject(leadingEdge)
-        lamp.HighLighObject(followEdge)
+                    Next
+                End If
+            Next
+            point1 = pt
+            bl.Construction = True
+            Return leadingEdge
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
 
-
-        If leadingEdge.StartVertex.Point.DistanceTo(pt) < leadingEdge.StopVertex.Point.DistanceTo(pt) Then
-            pt = leadingEdge.StartVertex.Point
-            v = leadingEdge.StartVertex.Point.VectorTo(leadingEdge.StopVertex.Point)
-            farPoint = leadingEdge.StopVertex.Point
-        Else
-            pt = leadingEdge.StopVertex.Point
-            v = leadingEdge.StopVertex.Point.VectorTo(leadingEdge.StartVertex.Point)
-            farPoint = leadingEdge.StartVertex.Point
-
-        End If
-        'lamp.HighLighObject(pt)
-        'lamp.HighLighObject(leadingEdge)
-        v.AsUnitVector.AsVector()
-        v.ScaleBy(thicknessCM * 5 / 10)
-        pt.TranslateBy(v)
-        'lamp.HighLighObject(pt)
-        bl.Construction = True
-        point1 = pt
-        Return pt
     End Function
     Function DrawFirstLine() As SketchLine3D
         Try
@@ -370,7 +365,7 @@ Public Class MacroFold5
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, majorLine)
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, minorLine)
             Dim dc As DimensionConstraint3D
-            If farPoint.Equals(majorLine.EndSketchPoint.Geometry) Then
+            If farPoint.DistanceTo(majorLine.EndSketchPoint.Geometry) < gap1CM Then
                 dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(l.StartPoint, majorLine.EndPoint)
             Else
                 dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(l.StartPoint, majorLine.StartPoint)
@@ -579,7 +574,7 @@ Public Class MacroFold5
             Dim va, vb As Vector
 
             m1 = 0
-            vb = minorEdge.StartVertex.Point.VectorTo(minorEdge.StopVertex.Point)
+            vb = followEdge.StartVertex.Point.VectorTo(followEdge.StopVertex.Point)
             For Each eda As Edge In adjacentFace.Edges
                 va = eda.StartVertex.Point.VectorTo(eda.StopVertex.Point)
                 If va.DotProduct(vb) > m1 Then
@@ -587,7 +582,7 @@ Public Class MacroFold5
                     adjacentEdge = eda
                 End If
             Next
-
+            lamp.HighLighObject(adjacentEdge)
             Return adjacentEdge
         Catch ex As Exception
             MsgBox(ex.ToString())

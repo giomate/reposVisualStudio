@@ -19,7 +19,7 @@ Public Class InventorFile
         Public Dmin As Double
 
     End Structure
-    Dim DP As DesignParam
+    Public DP As DesignParam
     Dim Tr As Double
     Dim Cr As Double
     Public Sub New(App As Inventor.Application)
@@ -182,7 +182,7 @@ Public Class InventorFile
     Public Function CreateSheetMetalFile(shortname As String) As PartDocument
         If IsAlreadyCreated(shortname) Then
 
-            ' documento.Close(True)
+            documento.Close(True)
         End If
         Doblez = CreateSheetMetalFile()
         Conversions.SetUnitsToMetric(Doblez)

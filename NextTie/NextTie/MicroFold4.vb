@@ -33,7 +33,7 @@ Public Class MicroFold4
     Dim workFace, adjacentFace, nextWorkFace As Face
     Dim bendAngle As DimensionConstraint
     Dim folded As FoldFeature
-    Dim features As SheetMetalFeatures
+    Dim sheetMetalFeatures As SheetMetalFeatures
     Dim lamp As Highlithing
     Dim bender As Doblador
     Dim parallel As GeometricConstraint3D
@@ -46,7 +46,7 @@ Public Class MicroFold4
 
         mainSketch = New Sketcher3D(doku)
         compDef = doku.ComponentDefinition
-        features = compDef.Features
+        sheetMetalFeatures = compDef.Features
         tg = app.TransientGeometry
         bandLines = app.TransientObjects.CreateObjectCollection
         constructionLines = app.TransientObjects.CreateObjectCollection
@@ -159,7 +159,7 @@ Public Class MicroFold4
             maxArea1 = maxArea2
 
 
-            For Each f As Face In compDef.Features.Item(compDef.Features.Count).Faces
+            For Each f As Face In sheetMetalFeatures.FoldFeatures.Item(sheetMetalFeatures.FoldFeatures.Count).Faces
                 'lamp.HighLighFace(f)
                 If f.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
                     'lamp.HighLighFace(f)

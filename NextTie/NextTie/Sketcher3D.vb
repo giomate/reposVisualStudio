@@ -44,7 +44,7 @@ Public Class Sketcher3D
         wp1 = ref.StartSketchPoint.Geometry
         wp3 = ref.EndSketchPoint.Geometry
         sk3D = doku.ComponentDefinition.Sketches3D.Add()
-        sk3D.Name = "s0"
+        sk3D.Name = "s1"
         curve = curve3D.DrawTrobinaCurve(sk3D)
 
         DrawInitialLine(refLine)
@@ -130,7 +130,7 @@ Public Class Sketcher3D
     Function DrawTrobinaCurve(q As Integer) As SketchEquationCurve3D
 
 
-        Return DrawTrobinaCurve(q, "s0")
+        Return DrawTrobinaCurve(q, "s1")
     End Function
     Function DrawTrobinaCurve(q As Integer, s As String) As SketchEquationCurve3D
 

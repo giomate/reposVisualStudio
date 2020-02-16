@@ -34,7 +34,7 @@ Public Class MacroFold
     Dim workFace, adjacentFace, nextworkface As Face
     Dim bendAngle As DimensionConstraint
     Dim folded As FoldFeature
-    Dim features As SheetMetalFeatures
+    Dim sheetMetalFeatures As SheetMetalFeatures
     Dim lamp As Highlithing
     Dim bender As Doblador
     Dim gapFold, gapVertex As DimensionConstraint3D
@@ -47,7 +47,7 @@ Public Class MacroFold
 
         mainSketch = New Sketcher3D(doku)
         compDef = doku.ComponentDefinition
-        features = compDef.Features
+        sheetMetalFeatures = compDef.Features
         tg = app.TransientGeometry
         bandLines = app.TransientObjects.CreateObjectCollection
         constructionLines = app.TransientObjects.CreateObjectCollection
@@ -163,7 +163,7 @@ Public Class MacroFold
             maxArea1 = maxArea2
 
 
-            For Each f As Face In compDef.Features.Item(compDef.Features.Count).Faces
+            For Each f As Face In sheetMetalFeatures.FoldFeatures.Item(sheetMetalFeatures.FoldFeatures.Count).Faces
                 'lamp.HighLighFace(f)
                 If f.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
                     'lamp.HighLighFace(f)
@@ -208,7 +208,7 @@ Public Class MacroFold
                     End If
                 End If
             Next
-            For Each f As Face In compDef.Features.Item(compDef.Features.Count - 1).Faces
+            For Each f As Face In sheetMetalFeatures.FoldFeatures.Item(sheetMetalFeatures.FoldFeatures.Count - 1).Faces
                 For Each ft As Face In maxface2.TangentiallyConnectedFaces
                     If ft.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
                         If ft.Equals(f) Then
@@ -224,7 +224,7 @@ Public Class MacroFold
             Next
 
 
-            'lamp.HighLighFace(workFace)
+            lamp.HighLighFace(workFace)
             initialPlane = tg.CreatePlaneByThreePoints(workFace.Vertices.Item(1).Point, workFace.Vertices.Item(2).Point, workFace.Vertices.Item(3).Point)
             Return workFace
         Catch ex As Exception
@@ -661,18 +661,24 @@ Public Class MacroFold
     End Function
     Function AdjustlastAngle() As Boolean
         Try
-            Dim fourLine, sixthLine, cl3 As SketchLine3D
+            Dim fourLine, sixthLine, cl3, cl2 As SketchLine3D
             Dim dc As TwoLineAngleDimConstraint3D
             Dim limit As Double = 0.1
+            Dim counterLimit As Integer = 0
+
+            Dim d As Double
 
             Dim b As Boolean = False
-
             fourLine = bandLines.Item(2)
             sixthLine = bandLines.Item(4)
             cl3 = constructionLines.Item(3)
-            dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
+            cl2 = constructionLines.Item(2)
 
-            If adjuster.AdjustGapSmothly(gapFold, gap1CM, dc) Then
+            d = CalculateRoof()
+            If d > 0 Then
+                dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
+
+                If adjuster.AdjustGapSmothly(gapFold, gap1CM, dc) Then
                     b = True
                 Else
                     dc.Driven = True
@@ -680,6 +686,36 @@ Public Class MacroFold
                     gapFold = sk3D.DimensionConstraints3D.AddLineLength(cl3)
                     b = True
                 End If
+            Else
+                Try
+                    dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
+                    dc.Driven = True
+                    While (d < 0 And counterLimit < 32)
+                        Try
+                            gapFold.Driven = False
+                            adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 17 / 16)
+                            gapFold.Driven = True
+                            doku.Update2()
+
+                        Catch ex2 As Exception
+                            counterLimit = counterLimit + 1
+                            gapFold.Driven = True
+                        End Try
+                        d = CalculateRoof()
+                        counterLimit = counterLimit + 1
+                    End While
+                    gapFold.Driven = False
+                    b = True
+                Catch ex As Exception
+                    Try
+                        gapFold.Delete()
+                    Catch ex3 As Exception
+                    End Try
+                    gapFold = sk3D.DimensionConstraints3D.AddLineLength(cl3)
+                    b = True
+                End Try
+            End If
+
 
 
             Return b
@@ -687,6 +723,26 @@ Public Class MacroFold
             MsgBox(ex.ToString())
             Return Nothing
         End Try
+    End Function
+    Function CalculateRoof() As Double
+        Dim fourLine, sixthLine, cl3, cl2 As SketchLine3D
+
+
+        Dim v1, v2, v3, v4 As Vector
+        Dim d As Double
+
+
+        fourLine = bandLines.Item(2)
+        sixthLine = bandLines.Item(4)
+        cl3 = constructionLines.Item(3)
+        cl2 = constructionLines.Item(2)
+        v3 = firstLine.StartSketchPoint.Geometry.VectorTo(sixthLine.EndSketchPoint.Geometry)
+        v2 = fourLine.EndSketchPoint.Geometry.VectorTo(fourLine.StartSketchPoint.Geometry)
+        v4 = cl2.Geometry.Direction.AsVector
+        v1 = v2.CrossProduct(v3)
+        d = v1.DotProduct(v4)
+
+        Return d
     End Function
     Public Function GetParameter(name As String) As Parameter
         Dim p As Parameter = Nothing

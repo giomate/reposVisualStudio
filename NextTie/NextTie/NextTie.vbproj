@@ -80,6 +80,7 @@
   <ItemGroup>
     <Compile Include="Commands.vb" />
     <Compile Include="Conversions.vb" />
+    <Compile Include="Cortador.vb" />
     <Compile Include="Curves3D.vb" />
     <Compile Include="DesignDoctor.vb" />
     <Compile Include="DesignMonitoring.vb" />

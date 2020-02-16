@@ -76,12 +76,19 @@ Public Class Nombres
 
         Return CInt(s(0)) + 1
     End Function
-    Public Function GetFileNumber(fullname As String) As Integer
+    Public Function GetFileNumber(fullName As String) As Integer
         Dim s() As String
-        s = Strings.Split(fullname, "Band")
-        s = Strings.Split(s(1), ".ipt")
+        Dim pattern = String.Concat("Band", "\d+", "\w*")
+        If Regex.IsMatch(fullName, pattern) Then
+            s = Strings.Split(fullName, "Band")
+            s = Strings.Split(s(1), ".ipt")
 
-        Return CInt(s(0))
+            Return CInt(s(0))
+        End If
+
+
+
+        Return 0
     End Function
     Public Function GetNextSketchName(docu As Inventor.Document) As String
         Dim s(), sn As String

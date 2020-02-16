@@ -35,7 +35,7 @@ Public Class MicroFold6
     Dim parallel As GeometricConstraint3D
     Dim tiltAngle As DimensionConstraint3D
     Dim folded As FoldFeature
-    Dim features As SheetMetalFeatures
+    Dim sheetMetalFeatures As SheetMetalFeatures
     Dim lamp As Highlithing
     Dim bender As Doblador
     Public Sub New(docu As Inventor.Document)
@@ -47,7 +47,7 @@ Public Class MicroFold6
 
         mainSketch = New Sketcher3D(doku)
         compDef = doku.ComponentDefinition
-        features = compDef.Features
+        sheetMetalFeatures = compDef.Features
         tg = app.TransientGeometry
         bandLines = app.TransientObjects.CreateObjectCollection
         constructionLines = app.TransientObjects.CreateObjectCollection
@@ -60,6 +60,28 @@ Public Class MicroFold6
         done = False
     End Sub
     Public Function MakeSixthFold() As Boolean
+        Try
+            Return MakeEvenFold("f6")
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+        Return False
+    End Function
+    Public Function MakeEighthFold() As Boolean
+        Try
+            Return MakeEvenFold("f8")
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+        Return False
+    End Function
+    Public Function MakeEvenFold(s As String) As Boolean
         Try
             If GetWorkFace().SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
                 If mainSketch.DrawTrobinaCurve(nombrador.GetQNumber(doku), nombrador.GetNextSketchName(doku)).Construction Then
@@ -87,7 +109,7 @@ Public Class MicroFold6
                                                     comando.MakeInvisibleWorkPlanes(doku)
                                                     folded = bender.FoldBand(bandLines.Count)
                                                     folded = CheckFoldSide(folded)
-                                                    folded.Name = "f6"
+                                                    folded.Name = s
                                                     doku.Update2(True)
                                                     If monitor.IsFeatureHealthy(folded) Then
                                                         doku.Save2(True)
@@ -162,7 +184,7 @@ Public Class MicroFold6
             maxArea1 = maxArea2
 
 
-            For Each f As Face In compDef.Features.Item(compDef.Features.Count).Faces
+            For Each f As Face In sheetMetalFeatures.FoldFeatures.Item(sheetMetalFeatures.FoldFeatures.Count).Faces
                 'lamp.HighLighFace(f)
                 If f.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
                     'lamp.HighLighFace(f)

@@ -37,6 +37,7 @@ Public Class TieMaker1
     Dim cutfeature As CutFeature
     Dim bendLine, cutLine As SketchLine
     Public compDef As SheetMetalComponentDefinition
+    Dim sheetMetalFeatures As SheetMetalFeatures
     Dim mainWorkPlane As WorkPlane
     Dim minorEdge, majorEdge, bendEdge, adjacentEdge, cutEdge1, cutEdge2, CutEsge3 As Edge
     Dim minorLine, majorLine, cutLine3D, kante3D, tante3D As SketchLine3D
@@ -44,6 +45,7 @@ Public Class TieMaker1
     Dim bendAngle As DimensionConstraint
     Dim gapFold, gapVertex As DimensionConstraint3D
     Dim folded As FoldFeature
+    Public foldFeatures As FoldFeatures
     Dim features As SheetMetalFeatures
     Dim lamp As Highlithing
 
@@ -60,6 +62,7 @@ Public Class TieMaker1
     Dim doblez5 As MacroFold5
     Dim doblez6 As MicroFold6
     Dim doblez7 As MacroFold5
+    Dim doblez8 As MicroFold6
     Dim manager As FoldingEvaluator
     Dim giro As TwistFold7
     Dim arrayFunctions As Collection
@@ -73,7 +76,8 @@ Public Class TieMaker1
         projectManager = app.DesignProjectManager
 
         compDef = doku.ComponentDefinition
-        features = compDef.Features
+        sheetMetalFeatures = compDef.Features
+        foldFeatures = sheetMetalFeatures.FoldFeatures
         tg = app.TransientGeometry
         bandLines = app.TransientObjects.CreateObjectCollection
         constructionLines = app.TransientObjects.CreateObjectCollection
@@ -86,6 +90,7 @@ Public Class TieMaker1
         refDoc = New FindReferenceLine(doku)
         nombrador = New Nombres(doku)
         manager = New FoldingEvaluator(doku)
+        trobinaCurve = New Curves3D(doku)
 
 
         done = False
@@ -95,6 +100,8 @@ Public Class TieMaker1
             Dim i As Integer
 
             i = GetStartingFeature()
+            doku.Update2(True)
+
             If i < 1 Then
                 If GetInitialConditions() > 0 Then
                     If doblez1.MakeFirstFold(refDoc, qNext) Then
@@ -104,7 +111,23 @@ Public Class TieMaker1
                     End If
                 End If
             Else
-                MakeRestTie(i)
+                If sheetMetalFeatures.CutFeatures.Count > 0 Then
+                    cutfeature = sheetMetalFeatures.CutFeatures.Item(1)
+                    If cutfeature.Name = "initCut" Then
+                        MakeRestTie(i)
+                    Else
+                        If monitor.IsFeatureHealthy(doblez1.MakeInitCut()) Then
+                            MakeRestTie(1)
+                        End If
+                    End If
+
+                Else
+                    If monitor.IsFeatureHealthy(doblez1.MakeInitCut()) Then
+                        MakeRestTie(1)
+                    End If
+
+                End If
+
             End If
             If compDef.Sketches3D.Item("last").SketchLines3D.Count > 0 Then
                 done = True
@@ -170,16 +193,33 @@ Public Class TieMaker1
                         doblez7 = New MacroFold5(doblez6.doku)
                         If doblez7.MakeFifthFold() Then
                             doku = doblez7.doku
-                            MakeRestTie(10)
+                            MakeRestTie(i + 1)
                         End If
                     End If
                 Case 7
+                    doblez8 = New MicroFold6(doblez7.doku)
+                    If doblez8.MakeEighthFold() Then
+                        manager.Update(doblez8.doku)
+                        MakeRestTie(10)
+                    End If
+                Case 8
+                    giro = New TwistFold7(doblez8.doku)
+                    If giro.MakeFinalTwist() Then
+                        Return doku
+                    End If
+                Case 9
+
                     If giro.MakeFinalTwist() Then
                         Return doku
                     End If
 
                 Case 10
-                    giro = New TwistFold7(doblez6.doku)
+                    Try
+                        giro = New TwistFold7(doblez8.doku)
+                    Catch ex As Exception
+                        giro = New TwistFold7(doblez6.doku)
+                    End Try
+
                     If giro.MakeFinalTwist() Then
                         Return doku
                     End If
@@ -217,7 +257,13 @@ Public Class TieMaker1
                 doblez6 = New MicroFold6(doblez5.doku)
             Case 7
                 CreateFoldObjects(i - 1)
-                giro = New TwistFold7(doblez6.doku)
+                doblez7 = New MacroFold5(doblez6.doku)
+            Case 8
+                CreateFoldObjects(i - 1)
+                doblez8 = New MicroFold6(doblez7.doku)
+            Case 9
+                CreateFoldObjects(i - 1)
+                giro = New TwistFold7(doblez8.doku)
             Case Else
                 Return doku
         End Select
@@ -244,9 +290,15 @@ Public Class TieMaker1
             Dim i As Integer = 0
             If invDoc.IsAlreadyCreated(nombrador.MakeNextFileName(refDoc.oDoc)) Then
                 doku = invDoc.documento
+                compDef = doku.ComponentDefinition
+                sheetMetalFeatures = compDef.Features
+                If doku.ComponentDefinition.Features.Count > 0 Then
+                    i = nombrador.GetFeatureNumber(manager.GetLastFold(doku))
+                    CreateFoldObjects(i)
+                Else
+                    i = 0
+                End If
 
-                i = nombrador.GetFeatureNumber(manager.GetLastFold(doku))
-                CreateFoldObjects(i)
             End If
             Return i
         Catch ex As Exception
@@ -257,18 +309,42 @@ Public Class TieMaker1
     End Function
     Public Function FindLastTie() As PartDocument
         Dim max As Integer = 0
-        Dim ltn As String
+        Dim ltn, slt As String
         Dim lastTie As PartDocument
         fullFileNames = Directory.GetFiles(projectManager.ActiveDesignProject.WorkspacePath, "*.ipt")
         For Each s As String In fullFileNames
             If nombrador.GetFileNumber(s) > max Then
                 max = nombrador.GetFileNumber(s)
+                slt = ltn
                 ltn = s
 
             End If
         Next
         lastTie = invDoc.OpenFullFileName(ltn)
-        qLastTie = nombrador.GetQNumber(lastTie)
+        If IsLastTieFinish(lastTie) Then
+
+        Else
+            lastTie = invDoc.OpenFullFileName(slt)
+        End If
+
+        qLastTie = nombrador.GetQNumber(lastTie) - 1
         Return lastTie
+    End Function
+
+    Public Function IsLastTieFinish(d As PartDocument) As Boolean
+        Dim b As Boolean = False
+
+        If d.ComponentDefinition.Features.Count > 5 Then
+            Try
+                If d.ComponentDefinition.Sketches3D.Item("last").SketchLines3D.Count > 0 Then
+                    b = True
+                End If
+            Catch ex As Exception
+                b = False
+            End Try
+
+
+        End If
+        Return b
     End Function
 End Class

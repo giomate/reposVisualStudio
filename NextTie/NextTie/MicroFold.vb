@@ -21,6 +21,7 @@ Public Class MicroFold
     Dim bandLines, constructionLines As ObjectCollection
     Dim comando As Commands
     Dim mainSketch As Sketcher3D
+    Dim nombrador As Nombres
 
     Dim pro As Profile
     Dim direction As Vector
@@ -29,11 +30,12 @@ Public Class MicroFold
     Dim compDef As SheetMetalComponentDefinition
     Dim mainWorkPlane As WorkPlane
     Dim minorEdge, majorEdge, bendEdge As Edge
-    Dim workFace, nextWorkFace As Face
+    Dim workFace, nextWorkFace, adjacentFace As Face
     Dim bendAngle As DimensionConstraint
     Dim parallel As GeometricConstraint3D
+    Dim tiltAngle As DimensionConstraint3D
     Dim folded As FoldFeature
-    Dim features As SheetMetalFeatures
+    Dim sheetMetalFeatures As SheetMetalFeatures
     Dim lamp As Highlithing
     Dim bender As Doblador
 
@@ -43,10 +45,11 @@ Public Class MicroFold
         comando = New Commands(app)
         monitor = New DesignMonitoring(doku)
         adjuster = New SketchAdjust(doku)
+        nombrador = New Nombres(doku)
 
         mainSketch = New Sketcher3D(doku)
         compDef = doku.ComponentDefinition
-        features = compDef.Features
+        sheetMetalFeatures = compDef.Features
         tg = app.TransientGeometry
         bandLines = app.TransientObjects.CreateObjectCollection
         constructionLines = app.TransientObjects.CreateObjectCollection
@@ -85,8 +88,8 @@ Public Class MicroFold
         Try
             Dim sn As String
             If GetWorkFace().SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
-                sn = GetSketchName(doku)
-                If mainSketch.DrawTrobinaCurve(GetQNumber(doku), sn).Construction Then
+                sn = nombrador.GetNextSketchName(doku)
+                If mainSketch.DrawTrobinaCurve(nombrador.GetQNumber(doku), sn).Construction Then
                     sk3D = mainSketch.sk3D
                     curve = mainSketch.curve
                     If GetMinorEdge(workFace).GeometryType = CurveTypeEnum.kLineSegmentCurve Then
@@ -237,35 +240,67 @@ Public Class MicroFold
     End Function
     Function GetWorkFace() As Face
         Try
-            Dim maxArea1, maxArea2 As Double
 
-            Dim maxface1, maxface2 As Face
+            Dim maxArea1, maxArea2, maxArea3 As Double
 
-            maxface1 = compDef.Features.Item(compDef.Features.Count).Faces.Item(compDef.Features.Item(compDef.Features.Count).Faces.Count)
-            maxface2 = maxface1
-            maxArea2 = maxface2.Evaluator.Area
-            maxArea1 = maxArea2
-            For Each f As Face In compDef.Features.Item(compDef.Features.Count).Faces
+                Dim maxface1, maxface2, maxface3 As Face
 
-                If f.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                maxface1 = compDef.Features.Item(compDef.Features.Count).Faces.Item(1)
+                maxface2 = maxface1
+                maxArea2 = 0
+                maxArea1 = maxArea2
 
+
+            For Each f As Face In sheetMetalFeatures.FoldFeatures.Item(sheetMetalFeatures.FoldFeatures.Count).Faces
+                'lamp.HighLighFace(f)
+                If f.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
+                    'lamp.HighLighFace(f)
                     If f.Evaluator.Area > maxArea1 Then
                         maxArea2 = maxArea1
                         maxface2 = maxface1
                         maxArea1 = f.Evaluator.Area
                         maxface1 = f
+                    Else
+                        maxface2 = f
+                    End If
+                Else
+                    maxface3 = f
+                End If
+            Next
+            maxArea1 = 0
+                maxArea2 = 0
+                maxArea3 = 0
+                workFace = maxface3
+                adjacentFace = maxface3
+            lamp.HighLighFace(maxface2)
+            For Each f As Face In maxface2.TangentiallyConnectedFaces
 
+                If f.Evaluator.Area > maxArea3 Then
+                    If f.Evaluator.Area > maxArea2 Then
+                        If f.Evaluator.Area > maxArea1 Then
+                            maxface3 = adjacentFace
+                            adjacentFace = workFace
+                            workFace = f
+                            maxArea3 = maxArea2
+                            maxArea2 = maxArea1
+                            maxArea1 = f.Evaluator.Area
+                        Else
+                            maxface3 = adjacentFace
+                            adjacentFace = f
+                            maxArea3 = maxArea2
+                            maxArea2 = f.Evaluator.Area
+                        End If
+                    Else
+                        maxface3 = f
+                        maxArea3 = f.Evaluator.Area
                     End If
                 End If
-
-
             Next
 
-            workFace = maxface2
-            initialPlane = tg.CreatePlaneByThreePoints(workFace.Vertices.Item(1).Point, workFace.Vertices.Item(2).Point, workFace.Vertices.Item(3).Point)
-            lamp.HighLighFace(maxface2)
-            Return maxface2
-        Catch ex As Exception
+            lamp.HighLighFace(workFace)
+                initialPlane = tg.CreatePlaneByThreePoints(workFace.Vertices.Item(1).Point, workFace.Vertices.Item(2).Point, workFace.Vertices.Item(3).Point)
+                Return workFace
+            Catch ex As Exception
             MsgBox(ex.ToString())
             Return Nothing
         End Try
@@ -364,12 +399,20 @@ Public Class MicroFold
             l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.EndPoint, optpoint, False)
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
             Dim dc As DimensionConstraint3D
-            dc = sk3D.DimensionConstraints3D.AddLineLength(l)
-            If adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 3 / 4) Then
+            dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(firstLine, minorLine)
+            If adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 9 / 10) Then
             Else
-                adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 4 / 5)
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 11 / 12)
             End If
             dc.Delete()
+            dc = sk3D.DimensionConstraints3D.AddLineLength(firstLine)
+            If adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 7 / 6) Then
+            Else
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 9 / 8)
+            End If
+            dc.Delete()
+            tiltAngle = sk3D.DimensionConstraints3D.AddTwoLineAngle(firstLine, minorLine)
+            tiltAngle.Driven = True
             point3 = l.EndSketchPoint.Geometry
             lastLine = l
             bandLines.Add(l)
@@ -384,14 +427,26 @@ Public Class MicroFold
     End Function
     Function DrawThirdLine() As SketchLine3D
         Try
+            Dim dc As DimensionConstraint3D
             direction = lastLine.Geometry.Direction.AsVector()
-            direction.ScaleBy(thickness)
+            direction.ScaleBy(thickness * 5)
             Dim pt As Point
             pt = firstLine.StartSketchPoint.Geometry
             pt.TranslateBy(direction)
             Dim l As SketchLine3D = Nothing
             l = sk3D.SketchLines3D.AddByTwoPoints(firstLine.StartPoint, pt, False)
-            sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
+            Try
+                sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
+            Catch ex As Exception
+                dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, minorLine)
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 2)
+                dc.Delete()
+                dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 2)
+                dc.Delete()
+                sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
+            End Try
+
             parallel = sk3D.GeometricConstraints3D.AddParallel(l, lastLine)
 
             lastLine = l

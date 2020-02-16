@@ -64,7 +64,7 @@ Public Class InitSketcher
         wp1 = ref.StartSketchPoint.Geometry
         wp3 = ref.EndSketchPoint.Geometry
         sk3D = doku.ComponentDefinition.Sketches3D.Add()
-        sk3D.Name = "s0"
+        sk3D.Name = "s1"
         curve = curve3D.DrawTrobinaCurve(sk3D)
 
         DrawInitialLine(refLine)
@@ -233,7 +233,7 @@ Public Class InitSketcher
 
             End If
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
         Return False
@@ -272,31 +272,32 @@ Public Class InitSketcher
 
             End If
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
         Return False
     End Function
     Function DrawInitialLine(line As SketchLine3D) As SketchLine3D
-
-        sk3D.SketchLines3D.AddByTwoPoints(line.StartSketchPoint.Geometry, line.EndSketchPoint.Geometry)
-        sk3D.SketchLines3D.Item(sk3D.SketchLines3D.Count).Construction = True
+        Dim l As SketchLine3D
+        l = sk3D.SketchLines3D.AddByTwoPoints(line.StartSketchPoint.Geometry, line.EndSketchPoint.Geometry)
+        l.Construction = True
+        sk3D.GeometricConstraints3D.AddGround(l)
         Return line
     End Function
     Function DrawTrobinaCurve(q As Integer) As SketchEquationCurve3D
 
 
-        Return DrawTrobinaCurve(q, "s0")
+        Return DrawTrobinaCurve(q, "s1")
     End Function
     Function DrawTrobinaCurveFitted(q As Integer, s As Integer) As SketchEquationCurve3D
 
 
-        Return DrawTrobinaCurve(q, "s0", s)
+        Return DrawTrobinaCurve(q, "s1", s)
     End Function
     Function DrawTrobinaCurveFitted(q As Integer) As SketchEquationCurve3D
 
 
-        Return DrawTrobinaCurve(q, "s0", 0)
+        Return DrawTrobinaCurve(q, "s1", 0)
     End Function
     Function DrawTrobinaCurve(q As Integer, s As String) As SketchEquationCurve3D
 
@@ -317,11 +318,17 @@ Public Class InitSketcher
     Function DrawFirstLine() As SketchLine3D
         Try
 
-            Dim l As SketchLine3D = Nothing
-            Dim gc As GeometricConstraint3D
-            l = sk3D.SketchLines3D.AddByTwoPoints(refLine.EndSketchPoint.Geometry, refLine.StartSketchPoint.Geometry)
+            Dim l As SketchLine3D
+            Dim gc, gpc As GeometricConstraint3D
+            'rl = sk3D.Include(refLine)
+            l = sk3D.SketchLines3D.AddByTwoPoints(refLine.StartSketchPoint.Geometry, refLine.EndSketchPoint.Geometry)
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, curve)
             gc = sk3D.GeometricConstraints3D.AddGround(l.StartPoint)
+            Try
+                gpc = sk3D.GeometricConstraints3D.AddParallel(l, refLine)
+            Catch ex As Exception
+                gpc.Delete()
+            End Try
             If gc.Deletable Then
                 startPoint = gc
 
@@ -334,7 +341,7 @@ Public Class InitSketcher
 
             Return l
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
         Return Nothing
@@ -361,25 +368,34 @@ Public Class InitSketcher
 
             Return l
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
         Return Nothing
     End Function
     Function DrawSecondLine() As SketchLine3D
         Try
-            Dim v As Vector = lastLine.StartSketchPoint.Geometry.VectorTo(lastLine.EndSketchPoint.Geometry)
+            Dim v1, v2, v3 As Vector
             Dim p As Plane
             Dim l As SketchLine3D = Nothing
             Dim optpoint As Point = Nothing
-            p = tg.CreatePlane(lastLine.EndSketchPoint.Geometry, v)
+            Dim d As Double
+            v1 = lastLine.StartSketchPoint.Geometry.VectorTo(lastLine.EndSketchPoint.Geometry)
+            v3 = doku.ComponentDefinition.WorkPoints.Item(1).Point.VectorTo(lastLine.EndSketchPoint.Geometry)
+            p = tg.CreatePlane(lastLine.EndSketchPoint.Geometry, v1)
             Dim minDis As Double = 9999999999
             For Each o As Point In p.IntersectWithCurve(curve.Geometry)
-                'l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.EndPoint, o, False)
-                If o.DistanceTo(lastLine.EndSketchPoint.Geometry) < minDis Then
-                    minDis = o.DistanceTo(lastLine.EndSketchPoint.Geometry)
-                    optpoint = o
+                v2 = lastLine.EndSketchPoint.Geometry.VectorTo(o)
+                d = v1.CrossProduct(v2).Length * v2.DotProduct(v3)
+                If d > 0 Then
+                    If o.DistanceTo(lastLine.EndSketchPoint.Geometry) < minDis Then
+                        minDis = o.DistanceTo(lastLine.EndSketchPoint.Geometry)
+                        optpoint = o
+                    End If
+
                 End If
+                'l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.EndPoint, o, False)
+
 
             Next
 
@@ -396,7 +412,7 @@ Public Class InitSketcher
 
             Return l
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
 
@@ -423,7 +439,7 @@ Public Class InitSketcher
             lastLine = l
             Return l
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
 
@@ -446,7 +462,7 @@ Public Class InitSketcher
             lastLine = l
             Return l
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
 
@@ -487,7 +503,7 @@ Public Class InitSketcher
             End If
             Return Nothing
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
 
@@ -504,7 +520,7 @@ Public Class InitSketcher
             lastLine = l
             Return l
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
 
@@ -525,7 +541,7 @@ Public Class InitSketcher
             gapFold = sk3D.DimensionConstraints3D.AddLineLength(l, endPoint, False)
 
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, secondLine)
-            sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, firstLine)
+            'sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, firstLine)
             sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
 
             lastLine = l
@@ -533,7 +549,7 @@ Public Class InitSketcher
             l.Construction = True
             Return l
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
         Return Nothing
@@ -550,7 +566,7 @@ Public Class InitSketcher
             bandLines.Add(l)
             Return l
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
     End Function
@@ -567,7 +583,7 @@ Public Class InitSketcher
             bandLines.Add(l)
             Return l
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
     End Function
@@ -575,16 +591,35 @@ Public Class InitSketcher
         Try
             Dim l, pl As SketchLine3D
             Dim gc As GeometricConstraint3D
+            Dim dc As DimensionConstraint3D
             pl = thirdLine
             l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.EndPoint, pl.StartPoint, False)
-            gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, pl)
-            doku.Update2(True)
-            gc.Delete()
+            dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, thirdLine)
+            Try
+
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, Math.PI / 2)
+            Catch ex As Exception
+                dc.Driven = True
+            End Try
+            dc.Delete()
+
+            Try
+                gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, pl)
+                doku.Update2(True)
+                gc.Delete()
+            Catch ex As Exception
+                If gc.Deletable Then
+                    gc.Delete()
+
+                End If
+            End Try
+
+
             lastLine = l
             bandLines.Add(l)
             Return l
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
     End Function
@@ -643,7 +678,7 @@ Public Class InitSketcher
             bandLines.Add(l)
             Return l
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
     End Function
@@ -671,7 +706,7 @@ Public Class InitSketcher
             done = 1
             Return l
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
     End Function
@@ -683,6 +718,7 @@ Public Class InitSketcher
             Dim dcfl, tc, ac As DimensionConstraint3D
             Dim gccl2, gc As GeometricConstraint3D
             Dim limit As Double = 0.1
+            Dim v1, v2, v3 As Vector
 
             Dim b As Boolean = False
 
@@ -697,22 +733,27 @@ Public Class InitSketcher
             Else
                 ac.Driven = True
             End If
-            gccl2 = sk3D.GeometricConstraints3D.AddGround(cl2.StartPoint)
-            If adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 3) Then
-                gccl2.Delete()
+            v3 = firstLine.StartSketchPoint.Geometry.VectorTo(sixthLine.EndSketchPoint.Geometry)
+            v1 = firstLine.Geometry.Direction.AsVector
+            v2 = fourLine.Geometry.Direction.AsVector
+            If v3.CrossProduct(v2).Length > 0 Then
                 dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
+                dc.Driven = True
+                Try
+                    Try
+                        adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 2)
+                    Catch ex As Exception
+                    End Try
 
-                If adjuster.AdjustGapSmothly(gapFold, gapFoldCM, dc) Then
+                    adjuster.AdjustGapSmothly(gapFold, gapFoldCM, dc)
                     b = True
-                Else
+                Catch ex As Exception
+                    Debug.Print(ex.ToString)
                     dc.Driven = True
-                    gapFold.Delete()
-                    gapFold = sk3D.DimensionConstraints3D.AddLineLength(cl2)
-                    b = True
-                End If
+                End Try
+                dc.Driven = True
             Else
-                gccl2.Delete()
-                If adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 5) Then
+                If adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 3) Then
                     cl3 = constructionLines.Item(3)
                     tc = sk3D.DimensionConstraints3D.AddTwoPointDistance(cl3.EndPoint, lastLine.StartPoint)
                     If adjuster.AdjustDimensionConstraint3DSmothly(tc, gapFoldCM * 2) Then
@@ -758,13 +799,14 @@ Public Class InitSketcher
 
                     b = True
                 End If
-                'gapFold.Driven = True
-                b = True
             End If
+
+
+
 
             Return b
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
     End Function
@@ -853,7 +895,7 @@ Public Class InitSketcher
 
             Next
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
         End Try
 
 
@@ -901,7 +943,7 @@ Public Class InitSketcher
                 If monitor.AreConstrainsHealthy(sk3D) Then
                     b = True
                 Else
-                    Debug.Print("not healthy constrain")
+                    MsgBox("not healthy constrain")
                     b = True
                 End If
             Else
@@ -924,8 +966,8 @@ Public Class InitSketcher
                 Try
                     p = doku.ComponentDefinition.Parameters.UserParameters.Item(name)
                 Catch ex2 As Exception
-                    Debug.Print(ex2.ToString())
-                    Debug.Print("Parameter not found: " & name)
+                    MsgBox(ex2.ToString())
+                    MsgBox("Parameter not found: " & name)
                 End Try
 
             End Try
@@ -949,7 +991,7 @@ Public Class InitSketcher
                 End If
             End If
         Catch ex As Exception
-            Debug.Print(ex.ToString())
+            MsgBox(ex.ToString())
             healthy = False
         End Try
 
