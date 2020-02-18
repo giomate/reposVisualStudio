@@ -428,7 +428,15 @@ Public Class OriginSketch
                 Else
                     dc2.Driven = True
                 End If
-                sk3D.GeometricConstraints3D.AddPerpendicular(l, ol)
+                Try
+                    sk3D.GeometricConstraints3D.AddPerpendicular(l, ol)
+                Catch ex As Exception
+                    dc2.Driven = False
+                    adjuster.AdjustDimensionConstraint3DSmothly(dc2, GetParameter("b")._Value)
+                    dc2.Driven = True
+                    sk3D.GeometricConstraints3D.AddPerpendicular(l, ol)
+                End Try
+
                 Try
                     sk3D.GeometricConstraints3D.AddEqual(l, cl)
                 Catch ex As Exception

@@ -25,6 +25,7 @@ Public Class InitSketcher
     Dim startPoint As GeometricConstraint3D
     Public ID1, ID2 As Integer
     Dim k1(), k2() As Byte
+    Dim backwards As Boolean
 
 
 
@@ -138,6 +139,11 @@ Public Class InitSketcher
     Public Function DrawMainSketch(refDoc As FindReferenceLine, q As Integer) As Sketch3D
 
         Dim s As String
+        If refDoc.foldFeatures.Count > 8 Then
+            backwards = True
+        Else
+            backwards = False
+        End If
 
         refLine = refDoc.GetKeyLine()
         doku.Activate()
@@ -534,6 +540,9 @@ Public Class InitSketcher
             v2 = secondLine.EndSketchPoint.Geometry.VectorTo(secondLine.StartSketchPoint.Geometry)
             v3 = v1.CrossProduct(v2).AsUnitVector().AsVector()
             v3.ScaleBy(gapFoldCM)
+            If backwards Then
+                v3.ScaleBy(-1)
+            End If
             endPoint = secondLine.StartSketchPoint.Geometry
             endPoint.TranslateBy(v3)
             l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.StartSketchPoint.Geometry, endPoint, False)
@@ -715,10 +724,12 @@ Public Class InitSketcher
         Try
             Dim fourLine, sixthLine, cl2, cl3, bl5 As SketchLine3D
             Dim dc As TwoLineAngleDimConstraint3D
-            Dim dcfl, tc, ac As DimensionConstraint3D
-            Dim gccl2, gc As GeometricConstraint3D
+            Dim ac As DimensionConstraint3D
+            Dim gc As GeometricConstraint3D
             Dim limit As Double = 0.1
-            Dim v1, v2, v3 As Vector
+            Dim d As Double
+            Dim counterLimit As Integer = 0
+
 
             Dim b As Boolean = False
 
@@ -733,18 +744,16 @@ Public Class InitSketcher
             Else
                 ac.Driven = True
             End If
-            v3 = firstLine.StartSketchPoint.Geometry.VectorTo(sixthLine.EndSketchPoint.Geometry)
-            v1 = firstLine.Geometry.Direction.AsVector
-            v2 = fourLine.Geometry.Direction.AsVector
-            If v3.CrossProduct(v2).Length > 0 Then
-                dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
+            dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
+            dc.Driven = True
+            d = CalculateRoof()
+            If d > 0 Then
                 dc.Driven = True
                 Try
                     Try
                         adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 2)
                     Catch ex As Exception
                     End Try
-
                     adjuster.AdjustGapSmothly(gapFold, gapFoldCM, dc)
                     b = True
                 Catch ex As Exception
@@ -753,52 +762,32 @@ Public Class InitSketcher
                 End Try
                 dc.Driven = True
             Else
-                If adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 3) Then
-                    cl3 = constructionLines.Item(3)
-                    tc = sk3D.DimensionConstraints3D.AddTwoPointDistance(cl3.EndPoint, lastLine.StartPoint)
-                    If adjuster.AdjustDimensionConstraint3DSmothly(tc, gapFoldCM * 2) Then
-                        tc.Driven = True
-                    Else
-                        tc.Delete()
-                    End If
-                    dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
+                Try
                     dc.Driven = True
-                    If adjuster.AdjustGapSmothly(gapFold, gapFoldCM, dc) Then
-                        b = True
-                    Else
-                        gapFold.Driven = True
-                        dc.Driven = False
-
+                    While ((d < 0 Or dc.Parameter._Value > Math.PI - limit / 2) And counterLimit < 32)
                         Try
-                            adjuster.AdjustDimensionConstraint3DSmothly(dc, Math.PI - limit)
-                        Catch ex As Exception
+                            gapFold.Driven = False
+                            adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 9 / 8)
+                            gapFold.Driven = True
+                            doku.Update2()
 
+                        Catch ex2 As Exception
+                            counterLimit = counterLimit + 1
+                            gapFold.Driven = True
                         End Try
-                        gapFold.Delete()
-                        gapFold = sk3D.DimensionConstraints3D.AddLineLength(cl2)
-                        b = True
-                    End If
-                Else
-                    gapFold.Delete()
-                    gapFold = sk3D.DimensionConstraints3D.AddLineLength(cl2)
-                    dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
-                    If adjuster.AdjustGapSmothly(gapFold, gapFoldCM, dc) Then
-                        b = True
-                    Else
-                        dc.Driven = True
-                        gapFold.Delete()
-                        gapFold = sk3D.DimensionConstraints3D.AddLineLength(cl2)
-                        Try
-                            adjuster.AdjustDimensionConstraint3DSmothly(dc, Math.PI - limit)
-                        Catch ex As Exception
-
-                        End Try
-
-                        b = True
-                    End If
-
+                        d = CalculateRoof()
+                        counterLimit = counterLimit + 1
+                    End While
+                    gapFold.Driven = False
                     b = True
-                End If
+                Catch ex As Exception
+                    Try
+                        gapFold.Delete()
+                    Catch ex3 As Exception
+                    End Try
+                    gapFold = sk3D.DimensionConstraints3D.AddLineLength(cl3)
+                    b = True
+                End Try
             End If
 
 
@@ -809,6 +798,34 @@ Public Class InitSketcher
             MsgBox(ex.ToString())
             Return Nothing
         End Try
+    End Function
+    Function CalculateRoof() As Double
+        Dim fourLine, sixthLine, cl3, cl2 As SketchLine3D
+
+
+        Dim v1, v2, v3, v4 As Vector
+        Dim d As Double
+
+
+
+        fourLine = bandLines.Item(4)
+        sixthLine = bandLines.Item(6)
+        cl3 = constructionLines.Item(3)
+        cl2 = constructionLines.Item(2)
+        v3 = firstLine.StartSketchPoint.Geometry.VectorTo(sixthLine.EndSketchPoint.Geometry)
+        v2 = fourLine.Geometry.Direction.AsVector
+
+        v4 = cl3.Geometry.Direction.AsVector
+        If backwards Then
+        Else
+            v4.ScaleBy(-1)
+        End If
+
+
+        v1 = v2.CrossProduct(v3)
+        d = v1.DotProduct(v4)
+
+        Return d
     End Function
     Function AdjustTwoPointsSmothly(dc As TwoPointDistanceDimConstraint3D, v As Double) As Boolean
 

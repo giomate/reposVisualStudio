@@ -25,7 +25,7 @@ Public Class InitFold
     Dim bendLine As SketchLine
     Dim compDef As SheetMetalComponentDefinition
     Dim mainWorkPlane As WorkPlane
-    Dim workface, cutFace As Face
+    Dim workface, cutFace, nextworkFace As Face
     Dim edgeBand, majorEdge, minorEdge, bendEdge As Edge
     Dim bendAngle As DimensionConstraint
     Dim folded As FoldFeature
@@ -36,6 +36,9 @@ Public Class InitFold
     Dim foldFeatures As FoldFeatures
     Dim lamp As Highlithing
     Dim bender As Doblador
+    Dim backwards As Boolean
+    Dim initialPlane As Plane
+    Dim foldDefinition As FoldDefinition
     Public Sub New(docu As Inventor.Document)
         doku = docu
         app = doku.Parent
@@ -123,6 +126,11 @@ Public Class InitFold
     Public Function MakeFirstFold(refDoc As FindReferenceLine, q As Integer) As Boolean
         Dim b As Boolean
         Try
+            If refDoc.foldFeatures.Count > 8 Then
+                backwards = True
+            Else
+                backwards = False
+            End If
             Try
                 foldFeature = foldFeatures.Item(1)
                 cutFeature = MakeInitCut()
@@ -141,6 +149,7 @@ Public Class InitFold
                                         comando.MakeInvisibleWorkPlanes(doku)
                                         bandLines = mainSketch.bandLines
                                         folded = FoldBand(bandLines.Count)
+                                        folded = CheckFoldSide(folded)
                                         folded.Name = "f1"
                                         doku.Update2(True)
                                         If monitor.IsFeatureHealthy(folded) Then
@@ -223,7 +232,12 @@ Public Class InitFold
         compDef = oSheetMetalCompDef
         Dim oFaceFeatureDefinition As FaceFeatureDefinition
         oFaceFeatureDefinition = oSheetMetalFeatures.FaceFeatures.CreateFaceFeatureDefinition(pro)
-        oFaceFeatureDefinition.Direction = PartFeatureExtentDirectionEnum.kNegativeExtentDirection
+        If backwards Then
+            oFaceFeatureDefinition.Direction = PartFeatureExtentDirectionEnum.kPositiveExtentDirection
+        Else
+            oFaceFeatureDefinition.Direction = PartFeatureExtentDirectionEnum.kNegativeExtentDirection
+        End If
+
         Dim oFaceFeature As FaceFeature
         oFaceFeature = oSheetMetalFeatures.FaceFeatures.Add(oFaceFeatureDefinition)
         feature = oFaceFeature
@@ -384,6 +398,7 @@ Public Class InitFold
             Next
 
             workface = maxface1
+            initialPlane = tg.CreatePlaneByThreePoints(workface.Vertices.Item(1).Point, workface.Vertices.Item(2).Point, workface.Vertices.Item(3).Point)
             lamp.HighLighFace(workface)
 
             Return workface
@@ -542,7 +557,7 @@ Public Class InitFold
     End Function
     Function AdjustFoldDefinition(i As Integer) As FoldDefinition
         Try
-          
+
             Dim oFoldDefinition As FoldDefinition
             If i > 4 Then
 
@@ -552,10 +567,7 @@ Public Class InitFold
                     oFoldDefinition = foldFeatures.CreateFoldDefinition(bendLine, Math.PI - bendAngle.Parameter._Value)
                 End If
 
-                If Not oFoldDefinition.IsPositiveBendSide Then
-                    oFoldDefinition.IsPositiveBendSide = Not oFoldDefinition.IsPositiveBendSide
 
-                End If
             Else
                 If bendAngle.Parameter._Value > Math.PI / 2 Then
                     oFoldDefinition = foldFeatures.CreateFoldDefinition(bendLine, Math.PI - bendAngle.Parameter._Value)
@@ -563,12 +575,114 @@ Public Class InitFold
 
                     oFoldDefinition = foldFeatures.CreateFoldDefinition(bendLine, bendAngle.Parameter._Value)
                 End If
-                If oFoldDefinition.IsPositiveBendSide Then
-                    oFoldDefinition.IsPositiveBendSide = Not oFoldDefinition.IsPositiveBendSide
-                End If
-            End If
 
+            End If
+            foldDefinition = oFoldDefinition
             Return oFoldDefinition
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+
+    End Function
+    Function CheckFoldSide(ff As FoldFeature) As FoldFeature
+        Try
+            Dim v1, v2 As Vector
+            Dim pl2 As Plane
+            Dim pt2 As Point
+            Dim d As Double
+            v1 = initialPlane.Normal.AsVector
+            pt2 = GetNextWorkFace(ff).Vertices.Item(1).Point
+            pl2 = tg.CreatePlaneByThreePoints(nextworkFace.Vertices.Item(1).Point, nextworkFace.Vertices.Item(2).Point, nextworkFace.Vertices.Item(3).Point)
+            v2 = pl2.Normal.AsVector
+            d = (v1.CrossProduct(v2)).Length
+            If Math.Abs(d) < 0.01 Then
+                ff = CorrectFold(ff)
+            End If
+            Return ff
+
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+    End Function
+    Public Function CorrectFold(ff As FoldFeature) As FoldFeature
+        Try
+            ff.Delete()
+            foldDefinition.IsPositiveBendSide = Not foldDefinition.IsPositiveBendSide
+
+            folded = foldFeatures.Add(foldDefinition)
+            Return folded
+
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+    End Function
+    Function GetNextWorkFace(ff As FoldFeature) As Face
+        Try
+            Dim maxArea1, maxArea2, maxArea3 As Double
+
+            Dim maxface1, maxface2, maxface3, bf As Face
+
+            maxface1 = ff.Faces.Item(1)
+            maxface2 = maxface1
+            maxface3 = maxface1
+            maxArea2 = 0
+            maxArea1 = maxArea2
+
+
+            For Each f As Face In ff.Faces
+                'lamp.HighLighFace(f)
+                If f.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
+                    'lamp.HighLighFace(f)
+                    If f.Evaluator.Area > maxArea1 Then
+                        maxArea2 = maxArea1
+                        maxface2 = maxface1
+                        maxArea1 = f.Evaluator.Area
+                        maxface1 = f
+                    Else
+                        maxface2 = f
+                    End If
+                Else
+                    maxface3 = f
+                End If
+            Next
+            maxArea1 = 0
+            maxArea2 = 0
+            maxArea3 = 0
+            bf = maxface2
+            'lamp.HighLighFace(maxface2)
+            For Each f As Face In bf.TangentiallyConnectedFaces
+
+                If f.Evaluator.Area > maxArea3 Then
+                    If f.Evaluator.Area > maxArea2 Then
+                        If f.Evaluator.Area > maxArea1 Then
+                            maxface3 = maxface2
+                            maxface2 = maxface1
+                            maxface1 = f
+                            maxArea3 = maxArea2
+                            maxArea2 = maxArea1
+                            maxArea1 = f.Evaluator.Area
+                        Else
+                            maxface3 = maxface2
+                            maxface2 = f
+                            maxArea3 = maxArea2
+                            maxArea2 = f.Evaluator.Area
+                        End If
+                    Else
+                        maxface3 = f
+                        maxArea3 = f.Evaluator.Area
+                    End If
+                End If
+            Next
+            nextWorkFace = maxface1
+            lamp.HighLighFace(maxface1)
+            Return nextWorkFace
         Catch ex As Exception
             MsgBox(ex.ToString())
             Return Nothing

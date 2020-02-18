@@ -106,8 +106,8 @@ Public Class MicroFold
                                                 comando.MakeInvisibleSketches(doku)
                                                 comando.MakeInvisibleWorkPlanes(doku)
                                                 folded = bender.FoldBand(bandLines.Count)
-                                                CheckFoldSide(folded).Name = "f2"
-
+                                                folded = CheckFoldSide(folded)
+                                                folded.Name = "f2"
                                                 doku.Update2(True)
 
                                                 If monitor.IsFeatureHealthy(folded) Then
@@ -478,10 +478,13 @@ Public Class MicroFold
             dc.Delete()
             dc = sk3D.DimensionConstraints3D.AddLineLength(l)
             If AdjustLineLenghtSmothly(dc, GetParameter("b")._Value / 1) Then
-                l.Construction = True
-                constructionLines.Add(l)
-                lastLine = l
-                Return l
+                Try
+                    adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value)
+                    dc.Parameter._Value = GetParameter("b")._Value
+                Catch ex As Exception
+                    dc.Driven = True
+                End Try
+
             Else
                 dc.Driven = True
                 parallel.Delete()
@@ -509,12 +512,14 @@ Public Class MicroFold
                 End If
 
             End If
+            l.Construction = True
+            constructionLines.Add(l)
+            lastLine = l
+            Return l
 
 
 
 
-
-            Return Nothing
         Catch ex As Exception
             MsgBox(ex.ToString())
             Return Nothing

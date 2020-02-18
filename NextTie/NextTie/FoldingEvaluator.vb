@@ -121,9 +121,7 @@ Public Class FoldingEvaluator
     Function DrawEvaluationSketch() As Sketch3D
         Try
             sk3D = doku.ComponentDefinition.Sketches3D.Add()
-
             firstLine = sk3D.Include(GetLastBendLine())
-
             curve = ring.DrawLowerRing(sk3D)
             sk3D.GeometricConstraints3D.AddGround(curve)
             secondLine = sk3D.SketchLines3D.AddByTwoPoints(firstLine.EndPoint, curve.StartSketchPoint.Geometry, False)
@@ -153,6 +151,20 @@ Public Class FoldingEvaluator
                 sk3D.Name = "crucialAngle"
                 dc2 = sk3D.DimensionConstraints3D.AddLineLength(secondLine)
                 adjuster.UpdateDocu(doku)
+                Try
+                    adjuster.GetMinimalDimension(dc2)
+                Catch ex2 As Exception
+
+                End Try
+                dc2.Driven = True
+                dc1 = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
+                Try
+                    adjuster.GetMinimalDimension(dc1)
+                Catch ex3 As Exception
+                    dc1.Driven = True
+                End Try
+                dc1.Delete()
+                dc2.Driven = False
                 If adjuster.GetMinimalDimension(dc2) Then
 
                     dc2.Delete()

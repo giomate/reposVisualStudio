@@ -466,10 +466,11 @@ Public Class MacroFold
             Dim endPoint As Point
             Dim v1, v2, v3 As Vector
             Dim pl As Plane
+
             v1 = firstLine.StartSketchPoint.Geometry.VectorTo(farPoint)
             v2 = firstLine.Geometry.Direction.AsVector
-            v3 = v1.CrossProduct(v2)
-            v3.ScaleBy(1 / GetParameter("b")._Value)
+            v3 = initialPlane.Normal.AsVector
+            v3.ScaleBy(-1)
             endPoint = firstLine.EndSketchPoint.Geometry
             endPoint.TranslateBy(v3)
             ol = constructionLines(1)
@@ -512,6 +513,11 @@ Public Class MacroFold
             gc = sk3D.GeometricConstraints3D.AddCoincident(ol.EndPoint, l)
             gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, ol)
             gapVertex.Driven = False
+            Try
+                adjuster.GetMinimalDimension(gapVertex)
+            Catch ex As Exception
+                gapVertex.Driven = True
+            End Try
             lastLine = l
             bandLines.Add(l)
             secondLine = lastLine
@@ -660,6 +666,7 @@ Public Class MacroFold
         End Try
     End Function
     Function AdjustlastAngle() As Boolean
+
         Try
             Dim fourLine, sixthLine, cl3, cl2 As SketchLine3D
             Dim dc As TwoLineAngleDimConstraint3D
@@ -673,10 +680,11 @@ Public Class MacroFold
             sixthLine = bandLines.Item(4)
             cl3 = constructionLines.Item(3)
             cl2 = constructionLines.Item(2)
-
+            dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
+            dc.Driven = True
             d = CalculateRoof()
             If d > 0 Then
-                dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
+
 
                 If adjuster.AdjustGapSmothly(gapFold, gap1CM, dc) Then
                     b = True
@@ -688,9 +696,9 @@ Public Class MacroFold
                 End If
             Else
                 Try
-                    dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
+
                     dc.Driven = True
-                    While (d < 0 And counterLimit < 32)
+                    While ((d < 0 Or dc.Parameter._Value > Math.PI - limit / 2) And counterLimit < 32)
                         Try
                             gapFold.Driven = False
                             adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 17 / 16)
@@ -715,9 +723,21 @@ Public Class MacroFold
                     b = True
                 End Try
             End If
+            Try
+                gapFold.Driven = True
+                dc.Driven = False
+                Try
+                    gapVertex.Driven = False
+                    adjuster.GetMinimalDimension(gapVertex)
+                Catch ex As Exception
+                    gapVertex.Driven = True
+                End Try
+                dc.Driven = True
+                gapFold.Driven = False
 
-
-
+            Catch ex As Exception
+                gapFold.Driven = True
+            End Try
             Return b
         Catch ex As Exception
             MsgBox(ex.ToString())
@@ -728,8 +748,8 @@ Public Class MacroFold
         Dim fourLine, sixthLine, cl3, cl2 As SketchLine3D
 
 
-        Dim v1, v2, v3, v4 As Vector
-        Dim d As Double
+        Dim v1, v2, v3, v4, vfl, vnwf, vflnwf, vcp, v8 As Vector
+        Dim d, e As Double
 
 
         fourLine = bandLines.Item(2)
@@ -740,9 +760,15 @@ Public Class MacroFold
         v2 = fourLine.EndSketchPoint.Geometry.VectorTo(fourLine.StartSketchPoint.Geometry)
         v4 = cl2.Geometry.Direction.AsVector
         v1 = v2.CrossProduct(v3)
+        vfl = firstLine.Geometry.Direction.AsVector
+        vnwf = initialPlane.Normal.AsVector
+        vnwf.ScaleBy(-1)
+        vflnwf = vfl.CrossProduct(vnwf)
+        vcp = compDef.WorkPoints.Item(1).Point.VectorTo(firstLine.EndSketchPoint.Geometry)
+        e = vcp.DotProduct(vflnwf)
         d = v1.DotProduct(v4)
 
-        Return d
+        Return d * e
     End Function
     Public Function GetParameter(name As String) As Parameter
         Dim p As Parameter = Nothing

@@ -5,8 +5,14 @@ Public Class FindReferenceLine
     Dim sk3D As Sketch3D
     Dim line3D As SketchLines3D
     Public line As SketchLine3D
+    Public foldFeatures As FoldFeatures
+    Dim sheetMetalFeatures As SheetMetalFeatures
+    Dim compDef As SheetMetalComponentDefinition
     Public Sub New(docu As Inventor.Document)
         oDoc = docu
+        compDef = docu.ComponentDefinition
+        sheetMetalFeatures = compDef.Features
+        foldFeatures = sheetMetalFeatures.FoldFeatures
     End Sub
 
     Public Function GetKeyLine(docu As Inventor.Document) As SketchLines3D

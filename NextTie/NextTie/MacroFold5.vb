@@ -63,7 +63,35 @@ Public Class MacroFold5
 
         done = False
     End Sub
+    Public Function MakeThirdFold() As Boolean
+        Try
+            Return MakeOddFold("f3")
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+        Return False
+    End Function
     Public Function MakeFifthFold() As Boolean
+        Try
+            Return MakeOddFold("f5")
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+        Return False
+    End Function
+    Public Function MakeSeventhFold() As Boolean
+        Try
+            Return MakeOddFold("f7")
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+        Return False
+    End Function
+
+    Public Function MakeOddFold(s As String) As Boolean
         Try
             If GetWorkFace().SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
                 If mainSketch.DrawTrobinaCurve(nombrador.GetQNumber(doku), nombrador.GetNextSketchName(doku)).Construction Then
@@ -75,7 +103,6 @@ Public Class MacroFold5
                                 Dim sl As SketchLine3D
                                 sl = bandLines(1)
                                 If bender.GetBendLine(workFace, sl).Length > 0 Then
-
                                     sl = bandLines(2)
                                     Dim ed As Edge
                                     ed = GetMajorEdge(workFace)
@@ -84,28 +111,18 @@ Public Class MacroFold5
                                     Else
                                         ed = minorEdge
                                     End If
-
                                     If bender.GetFoldingAngle(ed, sl).Parameter._Value > 0 Then
                                         comando.MakeInvisibleSketches(doku)
                                         comando.MakeInvisibleWorkPlanes(doku)
                                         folded = bender.FoldBand(bandLines.Count)
                                         folded = CheckFoldSide(folded)
-                                        Try
-                                            If monitor.IsFeatureHealthy(sheetMetalFeatures.FoldFeatures.Item("f5")) Then
-                                                folded.Name = "f7"
-                                            End If
-                                        Catch ex As Exception
-                                            folded.Name = "f5"
-                                        End Try
-
+                                        folded.Name = s
                                         doku.Update2(True)
                                         If monitor.IsFeatureHealthy(folded) Then
                                             doku.Save2(True)
                                             done = 1
                                             Return True
                                         End If
-
-
                                     End If
 
                                 End If
@@ -447,6 +464,7 @@ Public Class MacroFold5
             constructionLines.Add(l)
 
 
+
             lastLine = l
 
             Return l
@@ -463,8 +481,8 @@ Public Class MacroFold5
             Dim v As Vector
             Dim pl As Plane
             pl = tg.CreatePlaneByThreePoints(minorLine.EndSketchPoint.Geometry, minorLine.StartSketchPoint.Geometry, majorLine.StartSketchPoint.Geometry)
-            v = pl.Normal.AsVector()
-            v.ScaleBy(GetParameter("b")._Value / 1)
+            v = initialPlane.Normal.AsVector
+            v.ScaleBy(-1)
             endPoint = firstLine.EndSketchPoint.Geometry
             endPoint.TranslateBy(v)
             ol = constructionLines(1)
@@ -473,13 +491,16 @@ Public Class MacroFold5
             gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, firstLine)
             Dim dc As DimensionConstraint3D
             dc = sk3D.DimensionConstraints3D.AddLineLength(l)
-            If adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value / 1) Then
-                gc.Delete()
-                l.Construction = True
-                constructionLines.Add(l)
+            Try
+                dc.Parameter._Value = GetParameter("b")._Value
+            Catch ex As Exception
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value / 1)
+                dc.Parameter._Value = GetParameter("b")._Value
+            End Try
 
-            End If
-
+            gc.Delete()
+            l.Construction = True
+            constructionLines.Add(l)
 
 
 
@@ -503,6 +524,11 @@ Public Class MacroFold5
             gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, ol)
             gc = sk3D.GeometricConstraints3D.AddCoincident(ol.EndPoint, l)
             gapVertex.Driven = False
+            Try
+                adjuster.GetMinimalDimension(gapVertex)
+            Catch ex As Exception
+                gapVertex.Driven = True
+            End Try
             lastLine = l
             bandLines.Add(l)
             secondLine = lastLine
@@ -570,15 +596,17 @@ Public Class MacroFold5
     End Function
     Function GetAdjacentEdge() As Edge
         Try
-            Dim m1, m2 As Double
-            Dim va, vb As Vector
-
+            Dim m1, m2, d As Double
+            Dim va, vb, v1, v2 As Vector
+            v1 = bendEdge.StartVertex.Point.VectorTo(bendEdge.StopVertex.Point)
             m1 = 0
             vb = followEdge.StartVertex.Point.VectorTo(followEdge.StopVertex.Point)
             For Each eda As Edge In adjacentFace.Edges
                 va = eda.StartVertex.Point.VectorTo(eda.StopVertex.Point)
-                If va.DotProduct(vb) > m1 Then
-                    m2 = m1
+                v2 = v1.CrossProduct(va)
+                d = va.DotProduct(vb) * v2.Length
+                If d > m1 Then
+                    m1 = d
                     adjacentEdge = eda
                 End If
             Next
@@ -675,34 +703,110 @@ Public Class MacroFold5
         End Try
     End Function
     Function AdjustLastAngle() As Boolean
+
         Try
-            Dim fourLine, sixthLine, cl3 As SketchLine3D
-            Dim dc As TwoLineAngleDimConstraint3D
-            Dim limit As Double = 0.08
+                Dim fourLine, sixthLine, cl3, cl2 As SketchLine3D
+                Dim dc As TwoLineAngleDimConstraint3D
+                Dim limit As Double = 0.1
+                Dim counterLimit As Integer = 0
 
-            Dim b As Boolean = False
+                Dim d As Double
 
-            fourLine = bandLines.Item(2)
-            sixthLine = bandLines.Item(4)
-            cl3 = constructionLines.Item(3)
+                Dim b As Boolean = False
+                fourLine = bandLines.Item(2)
+                sixthLine = bandLines.Item(4)
+                cl3 = constructionLines.Item(3)
+                cl2 = constructionLines.Item(2)
             dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
+            dc.Driven = True
+            d = CalculateRoof()
+            If d > 0 Then
 
-            If adjuster.AdjustGapLimitSmothly(gapFold, gap1CM, dc, limit) Then
-                b = True
-            Else
-                dc.Driven = True
+
+                If adjuster.AdjustGapSmothly(gapFold, gap1CM, dc) Then
+                    b = True
+                Else
+                    dc.Driven = True
                     gapFold.Delete()
                     gapFold = sk3D.DimensionConstraints3D.AddLineLength(cl3)
                     b = True
                 End If
+            Else
+                Try
 
+                    dc.Driven = True
+                    While ((d < 0 Or dc.Parameter._Value > Math.PI - limit / 2) And counterLimit < 32)
+                        Try
+                            gapFold.Driven = False
+                            adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 17 / 16)
+                            gapFold.Driven = True
+                            doku.Update2()
 
+                        Catch ex2 As Exception
+                            counterLimit = counterLimit + 1
+                            gapFold.Driven = True
+                        End Try
+                        d = CalculateRoof()
+                        counterLimit = counterLimit + 1
+                    End While
+                    gapFold.Driven = False
+                    b = True
+                Catch ex As Exception
+                    Try
+                        gapFold.Delete()
+                    Catch ex3 As Exception
+                    End Try
+                    gapFold = sk3D.DimensionConstraints3D.AddLineLength(cl3)
+                    b = True
+                End Try
+            End If
+            Try
+                gapFold.Driven = True
+                dc.Driven = False
+                Try
+                    gapVertex.Driven = False
+                    adjuster.GetMinimalDimension(gapVertex)
+                Catch ex As Exception
+                    gapVertex.Driven = True
+                End Try
+                dc.Driven = True
+                gapFold.Driven = False
+
+            Catch ex As Exception
+                gapFold.Driven = True
+            End Try
             Return b
-        Catch ex As Exception
-            MsgBox(ex.ToString())
-            Return Nothing
-        End Try
+            Catch ex As Exception
+                MsgBox(ex.ToString())
+                Return Nothing
+            End Try
+    End Function
+    Function CalculateRoof() As Double
+        Dim fourLine, sixthLine, cl3, cl2 As SketchLine3D
 
+
+        Dim v1, v2, v3, v4, vfl, vnwf, vflnwf, vcp As Vector
+        Dim d, e As Double
+        Dim i As Integer
+
+
+        fourLine = bandLines.Item(2)
+        sixthLine = bandLines.Item(4)
+        cl3 = constructionLines.Item(3)
+        cl2 = constructionLines.Item(2)
+        v3 = firstLine.StartSketchPoint.Geometry.VectorTo(sixthLine.EndSketchPoint.Geometry)
+        v2 = fourLine.EndSketchPoint.Geometry.VectorTo(fourLine.StartSketchPoint.Geometry)
+        v4 = cl2.Geometry.Direction.AsVector
+        v1 = v2.CrossProduct(v3)
+        vfl = firstLine.Geometry.Direction.AsVector
+        vnwf = initialPlane.Normal.AsVector
+        vnwf.ScaleBy(-1)
+        vflnwf = vfl.CrossProduct(vnwf)
+        vcp = compDef.WorkPoints.Item(1).Point.VectorTo(firstLine.EndSketchPoint.Geometry)
+        e = vcp.DotProduct(vflnwf)
+        d = v1.DotProduct(v4)
+
+        Return d * e
     End Function
     Public Function GetParameter(name As String) As Parameter
         Dim p As Parameter = Nothing

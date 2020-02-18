@@ -228,7 +228,7 @@ Public Class Cortador
         lamp.HighLighFace(cutFace)
         Return cutFace
     End Function
-    Function LastCutProfil(firstLine As SketchLine3D, sesondLine As SketchLine3D) As Profile
+    Function LastCutProfil(firstLine As SketchLine3D, secondLine As SketchLine3D) As Profile
         Try
             Dim pro As Profile
             'lamp.HighLighFace(maxface1)

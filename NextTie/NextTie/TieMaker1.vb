@@ -56,9 +56,9 @@ Public Class TieMaker1
     Dim twistPlane As WorkPlane
     Dim refDoc As FindReferenceLine
     Dim doblez1 As InitFold
-    Dim doblez2 As MicroFold
-    Dim doblez3 As MacroFold
-    Dim doblez4 As MicroFold4
+    Dim doblez2 As MicroFold6
+    Dim doblez3 As MacroFold5
+    Dim doblez4 As MicroFold6
     Dim doblez5 As MacroFold5
     Dim doblez6 As MicroFold6
     Dim doblez7 As MacroFold5
@@ -145,22 +145,22 @@ Public Class TieMaker1
         Try
             Select Case i
                 Case 1
-                    doblez2 = New MicroFold(doblez1.doku)
+                    doblez2 = New MicroFold6(doblez1.doku)
                     If doblez2.MakeSecondFold() Then
                         doku = doblez2.doku
                         MakeRestTie(i + 1)
 
                     End If
                 Case 2
-                    doblez3 = New MacroFold(doblez2.doku)
+                    doblez3 = New MacroFold5(doblez2.doku)
                     If doblez3.MakeThirdFold() Then
                         doku = doblez3.doku
                         MakeRestTie(i + 1)
 
                     End If
                 Case 3
-                    doblez4 = New MicroFold4(doblez3.doku)
-                    If doblez4.MakeForthFold() Then
+                    doblez4 = New MicroFold6(doblez3.doku)
+                    If doblez4.MakeFourthFold() Then
                         doku = doblez4.doku
                         MakeRestTie(i + 1)
                     End If
@@ -173,15 +173,8 @@ Public Class TieMaker1
                 Case 5
                     doblez6 = New MicroFold6(doblez5.doku)
                     If doblez6.MakeSixthFold() Then
-                        manager.Update(doblez6.doku)
-                        If manager.IsReadyForLastFold() Then
-                            comando.MakeInvisibleSketches(doku)
-                            MakeRestTie(10)
-                        Else
-                            comando.MakeInvisibleSketches(doku)
-                            MakeRestTie(i + 1)
-                        End If
-
+                        doku = doblez6.doku
+                        MakeRestTie(i + 1)
                     End If
                 Case 6
                     manager.Update(doblez6.doku)
@@ -191,7 +184,7 @@ Public Class TieMaker1
                     Else
                         comando.MakeInvisibleSketches(doku)
                         doblez7 = New MacroFold5(doblez6.doku)
-                        If doblez7.MakeFifthFold() Then
+                        If doblez7.MakeSeventhFold() Then
                             doku = doblez7.doku
                             MakeRestTie(i + 1)
                         End If
@@ -240,15 +233,15 @@ Public Class TieMaker1
                 Return doku
             Case 2
                 CreateFoldObjects(i - 1)
-                doblez2 = New MicroFold(doblez1.doku)
+                doblez2 = New MicroFold6(doblez1.doku)
 
             Case 3
                 CreateFoldObjects(i - 1)
-                doblez3 = New MacroFold(doblez2.doku)
+                doblez3 = New MacroFold5(doblez2.doku)
 
             Case 4
                 CreateFoldObjects(i - 1)
-                doblez4 = New MicroFold4(doblez3.doku)
+                doblez4 = New MicroFold6(doblez3.doku)
             Case 5
                 CreateFoldObjects(i - 1)
                 doblez5 = New MacroFold5(doblez4.doku)

@@ -554,6 +554,7 @@ Public Class SketchAdjust
             'comando.UndoCommand()
             Debug.Print(ex.ToString())
             Debug.Print("Fail adjusting " & pit.Name & " ...last value:" & pit.Value.ToString)
+            RecoveryUnhealthySketch(oSk3D)
             errorCounter = errorCounter + 1
             GetMinimalDimension(dc)
             Return False
@@ -686,17 +687,26 @@ Public Class SketchAdjust
         Try
             compDef = sk.Parent
             oPartDoc = compDef.Document
+            Dim skerror As Integer = skcounter
             While Not monitor.IsSketch3dhHealthy(sk)
-                comando.UndoCommand()
-                oPartDoc.Update2()
-                If (Not monitor.IsSketch3dhHealthy(sk)) And skcounter < 100 Then
-                    skcounter = skcounter + 1
+                For index = 1 To skerror + 1
                     comando.UndoCommand()
+                Next
+                oPartDoc.Update2(True)
+
+                If Not monitor.IsSketch3dhHealthy(sk) Then
+                    skcounter = skcounter + 1
                     RecoveryUnhealthySketch(sk)
+                Else
+                    skerror = 0
                 End If
 
 
+
+
             End While
+            skcounter = 0
+
             Return sk
         Catch ex As Exception
             MsgBox(ex.ToString())

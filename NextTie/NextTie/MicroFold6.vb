@@ -59,6 +59,28 @@ Public Class MicroFold6
 
         done = False
     End Sub
+    Public Function MakeSecondFold() As Boolean
+        Try
+            Return MakeEvenFold("f2")
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+        Return False
+    End Function
+    Public Function MakeFourthFold() As Boolean
+        Try
+            Return MakeEvenFold("f4")
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+        Return False
+    End Function
     Public Function MakeSixthFold() As Boolean
         Try
             Return MakeEvenFold("f6")
@@ -573,7 +595,7 @@ Public Class MicroFold6
             parallel = sk3D.GeometricConstraints3D.AddParallel(l, secondLine)
             Return parallel
         Catch ex As Exception
-
+            Dim errorCounter As Integer = 0
             Dim ac1 As DimensionConstraint3D
             Dim cl As SketchLine3D
             cl = sk3D.SketchLines3D.AddByTwoPoints(firstLine.StartPoint, farPoint)
@@ -581,19 +603,36 @@ Public Class MicroFold6
             gc = sk3D.GeometricConstraints3D.AddParallel(cl, secondLine)
             ac1 = sk3D.DimensionConstraints3D.AddTwoLineAngle(cl, l)
             If ac1.Parameter._Value < Math.PI / 2 Then
-                If adjuster.GetMinimalDimension(ac1) Then
-                Else
-                    ac1.Driven = True
-                End If
+                While (ac1.Parameter._Value > 0 And errorCounter < 4)
+                    Try
+                        adjuster.GetMinimalDimension(ac1)
+                        errorCounter = errorCounter + 1
+                    Catch ex2 As Exception
+                        ac1.Driven = True
+                        errorCounter = errorCounter + 1
+                    End Try
+                End While
+                errorCounter = 0
+
+
+
             Else
-                If adjuster.GetMaximalDimension(ac1) Then
-                Else
+                Try
+                    adjuster.AdjustDimensionConstraint3DSmothly(ac1, Math.PI)
+                Catch ex4 As Exception
                     ac1.Driven = True
-                End If
+                End Try
+
             End If
             cl.Construction = True
+            ac1.Driven = True
+            Try
+                parallel = sk3D.GeometricConstraints3D.AddParallel(l, secondLine)
+            Catch ex3 As Exception
 
-            Return ac1
+            End Try
+
+            Return gc
         End Try
     End Function
     Function AdjustLineLenghtSmothly(dc As LineLengthDimConstraint3D, v As Double) As Boolean

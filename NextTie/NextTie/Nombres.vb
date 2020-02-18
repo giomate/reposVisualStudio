@@ -103,6 +103,19 @@ Public Class Nombres
 
         Return sn
     End Function
+    Public Function GetCurrentSketchNumber(docu As Inventor.Document) As Integer
+        Dim s(), sn As String
+        Dim i As Integer = 0
+
+        While Not ContainSFirst(compDef.Sketches3D.Item(compDef.Sketches3D.Count - i).Name)
+            i = i + 1
+        End While
+        sn = compDef.Sketches3D.Item(compDef.Sketches3D.Count - i).Name
+        s = Strings.Split(sn, "s")
+
+
+        Return CInt(s(1))
+    End Function
     Public Function GetFeatureNumber(f As FoldFeature) As Integer
         Dim s(), sn As String
         Dim i As Integer = 0
