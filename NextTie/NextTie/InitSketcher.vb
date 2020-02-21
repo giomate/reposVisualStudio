@@ -8,7 +8,7 @@ Public Class InitSketcher
     Dim app As Application
     Public sk3D, refSk As Sketch3D
     Dim lines3D As SketchLines3D
-    Public refLine, firstLine, secondLine, thirdLine, lastLine, twistLine, inputLine As SketchLine3D
+    Public refLine, firstLine, secondLine, thirdLine, lastLine, twistLine, inputLine, kanteLine As SketchLine3D
     Public curve, refCurve As SketchEquationCurve3D
     Public done, healthy As Boolean
     Dim curve3D As Curves3D
@@ -23,6 +23,8 @@ Public Class InitSketcher
     Dim nombrador As Nombres
     Dim metro, gapFold As DimensionConstraint3D
     Dim startPoint As GeometricConstraint3D
+    Dim sheetMetalFeatures As SheetMetalFeatures
+    Dim compDef As SheetMetalComponentDefinition
     Public ID1, ID2 As Integer
     Dim k1(), k2() As Byte
     Dim backwards As Boolean
@@ -48,7 +50,8 @@ Public Class InitSketcher
         doku = docu
         app = doku.Parent
         comando = New Commands(app)
-
+        compDef = doku.ComponentDefinition
+        SheetMetalFeatures = compDef.Features
         curve3D = New Curves3D(doku)
         monitor = New DesignMonitoring(doku)
         adjuster = New SketchAdjust(doku)
@@ -89,6 +92,8 @@ Public Class InitSketcher
         DrawTrobinaCurve(q)
         DrawInitialLine(refLine)
         comando.TopRightView()
+        compDef = doku.ComponentDefinition
+        sheetMetalFeatures = compDef.Features
         If sk3D.SketchLines3D.Count > 0 Then
 
             DrawLines()
@@ -146,8 +151,10 @@ Public Class InitSketcher
         End If
 
         refLine = refDoc.GetKeyLine()
+        kanteLine = refDoc.GetKanteLine()
         doku.Activate()
-
+        compDef = doku.ComponentDefinition
+        sheetMetalFeatures = compDef.Features
         curve = DrawTrobinaCurveFitted(q)
         DrawInitialLine(refLine)
         refLine.Construction = True
@@ -533,22 +540,33 @@ Public Class InitSketcher
     End Function
     Function DrawSecondConstructionLine() As SketchLine3D
         Try
-            Dim v1, v2, v3 As Vector
-            Dim l, pl As SketchLine3D
+            Dim v1, v2, v3, vk As Vector
+            Dim l, kl As SketchLine3D
             Dim endPoint As Point
             v1 = firstLine.EndSketchPoint.Geometry.VectorTo(firstLine.StartSketchPoint.Geometry)
             v2 = secondLine.EndSketchPoint.Geometry.VectorTo(secondLine.StartSketchPoint.Geometry)
             v3 = v1.CrossProduct(v2).AsUnitVector().AsVector()
             v3.ScaleBy(gapFoldCM)
+            kl = sk3D.SketchLines3D.AddByTwoPoints(kanteLine.StartSketchPoint.Geometry, kanteLine.EndSketchPoint.Geometry, False)
+
+            vk = kl.Geometry.Direction.AsVector
+            vk.ScaleBy(-1)
             If backwards Then
                 v3.ScaleBy(-1)
             End If
             endPoint = secondLine.StartSketchPoint.Geometry
-            endPoint.TranslateBy(v3)
-            l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.StartSketchPoint.Geometry, endPoint, False)
-            endPoint.TranslateBy(v3)
-            gapFold = sk3D.DimensionConstraints3D.AddLineLength(l, endPoint, False)
+            endPoint.TranslateBy(vk)
 
+            kl.Construction = True
+            l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.StartSketchPoint.Geometry, endPoint, False)
+
+            gapFold = sk3D.DimensionConstraints3D.AddLineLength(l)
+            Try
+                gapFold.Parameter._Value = gapFoldCM
+            Catch ex As Exception
+                adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
+                gapFold.Parameter._Value = gapFoldCM
+            End Try
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, secondLine)
             'sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, firstLine)
             sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
@@ -803,29 +821,36 @@ Public Class InitSketcher
         Dim fourLine, sixthLine, cl3, cl2 As SketchLine3D
 
 
-        Dim v1, v2, v3, v4 As Vector
-        Dim d As Double
+        Dim v1, v2, v3, v4, vfl, vnwf, vflnwf, vcp As Vector
+        Dim d, e As Double
+
+        Try
+            fourLine = bandLines.Item(4)
+            sixthLine = bandLines.Item(6)
+            cl3 = constructionLines.Item(3)
+            cl2 = constructionLines.Item(2)
+            v3 = firstLine.StartSketchPoint.Geometry.VectorTo(sixthLine.EndSketchPoint.Geometry)
+            v2 = fourLine.Geometry.Direction.AsVector
+
+            v4 = cl3.Geometry.Direction.AsVector
 
 
+            vfl = firstLine.Geometry.Direction.AsVector
+            vnwf = kanteLine.Geometry.Direction.AsVector
+            vnwf.ScaleBy(-1)
+            vcp = compDef.WorkPoints.Item(1).Point.VectorTo(firstLine.EndSketchPoint.Geometry)
+            vflnwf = vfl.CrossProduct(vnwf)
+            e = vcp.DotProduct(vflnwf)
+            v1 = v2.CrossProduct(v3)
+            d = v1.DotProduct(v4)
 
-        fourLine = bandLines.Item(4)
-        sixthLine = bandLines.Item(6)
-        cl3 = constructionLines.Item(3)
-        cl2 = constructionLines.Item(2)
-        v3 = firstLine.StartSketchPoint.Geometry.VectorTo(sixthLine.EndSketchPoint.Geometry)
-        v2 = fourLine.Geometry.Direction.AsVector
-
-        v4 = cl3.Geometry.Direction.AsVector
-        If backwards Then
-        Else
-            v4.ScaleBy(-1)
-        End If
+            Return d * e
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
 
 
-        v1 = v2.CrossProduct(v3)
-        d = v1.DotProduct(v4)
-
-        Return d
     End Function
     Function AdjustTwoPointsSmothly(dc As TwoPointDistanceDimConstraint3D, v As Double) As Boolean
 

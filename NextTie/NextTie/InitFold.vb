@@ -5,7 +5,7 @@ Public Class InitFold
     Dim app As Application
     Dim sk3D, refSk As Sketch3D
     Dim lines3D As SketchLines3D
-    Dim refLine, firstLine, secondLine, thirdLine, lastLine As SketchLine3D
+    Dim refLine, firstLine, secondLine, thirdLine, lastLine, kanteLine As SketchLine3D
     Dim curve, refCurve As SketchEquationCurve3D
     Public done, healthy As Boolean
     Dim curve3D As Curves3D
@@ -140,6 +140,7 @@ Public Class InitFold
                 If mainSketch.done Then
                     doku.ComponentDefinition.Sketches3D.Item("s1").Visible = False
                     If DrawBandStripe().Count > 0 Then
+                        kanteLine = refDoc.GetKanteLine()
                         If MakeStartingFace(faceProfile).GetHashCode > 0 Then
                             If GetWorkFace().Evaluator.Area > 0 Then
                                 If GetBendLine(workface, mainSketch.thirdLine).Length > 0 Then
@@ -232,7 +233,7 @@ Public Class InitFold
         compDef = oSheetMetalCompDef
         Dim oFaceFeatureDefinition As FaceFeatureDefinition
         oFaceFeatureDefinition = oSheetMetalFeatures.FaceFeatures.CreateFaceFeatureDefinition(pro)
-        If backwards Then
+        If CalculateFaceDirection() < 0 Then
             oFaceFeatureDefinition.Direction = PartFeatureExtentDirectionEnum.kPositiveExtentDirection
         Else
             oFaceFeatureDefinition.Direction = PartFeatureExtentDirectionEnum.kNegativeExtentDirection
@@ -242,6 +243,24 @@ Public Class InitFold
         oFaceFeature = oSheetMetalFeatures.FaceFeatures.Add(oFaceFeatureDefinition)
         feature = oFaceFeature
         Return oFaceFeature
+    End Function
+    Function CalculateFaceDirection() As Integer
+
+        Dim d As Double
+        Dim s As Integer
+
+        Try
+            d = kanteLine.Geometry.Direction.AsVector.X
+            If d < 0 Then
+                s = -1
+            Else
+                s = 1
+            End If
+            Return s
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
     End Function
     Function FoldBand() As FoldFeature
         Try

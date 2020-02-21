@@ -382,14 +382,26 @@ Public Class OriginSketch
     Function DrawThirdConstructionLine() As SketchLine3D
         Try
             Dim l As SketchLine3D = Nothing
-            Dim otherLine, cl As SketchLine3D
+            Dim bl4, cl1 As SketchLine3D
+            Dim dc As DimensionConstraint3D
+            Dim gc As GeometricConstraint3D
 
-            otherLine = bandLines.Item(4)
-            cl = constructionLines.Item(1)
-            l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.EndPoint, otherLine.Geometry.MidPoint, False)
-            sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, otherLine)
-            sk3D.GeometricConstraints3D.AddPerpendicular(l, otherLine)
-            sk3D.GeometricConstraints3D.AddEqual(l, cl)
+            bl4 = bandLines.Item(4)
+            cl1 = constructionLines.Item(1)
+            l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.EndPoint, bl4.Geometry.MidPoint, False)
+            sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, bl4)
+            sk3D.GeometricConstraints3D.AddPerpendicular(l, bl4)
+            dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+            dc.Driven = True
+            Try
+                gc = sk3D.GeometricConstraints3D.AddEqual(l, cl1)
+            Catch ex As Exception
+                dc.Driven = False
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value)
+                dc.Driven = True
+                sk3D.GeometricConstraints3D.AddPerpendicular(l, bl4)
+            End Try
+
             l.Construction = True
 
             constructionLines.Add(l)
@@ -406,15 +418,15 @@ Public Class OriginSketch
         Try
             Dim c As Integer
             Dim l, fl As SketchLine3D
-            Dim ol, cl As SketchLine3D
+            Dim bl4, cl As SketchLine3D
             Dim dc As TwoPointDistanceDimConstraint3D
             Dim dc2, dcbl1, dcbl4 As DimensionConstraint3D
             Dim gc As GeometricConstraint3D
-            ol = bandLines.Item(4)
+            bl4 = bandLines.Item(4)
             cl = constructionLines.Item(3)
-            l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.EndSketchPoint.Geometry, ol.StartSketchPoint.Geometry, False)
+            l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.EndSketchPoint.Geometry, bl4.StartSketchPoint.Geometry, False)
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, curve)
-            sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, ol)
+            sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, bl4)
             fl = bandLines.Item(4)
             dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(l.EndPoint, cl.EndPoint)
             If AdjustTwoPointsSmothly(dc, 1 / 10) Then
@@ -429,12 +441,12 @@ Public Class OriginSketch
                     dc2.Driven = True
                 End If
                 Try
-                    sk3D.GeometricConstraints3D.AddPerpendicular(l, ol)
+                    sk3D.GeometricConstraints3D.AddPerpendicular(l, bl4)
                 Catch ex As Exception
                     dc2.Driven = False
                     adjuster.AdjustDimensionConstraint3DSmothly(dc2, GetParameter("b")._Value)
                     dc2.Driven = True
-                    sk3D.GeometricConstraints3D.AddPerpendicular(l, ol)
+                    sk3D.GeometricConstraints3D.AddPerpendicular(l, bl4)
                 End Try
 
                 Try
@@ -465,11 +477,12 @@ Public Class OriginSketch
                         'gc.Delete()
                         gc = sk3D.GeometricConstraints3D.AddEqual(l, cl)
                     Catch ex3 As Exception
-                        gc.Delete()
+                        dc2.Driven = False
+                        adjuster.AdjustDimensionConstraint3DSmothly(dc2, GetParameter("b")._Value)
+                        dc2.Driven = True
+                        gc = sk3D.GeometricConstraints3D.AddEqual(l, cl)
                     End Try
                 End Try
-
-
                 gc = sk3D.GeometricConstraints3D.AddCoincident(fl.EndPoint, curve)
             Else
                 dc.Driven = True

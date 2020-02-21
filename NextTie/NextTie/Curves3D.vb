@@ -77,7 +77,7 @@ Public Class Curves3D
     Public Function DrawTrobinaCurve(sk As Sketch3D, q As Integer, d As Double, f As Integer) As SketchEquationCurve3D
         Dim g As Integer = 0
         If f > 6 Then
-            g = f - 6
+            g = f - 3
         End If
         sk.Edit()
         Dim r, z As String
@@ -87,7 +87,6 @@ Public Class Curves3D
         curve = sk.SketchEquationCurves3D.Add(CoordinateSystemTypeEnum.kCylindrical, r, " t * 1rad * p", z, (f - 7) * Math.PI / (DP.p * 16) * d + t, (f + 1 + g * 4 / 3) * Math.PI / (DP.p * 16) * d + t)
         curve.Construction = True
         sk.ExitEdit()
-
         Return curve
     End Function
     Public Function DrawLowerRing(sk As Sketch3D) As SketchEquationCurve3D

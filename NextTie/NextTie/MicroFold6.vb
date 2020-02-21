@@ -444,6 +444,7 @@ Public Class MicroFold6
             v = lastLine.Geometry.Direction.AsVector()
             Dim p As Plane
             Dim optpoint As Point = Nothing
+            Dim f As Double
             p = tg.CreatePlane(lastLine.EndSketchPoint.Geometry, v)
             Dim minDis As Double = 9999999999
             Dim d As Double
@@ -465,6 +466,7 @@ Public Class MicroFold6
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
             Dim dc As DimensionConstraint3D
             dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(firstLine, minorLine)
+
             If adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 9 / 10) Then
             Else
                 adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 11 / 12)
@@ -476,6 +478,18 @@ Public Class MicroFold6
                 adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 9 / 8)
             End If
             dc.Delete()
+
+            If sk3D.Name = "s8" Then
+                dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(firstLine, minorLine)
+                Try
+
+                    adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 4 / 5)
+                Catch ex As Exception
+
+                End Try
+                dc.Delete()
+
+            End If
             tiltAngle = sk3D.DimensionConstraints3D.AddTwoLineAngle(firstLine, minorLine)
             tiltAngle.Driven = True
             point3 = l.EndSketchPoint.Geometry
@@ -521,8 +535,8 @@ Public Class MicroFold6
     Function DrawFirstConstructionLine() As SketchLine3D
         Try
             Dim l As SketchLine3D = Nothing
-            Dim endPoint As Point
-            Dim v As Vector
+
+
             l = sk3D.SketchLines3D.AddByTwoPoints(thirdLine.EndPoint, firstLine.EndSketchPoint.Geometry, False)
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, secondLine)
             sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)

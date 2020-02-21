@@ -26,8 +26,19 @@ Public Class FindReferenceLine
         line = line3D.Item(line3D.Count)
         Return line
     End Function
+    Public Function GetKanteLine() As SketchLine3D
+
+        line3D = OpenKanteSketch(oDoc).SketchLines3D
+        Debug.Print("Number of lines:  " & line3D.Count.ToString)
+        line = line3D.Item(line3D.Count)
+        Return line
+    End Function
     Function OpenLastSketch(oDoc As PartDocument) As Sketch3D
         sk3D = oDoc.ComponentDefinition.Sketches3D.Item("last")
+        Return sk3D
+    End Function
+    Function OpenKanteSketch(oDoc As PartDocument) As Sketch3D
+        sk3D = oDoc.ComponentDefinition.Sketches3D.Item("kante")
         Return sk3D
     End Function
     Public Function OpenMainSketch(docu As PartDocument) As Sketch3D

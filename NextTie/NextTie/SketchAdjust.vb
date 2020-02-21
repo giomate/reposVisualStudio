@@ -175,8 +175,6 @@ Public Class SketchAdjust
             GetDimension(variable).Driven = False
         Next
 
-
-
     End Sub
     Public Function getParameter(name As String) As Parameter
         Try
@@ -600,7 +598,6 @@ Public Class SketchAdjust
                         resolution = resolution * (1 + 4 / CDbl(climit))
                         GetMaximalDimension(dc)
                     Else
-
                         errorCounter = 0
                         Return True
                     End If
