@@ -8,7 +8,7 @@ Public Class OriginSketch
     Dim app As Application
     Public sk3D, refSk As Sketch3D
     Dim lines3D As SketchLines3D
-    Public refLine, firstLine, secondLine, thirdLine, lastLine, twistLine, inputLine, doblezline, centroLine As SketchLine3D
+    Public refLine, firstLine, secondLine, thirdLine, lastLine, twistLine, inputLine, doblezline, centroLine, gapFoldLine As SketchLine3D
     Public curve, refCurve As SketchEquationCurve3D
     Public done, healthy As Boolean
     Dim curve3D As Curves3D
@@ -98,12 +98,13 @@ Public Class OriginSketch
         End If
         Return sk3D
     End Function
-    Public Function DrawNextMainSketch(rl As SketchLine3D, tl As SketchLine3D, fl As SketchLine3D) As SketchLine3D
+    Public Function DrawNextMainSketch(rl As SketchLine3D, tl As SketchLine3D, fl As SketchLine3D, gfl As SketchLine3D) As SketchLine3D
 
         twistLine = tl
         doblezline = fl
         sk3D = doku.ComponentDefinition.Sketches3D.Item(doku.ComponentDefinition.Sketches3D.Count)
         refLine = rl
+        gapFoldLine = gfl
         refLine.Construction = True
         curve = sk3D.SketchEquationCurves3D.Item(sk3D.SketchEquationCurves3D.Count)
         If refLine.Length > 0 Then
@@ -313,23 +314,42 @@ Public Class OriginSketch
     End Function
     Function DrawSecondLine() As SketchLine3D
         Try
-            Dim v As Vector = lastLine.StartSketchPoint.Geometry.VectorTo(lastLine.EndSketchPoint.Geometry)
-            Dim p As Plane
+            Dim v1, v2, v3 As Vector
+            v1 = lastLine.StartSketchPoint.Geometry.VectorTo(lastLine.EndSketchPoint.Geometry)
+            v3 = twistLine.StartSketchPoint.Geometry.VectorTo(twistLine.EndSketchPoint.Geometry)
             Dim l As SketchLine3D = Nothing
+            Dim d As Double
+            Dim dc As DimensionConstraint3D
             Dim optpoint As Point = Nothing
-            p = tg.CreatePlane(lastLine.EndSketchPoint.Geometry, v)
+            Dim p As Plane
+            p = tg.CreatePlane(lastLine.EndSketchPoint.Geometry, v1)
             Dim minDis As Double = 9999999999
             For Each o As Point In p.IntersectWithCurve(curve.Geometry)
                 'l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.EndPoint, o, False)
-                If o.DistanceTo(lastLine.EndSketchPoint.Geometry) < minDis Then
-                    minDis = o.DistanceTo(lastLine.EndSketchPoint.Geometry)
-                    optpoint = o
+                v2 = lastLine.EndSketchPoint.Geometry.VectorTo(o)
+                d = v2.DotProduct(v3)
+                If d > 0 Then
+                    If d < minDis Then
+                        minDis = d
+                        optpoint = o
+                    End If
                 End If
-
             Next
-
             l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.EndPoint, optpoint, False)
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
+            Try
+                dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+                If dc.Parameter._Value > GetParameter("b")._Value * 2 Then
+                    Try
+                        adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value)
+                    Catch ex As Exception
+                        dc.Driven = True
+                    End Try
+                End If
+                dc.Driven = True
+            Catch ex As Exception
+                dc.Driven = True
+            End Try
             'metro.Driven = True
             lastLine = l
             bandLines.Add(l)
@@ -383,14 +403,24 @@ Public Class OriginSketch
         Try
             Dim l As SketchLine3D = Nothing
             Dim bl4, cl1 As SketchLine3D
-            Dim dc As DimensionConstraint3D
+            Dim dc, ac As DimensionConstraint3D
             Dim gc As GeometricConstraint3D
 
             bl4 = bandLines.Item(4)
             cl1 = constructionLines.Item(1)
             l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.EndPoint, bl4.Geometry.MidPoint, False)
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, bl4)
-            sk3D.GeometricConstraints3D.AddPerpendicular(l, bl4)
+            ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, bl4)
+            ac.Driven = True
+            Try
+                sk3D.GeometricConstraints3D.AddPerpendicular(l, bl4)
+            Catch ex As Exception
+                ac.Driven = False
+                adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2)
+                ac.Driven = True
+                sk3D.GeometricConstraints3D.AddPerpendicular(l, bl4)
+            End Try
+
             dc = sk3D.DimensionConstraints3D.AddLineLength(l)
             dc.Driven = True
             Try
@@ -520,10 +550,11 @@ Public Class OriginSketch
             Dim v1, v2, v3 As Vector
             Dim l, pl As SketchLine3D
             Dim endPoint As Point
+            Dim dc As DimensionConstraint3D
             v1 = firstLine.EndSketchPoint.Geometry.VectorTo(firstLine.StartSketchPoint.Geometry)
             v2 = secondLine.EndSketchPoint.Geometry.VectorTo(secondLine.StartSketchPoint.Geometry)
-            v3 = v1.CrossProduct(v2).AsUnitVector().AsVector()
-            v3.ScaleBy(gapFoldCM)
+            v3 = gapFoldLine.Geometry.Direction.AsVector
+            v3.ScaleBy(1 * gapFoldCM)
             If sk3D.Name = "s9" Then
                 ' v3.ScaleBy(-1)
             End If
@@ -535,7 +566,15 @@ Public Class OriginSketch
 
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, secondLine)
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, firstLine)
-            sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
+            Try
+                sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
+            Catch ex As Exception
+                dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, secondLine)
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, Math.PI / 2)
+                dc.Driven = True
+                sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
+            End Try
+
 
             lastLine = l
             constructionLines.Add(l)

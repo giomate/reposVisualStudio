@@ -543,6 +543,7 @@ Public Class InitSketcher
             Dim v1, v2, v3, vk As Vector
             Dim l, kl As SketchLine3D
             Dim endPoint As Point
+            Dim dc As DimensionConstraint3D
             v1 = firstLine.EndSketchPoint.Geometry.VectorTo(firstLine.StartSketchPoint.Geometry)
             v2 = secondLine.EndSketchPoint.Geometry.VectorTo(secondLine.StartSketchPoint.Geometry)
             v3 = v1.CrossProduct(v2).AsUnitVector().AsVector()
@@ -569,7 +570,14 @@ Public Class InitSketcher
             End Try
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, secondLine)
             'sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, firstLine)
-            sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
+            Try
+                sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
+            Catch ex As Exception
+                dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, secondLine)
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, Math.PI / 2)
+                dc.Driven = True
+                sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
+            End Try
 
             lastLine = l
             constructionLines.Add(l)

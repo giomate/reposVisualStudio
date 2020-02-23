@@ -160,8 +160,6 @@ Public Class Cortador
                 maxe4 = d
                 e4 = ed
             End If
-
-
         Next
 
         lamp.HighLighObject(e3)
@@ -312,17 +310,11 @@ Public Class Cortador
         End Try
     End Function
     Function InitCutProfil(rl As SketchLine3D) As Profile
-
-
         Try
             'lamp.HighLighFace(maxface1)
             Dim ps As PlanarSketch
-
             ps = compDef.Sketches.Add(cutFace)
-
-
             Dim sl, fl, l, r, u, pfl, cl As SketchLine
-
             fl = ps.AddByProjectingEntity(rl)
             fl.Construction = True
             l = ps.AddByProjectingEntity(GetInitFaceCutEdges(cutFace))

@@ -138,25 +138,13 @@ Public Class MicroFold6
                                                         done = 1
                                                         Return True
                                                     End If
-
-
                                                 End If
-
                                             End If
-
-
                                         End If
-
-
                                     End If
-
                                 End If
-
-
                             End If
-
                         End If
-
                     End If
 
                 End If
@@ -458,8 +446,6 @@ Public Class MicroFold6
                         optpoint = o
                     End If
                 End If
-
-
             Next
             Dim l As SketchLine3D = Nothing
             l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.EndPoint, optpoint, False)
@@ -506,6 +492,8 @@ Public Class MicroFold6
     End Function
     Function DrawThirdLine() As SketchLine3D
         Try
+            Dim dc As DimensionConstraint3D
+            Dim gc As GeometricConstraint3D
             direction = lastLine.Geometry.Direction.AsVector()
             direction.ScaleBy(thickness * 10)
             Dim pt As Point
@@ -514,7 +502,15 @@ Public Class MicroFold6
             pt.TranslateBy(direction)
             Dim l As SketchLine3D = Nothing
             l = sk3D.SketchLines3D.AddByTwoPoints(firstLine.StartPoint, pt, False)
-            sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
+            Try
+                gc = sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
+            Catch ex As Exception
+                dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 2)
+                dc.Driven = True
+                gc = sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
+            End Try
+
             TryParallel(l)
 
 
@@ -535,8 +531,6 @@ Public Class MicroFold6
     Function DrawFirstConstructionLine() As SketchLine3D
         Try
             Dim l As SketchLine3D = Nothing
-
-
             l = sk3D.SketchLines3D.AddByTwoPoints(thirdLine.EndPoint, firstLine.EndSketchPoint.Geometry, False)
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, secondLine)
             sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
@@ -554,6 +548,7 @@ Public Class MicroFold6
 
                 dc.Driven = False
                 If adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value) Then
+                    dc.Parameter._Value = GetParameter("b")._Value
                     ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(thirdLine, l)
                     If adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2) Then
                     Else
@@ -565,8 +560,6 @@ Public Class MicroFold6
 
                 End If
                 TryParallel(thirdLine)
-
-
             End If
 
             l.Construction = True
@@ -605,37 +598,73 @@ Public Class MicroFold6
     End Function
     Function TryParallel(l As SketchLine3D) As GeometricConstraint3D
         Try
-
             parallel = sk3D.GeometricConstraints3D.AddParallel(l, secondLine)
             Return parallel
         Catch ex As Exception
             Dim errorCounter As Integer = 0
-            Dim ac1 As DimensionConstraint3D
+            Dim ac1, dcl2 As DimensionConstraint3D
             Dim cl As SketchLine3D
             cl = sk3D.SketchLines3D.AddByTwoPoints(firstLine.StartPoint, farPoint)
             Dim gc As GeometricConstraint3D
             gc = sk3D.GeometricConstraints3D.AddParallel(cl, secondLine)
             ac1 = sk3D.DimensionConstraints3D.AddTwoLineAngle(cl, l)
+            ac1.Driven = True
+            dcl2 = sk3D.DimensionConstraints3D.AddLineLength(secondLine)
+            dcl2.Driven = True
             If ac1.Parameter._Value < Math.PI / 2 Then
-                While (ac1.Parameter._Value > 0 And errorCounter < 4)
+                While (ac1.Parameter._Value > 0 And errorCounter < 8)
                     Try
+                        ac1.Driven = False
                         adjuster.GetMinimalDimension(ac1)
-                        errorCounter = errorCounter + 1
+                        ac1.Driven = True
                     Catch ex2 As Exception
                         ac1.Driven = True
                         errorCounter = errorCounter + 1
                     End Try
+                    Try
+                        dcl2.Driven = False
+                        adjuster.GetMinimalDimension(dcl2)
+                        dcl2.Driven = True
+                    Catch ex3 As Exception
+                        dcl2.Driven = True
+                        errorCounter = errorCounter + 1
+                    End Try
+                    Try
+                        parallel = sk3D.GeometricConstraints3D.AddParallel(l, secondLine)
+                        errorCounter = 9
+                    Catch ex3 As Exception
+                        errorCounter = errorCounter + 1
+                    End Try
+                    errorCounter = errorCounter + 1
                 End While
                 errorCounter = 0
-
-
-
             Else
-                Try
-                    adjuster.AdjustDimensionConstraint3DSmothly(ac1, Math.PI)
-                Catch ex4 As Exception
-                    ac1.Driven = True
-                End Try
+                While (ac1.Parameter._Value > 0 And errorCounter < 8)
+                    Try
+                        ac1.Driven = False
+                        adjuster.AdjustDimensionConstraint3DSmothly(ac1, Math.PI)
+                        ac1.Driven = True
+                    Catch ex2 As Exception
+                        ac1.Driven = True
+                        errorCounter = errorCounter + 1
+                    End Try
+                    Try
+                        dcl2.Driven = False
+                        adjuster.AdjustDimensionConstraint3DSmothly(dcl2, dcl2.Parameter._Value * 4 / 5)
+                        dcl2.Driven = True
+                    Catch ex3 As Exception
+                        dcl2.Driven = True
+                        errorCounter = errorCounter + 1
+                    End Try
+                    Try
+                        parallel = sk3D.GeometricConstraints3D.AddParallel(l, secondLine)
+                        errorCounter = 9
+                    Catch ex3 As Exception
+                        errorCounter = errorCounter + 1
+                    End Try
+                    errorCounter = errorCounter + 1
+                End While
+                errorCounter = 0
 
             End If
             cl.Construction = True
@@ -643,7 +672,6 @@ Public Class MicroFold6
             Try
                 parallel = sk3D.GeometricConstraints3D.AddParallel(l, secondLine)
             Catch ex3 As Exception
-
             End Try
 
             Return gc

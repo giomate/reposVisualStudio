@@ -7,7 +7,7 @@ Public Class MacroFold5
     Dim app As Application
     Dim sk3D, refSk As Sketch3D
 
-    Dim refLine, firstLine, secondLine, thirdLine, lastLine As SketchLine3D
+    Dim refLine, firstLine, secondLine, thirdLine, lastLine, bendLine3D As SketchLine3D
     Dim curve, refCurve As SketchEquationCurve3D
     Public done, healthy As Boolean
 
@@ -335,39 +335,92 @@ Public Class MacroFold5
     End Function
     Function GetLeadingEdge() As Edge
         Try
-            Dim bl As SketchLine3D
-            Dim pt As Point
+            Dim pt, opt As Point
             Dim minDis As Double = 9999999999
+            Dim minOpt As Double = 999999999
             Dim minEdge As Double = minDis
-            bl = sk3D.Include(bendEdge)
+            Dim l As SketchLine3D
+            bendLine3D = sk3D.Include(bendEdge)
             For Each o As Point In initialPlane.IntersectWithCurve(curve.Geometry)
-                If o.DistanceTo(bl.EndSketchPoint.Geometry) < minDis Then
+                'l = sk3D.SketchLines3D.AddByTwoPoints(o, bendLine3D.EndSketchPoint.Geometry)
+                If o.DistanceTo(bendLine3D.EndSketchPoint.Geometry) < minDis Then
                     minDis = o.DistanceTo(bendEdge.GetClosestPointTo(o))
-                    pt = o
+                    pt = bendEdge.GetClosestPointTo(o)
+                    opt = GetClosestPointTrobina(pt, o)
                     For Each ed As Edge In workFace.Edges
                         If ed.Equals(bendEdge) Then
                         Else
-                            If ed.GetClosestPointTo(o).DistanceTo(bendEdge.GetClosestPointTo(o)) < bl.Length + gap1CM * 2 Then
-                                If ed.GetClosestPointTo(o).DistanceTo(o) < minEdge Then
-                                    minEdge = ed.GetClosestPointTo(o).DistanceTo(o)
-                                    followEdge = leadingEdge
-                                    leadingEdge = ed
-                                Else
-                                    followEdge = ed
+                            If ed.GetClosestPointTo(o).DistanceTo(opt) < minOpt Then
+                                minOpt = ed.GetClosestPointTo(o).DistanceTo(opt)
+                                If ed.GetClosestPointTo(o).DistanceTo(bendEdge.GetClosestPointTo(o)) < bendLine3D.Length + gap1CM * 2 Then
+                                    If ed.GetClosestPointTo(opt).DistanceTo(opt) < minEdge Then
+                                        minEdge = ed.GetClosestPointTo(opt).DistanceTo(opt)
+                                        followEdge = leadingEdge
+                                        leadingEdge = ed
+                                    Else
+                                        followEdge = ed
+                                    End If
                                 End If
-
+                            Else
+                                followEdge = ed
                             End If
                         End If
                     Next
                 End If
             Next
             point1 = pt
-            bl.Construction = True
+            bendLine3D.Construction = True
             Return leadingEdge
         Catch ex As Exception
             MsgBox(ex.ToString())
             Return Nothing
         End Try
+
+    End Function
+    Function GetClosestPointTrobina(b As Point, o As Point) As Point
+        Try
+            Dim l As SketchLine3D
+            Dim dc As DimensionConstraint3D
+            Dim cp As Point
+            l = sk3D.SketchLines3D.AddByTwoPoints(b, o, False)
+            sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, bendLine3D)
+            sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
+            dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+            adjuster.GetMinimalDimension(dc)
+            cp = l.EndSketchPoint.Geometry
+            Try
+                dc.Delete()
+                l.Delete()
+            Catch ex As Exception
+            End Try
+            Return cp
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+    End Function
+    Function GetClosestPointTrobina(o As Point) As Point
+        Try
+            Dim l As SketchLine3D
+            Dim dc As DimensionConstraint3D
+            Dim cp As Point
+            l = sk3D.SketchLines3D.AddByTwoPoints(bendLine3D.EndPoint, o, False)
+            sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
+            dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+            adjuster.GetMinimalDimension(dc)
+            cp = l.EndSketchPoint.Geometry
+            Try
+                dc.Delete()
+                l.Delete()
+            Catch ex As Exception
+
+            End Try
+            Return cp
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
 
     End Function
     Function DrawFirstLine() As SketchLine3D
@@ -404,14 +457,12 @@ Public Class MacroFold5
     Function DrawFirstConstructionLine() As SketchLine3D
         Try
             Dim l As SketchLine3D = Nothing
-
-
             Dim v As Vector = firstLine.Geometry.Direction.AsVector
             Dim p As Plane
             Dim optpoint As Point = Nothing
             p = tg.CreatePlane(firstLine.EndSketchPoint.Geometry, v)
             Dim d As Double
-            Dim minDis As Double = 999999999999999
+            Dim minDis As Double = 999999999999
             Dim vc, vmjl As Vector
             vmjl = firstLine.EndSketchPoint.Geometry.VectorTo(farPoint)
             ' l = sk3D.SketchLines3D.AddByTwoPoints(firstLine.EndPoint, farPoint, False)dmm
@@ -552,7 +603,14 @@ Public Class MacroFold5
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, secondLine)
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, minorLine)
             sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
-            sk3D.GeometricConstraints3D.AddPerpendicular(l, minorLine)
+            Try
+                sk3D.GeometricConstraints3D.AddPerpendicular(l, minorLine)
+            Catch ex As Exception
+                gapVertex.Driven = True
+                sk3D.GeometricConstraints3D.AddPerpendicular(l, minorLine)
+                adjuster.GetMinimalDimension(gapVertex)
+            End Try
+
             Dim dc1, dc2 As DimensionConstraint3D
             pvl = sk3D.Include(GetAdjacentEdge())
             dc1 = sk3D.DimensionConstraints3D.AddLineLength(l)
@@ -560,8 +618,13 @@ Public Class MacroFold5
             sk3D.GeometricConstraints3D.AddCoincident(ol.StartPoint, secondLine)
             sk3D.GeometricConstraints3D.AddCoincident(ol.EndPoint, pvl)
             sk3D.GeometricConstraints3D.AddPerpendicular(ol, secondLine)
-            sk3D.GeometricConstraints3D.AddPerpendicular(ol, pvl)
-
+            Try
+                sk3D.GeometricConstraints3D.AddPerpendicular(ol, pvl)
+            Catch ex As Exception
+                gapVertex.Driven = True
+                sk3D.GeometricConstraints3D.AddPerpendicular(ol, pvl)
+                adjuster.GetMinimalDimension(gapVertex)
+            End Try
             dc2 = sk3D.DimensionConstraints3D.AddLineLength(ol)
             If dc2.Parameter._Value < dc1.Parameter._Value Then
                 l.Delete()
@@ -596,15 +659,17 @@ Public Class MacroFold5
     End Function
     Function GetAdjacentEdge() As Edge
         Try
-            Dim m1, m2, d As Double
-            Dim va, vb, v1, v2 As Vector
+            Dim m1, m2, d, e As Double
+            Dim va, vb, vc, v1, v2 As Vector
             v1 = bendEdge.StartVertex.Point.VectorTo(bendEdge.StopVertex.Point)
             m1 = 0
-            vb = followEdge.StartVertex.Point.VectorTo(followEdge.StopVertex.Point)
+            vb = point1.VectorTo(farPoint)
             For Each eda As Edge In adjacentFace.Edges
                 va = eda.StartVertex.Point.VectorTo(eda.StopVertex.Point)
                 v2 = v1.CrossProduct(va)
-                d = va.DotProduct(vb) * v2.Length
+                vc = eda.GetClosestPointTo(firstLine.EndSketchPoint.Geometry).VectorTo(firstLine.EndSketchPoint.Geometry)
+                e = eda.GetClosestPointTo(point1).DistanceTo(point1)
+                d = vb.DotProduct(vc) * v2.Length * e
                 If d > m1 Then
                     m1 = d
                     adjacentEdge = eda

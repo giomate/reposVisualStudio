@@ -86,8 +86,6 @@ Public Class Nombres
             Return CInt(s(0))
         End If
 
-
-
         Return 0
     End Function
     Public Function GetNextSketchName(docu As Inventor.Document) As String

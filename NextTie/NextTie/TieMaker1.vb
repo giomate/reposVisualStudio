@@ -301,17 +301,26 @@ Public Class TieMaker1
 
     End Function
     Public Function FindLastTie() As PartDocument
-        Dim max As Integer = 0
+        Dim max, max2 As Integer
+        max = 0
+        max2 = 0
         Dim ltn, slt As String
         Dim lastTie As PartDocument
         fullFileNames = Directory.GetFiles(projectManager.ActiveDesignProject.WorkspacePath, "*.ipt")
         For Each s As String In fullFileNames
-            If nombrador.GetFileNumber(s) > max Then
-                max = nombrador.GetFileNumber(s)
-                slt = ltn
-                ltn = s
+            If nombrador.GetFileNumber(s) > max2 Then
+                If nombrador.GetFileNumber(s) > max Then
+                    max2 = max
+                    max = nombrador.GetFileNumber(s)
+                    slt = ltn
+                    ltn = s
+                Else
+                    max2 = nombrador.GetFileNumber(s)
+                    slt = s
 
+                End If
             End If
+
         Next
         lastTie = invDoc.OpenFullFileName(ltn)
         If IsLastTieFinish(lastTie) Then

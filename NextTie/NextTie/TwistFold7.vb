@@ -7,7 +7,7 @@ Public Class TwistFold7
     Dim app As Application
     Dim sk3D, refSk As Sketch3D
 
-    Dim refLine, firstLine, secondLine, thirdLine, lastLine, connectLine, nextLine, centroLine As SketchLine3D
+    Dim refLine, firstLine, secondLine, thirdLine, lastLine, connectLine, nextLine, centroLine, bendLine3D, tangentLine As SketchLine3D
     Dim curve, refCurve As SketchEquationCurve3D
     Public done, healthy As Boolean
 
@@ -40,6 +40,7 @@ Public Class TwistFold7
     Dim workFace, adjacentFace, bendFace, frontBendFace, cutFace, twistFace, nextworkFace As Face
     Dim bendAngle As DimensionConstraint
     Dim gapFold, gapVertex, gapTwist, gapTry, perpendicular1, cruzeta As DimensionConstraint3D
+    Dim equalCl4 As GeometricConstraint3D
     Dim folded As FoldFeature
     Dim sheetMetalFeatures As SheetMetalFeatures
     Dim lamp As Highlithing
@@ -89,7 +90,7 @@ Public Class TwistFold7
                 secondLine = compDef.Sketches3D.Item("secondLine").SketchLines3D.Item(1)
                 nextLine = compDef.Sketches3D.Item("nextLine").SketchLines3D.Item(1)
                 connectLine = compDef.Sketches3D.Item("connectLine").SketchLines3D.Item(1)
-
+                tangentLine = compDef.Sketches3D.Item("tangentLine").SketchLines3D.Item(1)
                 If sheetMetalFeatures.CutFeatures.Count > 0 Then
                     If sheetMetalFeatures.CutFeatures.Item(sheetMetalFeatures.CutFeatures.Count).Name = "lastTwistCut" Then
                         cutfeature = sheetMetalFeatures.CutFeatures.Item(sheetMetalFeatures.CutFeatures.Count)
@@ -189,42 +190,28 @@ Public Class TwistFold7
 
 
             End If
-            f = sheetMetalFeatures.FoldFeatures.Count
             s = RotationDirection()
 
-            If f > 8 Then
-                If s > 0 Then
-                    g = 1
-                    For index = j To j + 3
-                        Math.DivRem(index, 4, k)
-                        Math.DivRem(k + g, 4, l)
-                        sp = esquinas.Item(l + 1)
-                        sk3D = compDef.Sketches3D.Add()
-                        l1 = sk3D.SketchLines3D.AddByTwoPoints(twistFace.Vertices.Item(k + 1).Point, sp.Geometry3d)
-                        pr3d = sk3D.Profiles3D.AddOpen
-                        rails.Add(pr3d)
-                    Next
-                Else
-                    g = 3
-                    For index = j To j + 3
-                        Math.DivRem(index, 4, k)
-                        Math.DivRem(k + g, 4, l)
-                        sp = esquinas.Item(4 - l)
-                        sk3D = compDef.Sketches3D.Add()
-                        l1 = sk3D.SketchLines3D.AddByTwoPoints(twistFace.Vertices.Item(k + 1).Point, sp.Geometry3d)
-                        pr3d = sk3D.Profiles3D.AddOpen
-                        rails.Add(pr3d)
-                    Next
-                End If
 
-            Else
+            If s > 0 Then
                 g = 1
                 For index = j To j + 3
                     Math.DivRem(index, 4, k)
                     Math.DivRem(k + g, 4, l)
                     sp = esquinas.Item(l + 1)
                     sk3D = compDef.Sketches3D.Add()
-                    l1 = sk3D.SketchLines3D.AddByTwoPoints(twistFace.Vertices.Item(4 - k).Point, sp.Geometry3d)
+                    l1 = sk3D.SketchLines3D.AddByTwoPoints(twistFace.Vertices.Item(k + 1).Point, sp.Geometry3d)
+                    pr3d = sk3D.Profiles3D.AddOpen
+                    rails.Add(pr3d)
+                Next
+            Else
+                g = 1
+                For index = j To j + 3
+                    Math.DivRem(index, 4, k)
+                    Math.DivRem(k + g, 4, l)
+                    sp = esquinas.Item(4 - l)
+                    sk3D = compDef.Sketches3D.Add()
+                    l1 = sk3D.SketchLines3D.AddByTwoPoints(twistFace.Vertices.Item(k + 1).Point, sp.Geometry3d)
                     pr3d = sk3D.Profiles3D.AddOpen
                     rails.Add(pr3d)
                 Next
@@ -243,12 +230,13 @@ Public Class TwistFold7
     Function RotationDirection() As Integer
         Dim sign As Integer
         Dim pl As Plane
-        Dim vnpl, vfl, v3 As Vector
-        pl = nextworkFace.Geometry
-        vnpl = pl.Normal.AsVector
+        Dim vcl5, vcl4, v3 As Vector
+
+
         'vnpl.ScaleBy(-1)
-        vfl = firstLine.Geometry.Direction.AsVector
-        v3 = vfl.CrossProduct(vnpl)
+        vcl4 = nextLine.Geometry.Direction.AsVector
+        vcl5 = tangentLine.Geometry.Direction.AsVector
+        v3 = vcl4.CrossProduct(vcl5)
         If v3.Z > 0 Then
             sign = -1
         Else
@@ -259,6 +247,7 @@ Public Class TwistFold7
         Return sign
     End Function
     Public Function MakeLastFold() As FoldFeature
+        Dim cl5 As SketchLine3D
         Try
             If GetWorkFace().SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
                 If curvas3D.DrawTrobinaCurve(nombrador.GetQNumber(doku), nombrador.GetNextSketchName(doku)).Construction Then
@@ -270,7 +259,8 @@ Public Class TwistFold7
                             nextSketch = New OriginSketch(doku)
                             Dim tl As SketchLine3D
                             tl = bandLines.Item(4)
-                            connectLine = nextSketch.DrawNextMainSketch(refLine, tl, firstLine)
+                            cl5 = constructionLines.Item(5)
+                            connectLine = nextSketch.DrawNextMainSketch(refLine, tl, firstLine, cl5)
                             If connectLine.Length > 0 Then
                                 centroLine = nextSketch.centroLine
                                 If ConnectTwistBrigde() Then
@@ -289,9 +279,9 @@ Public Class TwistFold7
                                             Catch ex As Exception
                                                 folded.Name = "f9"
                                             End Try
-
                                             doku.Update2(True)
                                             If monitor.IsFeatureHealthy(folded) Then
+                                                cl5 = constructionLines.Item(5)
                                                 foldFeature = bender.folded
                                                 sk3D = compDef.Sketches3D.Add()
                                                 sk3D.Include(firstLine)
@@ -306,24 +296,19 @@ Public Class TwistFold7
                                                 sk3D = compDef.Sketches3D.Add()
                                                 connectLine = nextSketch.secondLine
                                                 sk3D.Include(connectLine)
-
                                                 sk3D.Name = "connectLine"
+                                                sk3D = compDef.Sketches3D.Add()
+                                                sk3D.Include(cl5)
+                                                sk3D.Name = "tangentLine"
                                                 Return foldFeature
                                             End If
                                         End If
-
                                     End If
                                 End If
                             End If
-
                         End If
                     End If
                 End If
-
-
-
-
-
             End If
             Return Nothing
         Catch ex As Exception
@@ -510,6 +495,7 @@ Public Class TwistFold7
                 pr = ps.Profiles.AddForSolid
 
                 sections.Add(pr)
+                kante3D = l
                 Return pr
             Else
                 Return Nothing
@@ -637,7 +623,7 @@ Public Class TwistFold7
         Try
 
             Dim cnl, nssl As SketchLine3D
-            Dim dc1, dccl, accl, dcadl As DimensionConstraint3D
+            Dim dc1, dccl, accl, dcgvc As DimensionConstraint3D
             Dim gc, gcpp As GeometricConstraint3D
             Dim limit As Integer = 0
             Try
@@ -676,7 +662,7 @@ Public Class TwistFold7
             nssl = nextSketch.secondLine
             accl = sk3D.DimensionConstraints3D.AddTwoLineAngle(cnl, nssl)
             Try
-                While ((gapVertex.Parameter._Value > gap1CM Or accl.Parameter._Value < Math.PI) And limit < 4)
+                While ((gapVertex.Parameter._Value > gap1CM Or accl.Parameter._Value < Math.PI) And limit < 2)
                     Try
                         accl.Driven = False
                         gapVertex.Driven = True
@@ -701,6 +687,36 @@ Public Class TwistFold7
             Catch ex As Exception
                 accl.Driven = True
                 gapVertex.Driven = True
+            End Try
+            Try
+                Try
+                    dcgvc = sk3D.DimensionConstraints3D.AddTwoPointDistance(firstLine.EndPoint, bendEdge.GetClosestPointTo(firstLine.EndSketchPoint.Geometry))
+                    If dcgvc.Parameter._Value < gap1CM / 2 Then
+                        gapVertex.Driven = True
+                        adjuster.AdjustDimensionConstraint3DSmothly(dcgvc, gap1CM / 2)
+                    Else
+                        Try
+                            dcgvc.Driven = True
+                        Catch ex As Exception
+                        End Try
+                    End If
+                Catch ex As Exception
+                    Try
+                        If dcgvc.Parameter._Value < gap1CM / 2 Then
+                            gapVertex.Driven = True
+                            adjuster.AdjustDimensionConstraint3DSmothly(dcgvc, gap1CM / 2)
+                        Else
+                            Try
+                                dcgvc.Driven = True
+                            Catch ex2 As Exception
+                            End Try
+                        End If
+                    Catch ex4 As Exception
+                    End Try
+                End Try
+
+            Catch ex As Exception
+
             End Try
             accl.Driven = True
             cnl.Construction = True
@@ -1032,42 +1048,94 @@ Public Class TwistFold7
     End Function
     Function GetLeadingEdge() As Edge
         Try
-            Dim bl As SketchLine3D
-            Dim pt As Point
-            Dim minDis As Double = 9999999999
+            Dim pt, opt, blep, blsp As Point
+            Dim minDis As Double = 999999999
+            Dim minOpt As Double = 999999999
             Dim minEdge As Double = minDis
-            bl = sk3D.Include(bendEdge)
+            Dim l As SketchLine3D
+            bendLine3D = sk3D.Include(bendEdge)
+
+
             For Each o As Point In initialPlane.IntersectWithCurve(curve.Geometry)
-                If o.DistanceTo(bl.EndSketchPoint.Geometry) < minDis Then
+                'l = sk3D.SketchLines3D.AddByTwoPoints(o, bendLine3D.EndSketchPoint.Geometry)
+
+
+                If o.DistanceTo(bendEdge.GetClosestPointTo(o)) < minDis Then
                     minDis = o.DistanceTo(bendEdge.GetClosestPointTo(o))
-                    pt = o
+                    pt = bendEdge.GetClosestPointTo(o)
+                    opt = GetClosestPointTrobina(pt, o)
                     For Each ed As Edge In workFace.Edges
                         If ed.Equals(bendEdge) Then
                         Else
-                            If ed.GetClosestPointTo(o).DistanceTo(bendEdge.GetClosestPointTo(o)) < bl.Length + gap1CM * 2 Then
-                                If ed.GetClosestPointTo(o).DistanceTo(o) < minEdge Then
-                                    minEdge = ed.GetClosestPointTo(o).DistanceTo(o)
-                                    followEdge = leadingEdge
-                                    leadingEdge = ed
-                                Else
-                                    followEdge = ed
+                            If ed.GetClosestPointTo(o).DistanceTo(opt) < minOpt Then
+                                minOpt = ed.GetClosestPointTo(o).DistanceTo(opt)
+                                If ed.GetClosestPointTo(o).DistanceTo(bendEdge.GetClosestPointTo(o)) < bendLine3D.Length + gap1CM * 2 Then
+                                    If ed.GetClosestPointTo(opt).DistanceTo(opt) < minEdge Then
+                                        minEdge = ed.GetClosestPointTo(opt).DistanceTo(opt)
+                                        followEdge = leadingEdge
+                                        leadingEdge = ed
+                                    Else
+                                        followEdge = ed
+                                    End If
                                 End If
-
+                            Else
+                                followEdge = ed
                             End If
                         End If
-
-
                     Next
                 End If
             Next
-            bl.Construction = True
             point1 = pt
+            bendLine3D.Construction = True
             Return leadingEdge
         Catch ex As Exception
             MsgBox(ex.ToString())
             Return Nothing
         End Try
 
+    End Function
+    Function GetClosestPointTrobina(o As Point) As Point
+        Try
+            Dim l As SketchLine3D
+            Dim dc As DimensionConstraint3D
+            Dim cp As Point
+            l = sk3D.SketchLines3D.AddByTwoPoints(bendLine3D.EndPoint, o, False)
+            sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
+            dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+            adjuster.GetMinimalDimension(dc)
+            cp = l.EndSketchPoint.Geometry
+            Try
+                dc.Delete()
+                l.Delete()
+            Catch ex As Exception
+            End Try
+            Return cp
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+    End Function
+    Function GetClosestPointTrobina(b As Point, o As Point) As Point
+        Try
+            Dim l As SketchLine3D
+            Dim dc As DimensionConstraint3D
+            Dim cp As Point
+            l = sk3D.SketchLines3D.AddByTwoPoints(b, o, False)
+            sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, bendLine3D)
+            sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
+            dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+            adjuster.GetMinimalDimension(dc)
+            cp = l.EndSketchPoint.Geometry
+            Try
+                dc.Delete()
+                l.Delete()
+            Catch ex As Exception
+            End Try
+            Return cp
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
     End Function
     Function DrawFirstLine() As SketchLine3D
         Try
@@ -1217,7 +1285,7 @@ Public Class TwistFold7
             ' dc = sk3D.DimensionConstraints3D.AddLineLength(l)
             ' If adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value / 1) Then
             '  dc.Delete()
-            sk3D.GeometricConstraints3D.AddEqual(l, cl2)
+            equalCl4 = sk3D.GeometricConstraints3D.AddEqual(l, cl2)
             l.Construction = True
             constructionLines.Add(l)
 
@@ -1309,15 +1377,17 @@ Public Class TwistFold7
     End Function
     Function GetAdjacentEdge() As Edge
         Try
-            Dim m1, m2, d As Double
-            Dim va, vb, v1, v2 As Vector
+            Dim m1, m2, d, e As Double
+            Dim va, vb, vc, v1, v2 As Vector
             v1 = bendEdge.StartVertex.Point.VectorTo(bendEdge.StopVertex.Point)
             m1 = 0
-            vb = followEdge.StartVertex.Point.VectorTo(followEdge.StopVertex.Point)
+            vb = point1.VectorTo(farPoint)
             For Each eda As Edge In adjacentFace.Edges
                 va = eda.StartVertex.Point.VectorTo(eda.StopVertex.Point)
                 v2 = v1.CrossProduct(va)
-                d = va.DotProduct(vb) * v2.Length
+                vc = eda.GetClosestPointTo(firstLine.EndSketchPoint.Geometry).VectorTo(firstLine.EndSketchPoint.Geometry)
+                e = eda.GetClosestPointTo(point1).DistanceTo(point1)
+                d = vb.DotProduct(vc) * v2.Length * e
                 If d > m1 Then
                     m1 = d
                     adjacentEdge = eda
@@ -1333,13 +1403,14 @@ Public Class TwistFold7
     End Function
     Function DrawThirdLine() As SketchLine3D
         Try
-            Dim l, cl4, cl3, bl2, cl1 As SketchLine3D
+            Dim l, cl4, cl3, bl2, cl1, cl2 As SketchLine3D
             Dim ac As DimensionConstraint3D
-            Dim dc, dc2 As DimensionConstraint3D
-            Dim gc, cc As GeometricConstraint3D
+            Dim dc, dc2, dccl4 As DimensionConstraint3D
+            Dim gc, cc, gccll2 As GeometricConstraint3D
             bl2 = bandLines.Item(2)
             cl4 = constructionLines.Item(4)
             cl3 = constructionLines.Item(3)
+            cl2 = constructionLines.Item(2)
             cl1 = constructionLines.Item(1)
             l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.StartPoint, cl4.EndPoint, False)
 
@@ -1347,46 +1418,33 @@ Public Class TwistFold7
             gapVertex.Driven = False
             If adjuster.GetMinimalDimension(gapVertex) Then
                 gapVertex.Driven = True
-                Try
-                    dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, bl2)
-                    Try
-                        adjuster.AdjustDimensionConstraint3DSmothly(dc, Math.PI / 2)
-                    Catch ex6 As Exception
-
-                    End Try
-                    dc.Delete()
-                    gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, bl2)
-                Catch ex As Exception
-                    Try
-                        gc.Delete()
-                    Catch ex3 As Exception
-                    End Try
-                    dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, bl2)
-                    Try
-                        adjuster.AdjustDimensionConstraint3DSmothly(dc, Math.PI / 2)
-                    Catch ex1 As Exception
-
-                    End Try
-                    dc.Delete()
-                    Try
-                        gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, bl2)
-                    Catch ex2 As Exception
-                    End Try
-
-                End Try
-                Try
-                    gc.Delete()
-                Catch ex As Exception
-
-                End Try
+                equalCl4.Delete()
                 ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(bl2, l)
+                adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI * 3 / 4)
+                ac.Driven = True
+                dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+
                 Try
-                    adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI * 15 / 16)
+                    gccll2 = sk3D.GeometricConstraints3D.AddCollinear(l, bl2)
                 Catch ex As Exception
-                    If adjuster.AdjustDimensionConstraint3DSmothly(ac, ac.Parameter._Value * 5 / 4) Then
-                    Else
-                        adjuster.AdjustDimensionConstraint3DSmothly(ac, ac.Parameter._Value * 9 / 8)
-                    End If
+                    Try
+                        ac.Driven = False
+                        adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI * 15 / 16)
+                        ac.Driven = True
+                    Catch ex2 As Exception
+                        If adjuster.AdjustDimensionConstraint3DSmothly(ac, ac.Parameter._Value * 5 / 4) Then
+                        Else
+                            adjuster.AdjustDimensionConstraint3DSmothly(ac, ac.Parameter._Value * 9 / 8)
+                        End If
+                        ac.Driven = True
+                    End Try
+                    gccll2 = sk3D.GeometricConstraints3D.AddCollinear(l, bl2)
+                End Try
+
+                Try
+                    dc.Delete()
+                Catch ex As Exception
+
                 End Try
 
 
@@ -1396,8 +1454,7 @@ Public Class TwistFold7
                 dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, cl4)
 
                 Try
-                    adjuster.AdjustDimensionConstraint3DSmothly(dc, Math.PI * 9 / 16)
-
+                    'adjuster.AdjustDimensionConstraint3DSmothly(dc, Math.PI / 2)
                 Catch ex As Exception
                     dc.Driven = True
                 End Try
@@ -1410,7 +1467,6 @@ Public Class TwistFold7
                     adjuster.AdjustDimensionConstraint3DSmothly(dc2, GetParameter("b")._Value * 1)
                     Try
                         gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, cl4)
-
                     Catch ex As Exception
                         dc2.Driven = True
                         dc.Driven = False
@@ -1452,11 +1508,29 @@ Public Class TwistFold7
                 End Try
                 Try
                     dc2.Delete()
+                Catch ex As Exception
+
+                End Try
+                Try
                     gc.Delete()
                 Catch ex As Exception
 
                 End Try
+                Try
+                    gccll2.Delete()
+                Catch ex As Exception
 
+                End Try
+                Try
+                    equalCl4 = sk3D.GeometricConstraints3D.AddEqual(cl4, cl2)
+
+                Catch ex As Exception
+                    dccl4 = sk3D.DimensionConstraints3D.AddLineLength(cl4)
+                    adjuster.AdjustDimensionConstraint3DSmothly(dccl4, GetParameter("b")._Value)
+                    dccl4.Driven = True
+                    equalCl4 = sk3D.GeometricConstraints3D.AddEqual(cl4, cl2)
+
+                End Try
 
                 Try
                     gapVertex.Driven = False
@@ -1515,11 +1589,9 @@ Public Class TwistFold7
             l = sk3D.SketchLines3D.AddByTwoPoints(firstLine.EndPoint, cl4.StartPoint, False)
             dc = sk3D.DimensionConstraints3D.AddLineLength(l)
             Try
-
                 While (Math.Abs(l.Length - thirdLine.Length) > thicknessCM * 1 And c < 128)
                     Try
                         gapVertex.Driven = True
-
                         adjuster.AdjustDimensionConstraint3DSmothly(dc, thirdLine.Length)
                         gapVertex.Driven = False
                         doku.Update2()
@@ -1562,16 +1634,18 @@ Public Class TwistFold7
     End Function
     Function DrawFifthConstructionLine() As SketchLine3D
         Try
-            Dim l, l2, l3, l4, cl4, cl2, cl3, bl3, bl4 As SketchLine3D
+            Dim l, l2, l3, l4, l7, cl4, cl2, cl3, bl3, bl4 As SketchLine3D
             Dim v As Vector
-            Dim gapTry, dc2, ac As DimensionConstraint3D
-            Dim gc As GeometricConstraint3D
+            Dim gapTry, dc2, ac, dccl5, dc5 As DimensionConstraint3D
+            Dim gc, gcclcl7 As GeometricConstraint3D
             Dim c As Integer = 0
+            Dim tlimt As Integer = 4
             Dim pl As Plane
-            Dim vnpl, vl3cl4, vl3, vcl4 As Vector
+            Dim vnpl, vcl3, vbl3, vcl4, vl, vcl7, vbl4, vcl7l4 As Vector
             Dim endPoint As Point
-            Dim d As Double
+            Dim d, tangent As Double
             Dim limit As Integer = 0
+            tangent = gap1CM
             pl = workFace.Geometry
             cl4 = constructionLines.Item(4)
             cl3 = constructionLines.Item(3)
@@ -1579,13 +1653,15 @@ Public Class TwistFold7
             cl2 = constructionLines.Item(2)
             bl3 = bandLines.Item(3)
             bl4 = bandLines.Item(4)
-            vl3 = bl3.Geometry.Direction.AsVector()
-            vl3cl4 = vcl4.CrossProduct(vl3)
-            vl3cl4 = cl3.Geometry.Direction.AsVector
+            vbl3 = bl3.Geometry.Direction.AsVector()
+            vcl3 = vcl4.CrossProduct(vbl3)
+            vcl3 = cl3.Geometry.Direction.AsVector
+            vcl3.ScaleBy(tangent)
             endPoint = bl3.EndSketchPoint.Geometry
-            endPoint.TranslateBy(vl3cl4)
+            endPoint.TranslateBy(vcl3)
             l = sk3D.SketchLines3D.AddByTwoPoints(bl3.EndPoint, endPoint, False)
             l.Construction = True
+
             sk3D.GeometricConstraints3D.AddPerpendicular(bl3, l)
             Try
                 sk3D.GeometricConstraints3D.AddPerpendicular(cl4, l)
@@ -1600,21 +1676,59 @@ Public Class TwistFold7
 
             gapTwist = sk3D.DimensionConstraints3D.AddLineLength(l)
             gapTwist.Driven = True
-            constructionLines.Add(l)
+
             l2 = sk3D.SketchLines3D.AddByTwoPoints(bl3.StartPoint, l.EndPoint, False)
             l2.Construction = True
-            constructionLines.Add(l2)
-            l3 = sk3D.SketchLines3D.AddByTwoPoints(l2.Geometry.MidPoint, bl4.Geometry.MidPoint, False)
+
+
+
+            vcl4.ScaleBy(-1)
+            endPoint = bl4.EndSketchPoint.Geometry
+            endPoint.TranslateBy(vcl4)
+            l3 = sk3D.SketchLines3D.AddByTwoPoints(bl4.EndPoint, endPoint, False)
             l3.Construction = True
-            constructionLines.Add(l3)
-            sk3D.GeometricConstraints3D.AddCoincident(l3.StartPoint, l2)
-            sk3D.GeometricConstraints3D.AddCoincident(l3.EndPoint, bl4)
-            gapTry = sk3D.DimensionConstraints3D.AddLineLength(l3)
+
+
+
+
+            sk3D.GeometricConstraints3D.AddParallel(minorLine, l3)
+            'sk3D.GeometricConstraints3D.AddGround(l3)
+            dc5 = sk3D.DimensionConstraints3D.AddLineLength(l3)
+            'sk3D.GeometricConstraints3D.AddCoincident(l3.EndPoint, bl4)
+            vl = l.Geometry.Direction.AsVector
+            vcl7 = l3.Geometry.Direction.AsVector
+
+            vcl3 = cl3.Geometry.Direction.AsVector
+            endPoint = bl4.EndSketchPoint.Geometry
+            endPoint.TranslateBy(vcl3)
+            l7 = sk3D.SketchLines3D.AddByTwoPoints(bl4.EndPoint, endPoint, False)
+            l7.Construction = True
+
+            sk3D.GeometricConstraints3D.AddPerpendicular(l7, l3)
+            sk3D.GeometricConstraints3D.AddPerpendicular(l7, bl4)
+            dccl5 = sk3D.DimensionConstraints3D.AddTwoLineAngle(cl4, l7)
+            d = l.Geometry.Direction.AsVector.DotProduct(l3.Geometry.Direction.AsVector)
+            Try
+                gapTwist.Driven = False
+                While d < 1 / (limit * limit + 1) And limit < tlimt * 8
+                    adjuster.AdjustDimensionConstraint3DSmothly(dccl5, dccl5.Parameter._Value * 7 / 8)
+                    d = l.Geometry.Direction.AsVector.DotProduct(vcl7)
+                    limit = limit + 1
+                End While
+
+                dccl5.Driven = True
+            Catch ex As Exception
+                dccl5.Driven = True
+
+            End Try
+            limit = 0
+            gapTry = sk3D.DimensionConstraints3D.AddTwoLineAngle(l3, cl4)
             gapVertex.Driven = True
             dc2 = sk3D.DimensionConstraints3D.AddLineLength(bl4)
             dc2.Driven = True
+            ' gcclcl7 = sk3D.GeometricConstraints3D.AddCoincident(l3.EndPoint, cl4)
             Try
-                While ((gapTwist.Parameter._Value + gapTry.Parameter._Value > 2 * gap1CM) And limit < 4)
+                While ((gapTwist.Parameter._Value + gapTry.Parameter._Value > 3 * gap1CM / 2) And limit < tlimt)
                     Try
                         Try
                             dc2.Driven = False
@@ -1623,13 +1737,10 @@ Public Class TwistFold7
                         Catch ex As Exception
                             dc2.Driven = True
                         End Try
-                        gapTwist.Driven = True
+
                         gapTry.Driven = False
-                        adjuster.GetMinimalDimension(gapTry)
+                        adjuster.AdjustDimensionConstraint3DSmothly(gapTry, gapTry.Parameter._Value * 7 / 8)
                         gapTry.Driven = True
-                        gapTwist.Driven = False
-                        adjuster.AdjustDimensionConstraint3DSmothly(gapTwist, gap1CM)
-                        gapTwist.Driven = True
 
                         limit = limit + 1
                     Catch ex As Exception
@@ -1644,8 +1755,38 @@ Public Class TwistFold7
                 gapTry.Driven = True
                 gapTwist.Driven = True
             End Try
+            vl = l.Geometry.Direction.AsVector
+            vcl7 = l3.Geometry.Direction.AsVector
+            If vcl7.DotProduct(vl) < 0 Then
+                endPoint = l.StartSketchPoint.Geometry
+                vl.ScaleBy(-1)
+                endPoint.TranslateBy(vl)
+                l.Delete()
+                l = sk3D.SketchLines3D.AddByTwoPoints(bl3.EndPoint, endPoint, False)
+                l.Construction = True
+                gapTwist = sk3D.DimensionConstraints3D.AddLineLength(l)
+                adjuster.AdjustDimensionConstraint3DSmothly(gapTwist, gap1CM)
+                gapTwist.Driven = True
+                sk3D.GeometricConstraints3D.AddPerpendicular(bl3, l)
+                Try
+                    sk3D.GeometricConstraints3D.AddPerpendicular(cl4, l)
 
+                Catch ex As Exception
+                    ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, cl4)
+                    adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2)
+                    ac.Driven = True
+                    sk3D.GeometricConstraints3D.AddPerpendicular(cl4, l)
+                End Try
+                l2.Delete()
+                l2 = sk3D.SketchLines3D.AddByTwoPoints(bl3.StartPoint, l.EndPoint, False)
+                l2.Construction = True
+            End If
+            constructionLines.Add(l)
+            constructionLines.Add(l2)
+            constructionLines.Add(l3)
+            constructionLines.Add(l7)
             Try
+
                 gapTwist.Driven = False
                 l4 = sk3D.SketchLines3D.AddByTwoPoints(l.EndPoint, l2.Geometry.MidPoint, False)
                 l4.Construction = True
@@ -1683,14 +1824,27 @@ Public Class TwistFold7
     Function TryFixTwistGap(l4 As SketchLine3D) As GeometricConstraint3D
         Dim bl4 As SketchLine3D
         Dim t As GeometricConstraint3D
+        Dim dc2 As DimensionConstraint3D
 
         Try
             bl4 = bandLines.Item(4)
             t = sk3D.GeometricConstraints3D.AddCoincident(l4.EndPoint, bl4)
         Catch ex As Exception
-            gapTry.Driven = False
-            adjuster.GetMinimalDimension(gapTry)
-            gapTry.Driven = True
+            Try
+                dc2.Driven = False
+                adjuster.AdjustDimensionConstraint3DSmothly(dc2, dc2.Parameter._Value * 17 / 16)
+                dc2.Driven = True
+            Catch ex2 As Exception
+                dc2.Driven = True
+            End Try
+            Try
+                gapTry.Driven = False
+                adjuster.GetMinimalDimension(gapTry)
+                gapTry.Driven = True
+            Catch ex3 As Exception
+                gapTry.Driven = True
+            End Try
+
             TryFixTwistGap(l4)
 
         End Try

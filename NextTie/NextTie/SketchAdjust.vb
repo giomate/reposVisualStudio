@@ -17,7 +17,7 @@ Public Class SketchAdjust
     Dim counter, skcounter, errorCounter As Integer
     Dim monitor As DesignMonitoring
     Dim comando As Commands
-    Dim compDef As ComponentDefinition
+    Dim compDef As SheetMetalComponentDefinition
 
 
     Public Structure DesignParam
@@ -59,6 +59,7 @@ Public Class SketchAdjust
     Function UpdateDocu(d As PartDocument) As Integer
         oPartDoc = d
         oSk3D = d.ComponentDefinition.Sketches3D.Item(d.ComponentDefinition.Sketches3D.Count)
+        compDef = d.ComponentDefinition
         Return True
     End Function
     Function openFile(fileName As String) As PartDocument
@@ -91,7 +92,7 @@ Public Class SketchAdjust
         Return strFullFileName
     End Function
 
-    Function adjust(fileName As String, theta As Double) As Double
+    Function ThethaAdjust(fileName As String, theta As Double) As Double
         openFile(createFileName(fileName))
         'calculateGain(theta, "angulo")
         sp = theta
@@ -215,7 +216,7 @@ Public Class SketchAdjust
             Dim k As Double
             delta = (setValue - p._Value) / (resolution)
             If GetDimension(name).Type = ObjectTypeEnum.kTwoLineAngleDimConstraint3DObject Then
-                k = 8
+                k = 4
             Else
                 k = 2
             End If
@@ -505,8 +506,8 @@ Public Class SketchAdjust
             calculateGainForMinimun(setPoint, dc.Parameter.Name)
             dc.Driven = False
             If dc.Type = ObjectTypeEnum.kTwoLineAngleDimConstraint3DObject Then
-                SetpointCorrector = Math.Pow(resolution, 4)
-                climit = 16
+                SetpointCorrector = Math.Pow(resolution, 2)
+                climit = 12
             Else
                 SetpointCorrector = 1
 
@@ -721,8 +722,8 @@ Public Class SketchAdjust
         If dc.Type = ObjectTypeEnum.kTwoLineAngleDimConstraint3DObject Then
             c = s * dc.Parameter._Value * 16
             r = (1 / (s + Math.Pow(10, -6)) + resolution - 1) / ((counter / 2) + 1)
-            If r < 32 Then
-                resolution = 16
+            If r < 8 Then
+                resolution = 8
             Else
                 resolution = r
 
@@ -814,11 +815,21 @@ Public Class SketchAdjust
     End Function
 
     Function GetDimension(name As String) As DimensionConstraint3D
-        For Each dimension In oSk3D.DimensionConstraints3D
-            If dimension.Parameter.Name = name Then
-                Return dimension
-            End If
-        Next
+        Try
+            For Each dimension In oSk3D.DimensionConstraints3D
+                If dimension.Parameter.Name = name Then
+                    Return dimension
+                End If
+            Next
+        Catch ex As Exception
+            oSk3D = compDef.Sketches3D.Item(compDef.Sketches3D.Count)
+            For Each d As DimensionConstraint3D In oSk3D.DimensionConstraints3D
+                If d.Parameter.Name = name Then
+                    Return d
+                End If
+            Next
+        End Try
+
         Return Nothing
     End Function
 
