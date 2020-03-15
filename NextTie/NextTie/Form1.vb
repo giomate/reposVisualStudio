@@ -1,6 +1,10 @@
 ﻿Imports System.Type
 Imports System.Activator
 Imports System.Runtime.InteropServices
+Imports System
+Imports System.IO
+Imports System.Text
+Imports System.IO.Directory
 Imports Inventor
 Imports GetInitialConditions
 Public Class Form1
@@ -9,6 +13,7 @@ Public Class Form1
     Dim started, running, done As Boolean
     Dim oDesignProjectMgr As DesignProjectManager
     Dim invDoc As InventorFile
+    Dim iteration As Integer
 
     Dim tie1, tie0, nextTie As TieMaker1
 
@@ -17,6 +22,7 @@ Public Class Form1
         ' This call is required by the designer.
         InitializeComponent()
 
+        iteration = 2
         ' Add any initialization after the InitializeComponent() call.
         Try
 
@@ -65,8 +71,10 @@ Public Class Form1
         Try
 
             done = KeepMakingTies()
+            If done Then
+                Me.Close()
+            End If
 
-            Me.Close()
 
         Catch ex As Exception
             MsgBox(ex.ToString())
@@ -97,30 +105,43 @@ Public Class Form1
     Public Function KeepMakingTies() As Boolean
         Dim b As Boolean = True
         Dim q As Integer
+        Dim s As String
         Try
             If (started And (Not running)) Then
                 invDoc = New InventorFile(oApp)
                 tie0 = New TieMaker1(invDoc.OpenSheetMetalFile("Band0.ipt"))
-
                 nextTie = New TieMaker1(tie0.FindLastTie())
                 q = tie0.qLastTie
+                If q > 0 Then
+                    tie0.doku.Save2(True)
+                    tie0.doku.Close(True)
+                End If
+
                 While (q < tie0.trobinaCurve.DP.q And b)
                     If nextTie.MakeNextTie().ComponentDefinition.Features.Count > 5 Then
                         If nextTie.compDef.Sketches3D.Item("last").SketchLines3D.Count > 0 Then
                             b = nextTie.done
                             If b Then
                                 oDoc = nextTie.doku
+                                s = nextTie.fullFileName
                                 oDoc.Update2(True)
                                 oDoc.Save2(True)
-                                tie0 = nextTie
+                                oApp.Documents.CloseAll()
+                                tie0 = New TieMaker1(invDoc.OpenFullFileName(s))
                                 nextTie = New TieMaker1(tie0.FindLastTie())
                                 q = tie0.qLastTie
+
                             End If
                         End If
 
                     End If
                 End While
-
+                If b Then
+                    If nextTie.MoveAllTies(iteration) > 0 Then
+                        iteration = iteration + 1
+                        b = True
+                    End If
+                End If
 
             End If
             Return b

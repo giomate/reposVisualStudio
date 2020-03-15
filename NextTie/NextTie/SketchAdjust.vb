@@ -501,18 +501,18 @@ Public Class SketchAdjust
 
             Dim b As Boolean = False
             Dim setPoint As Double = 0
-            Dim climit As Integer = 8
+            Dim climit As Integer = 4
             pit = getParameter(dc.Parameter.Name)
             calculateGainForMinimun(setPoint, dc.Parameter.Name)
             dc.Driven = False
             If dc.Type = ObjectTypeEnum.kTwoLineAngleDimConstraint3DObject Then
                 SetpointCorrector = Math.Pow(resolution, 2)
-                climit = 12
+                climit = 6
             Else
                 SetpointCorrector = 1
 
             End If
-            While (((Math.Abs(delta * resolution) * SetpointCorrector) > (Math.Pow(10, -3) / resolution)) And (monitor.IsSketch3dhHealthy(oSk3D)) And (errorCounter < climit) And (counter < climit * 8))
+            While (((Math.Abs(delta * resolution) * SetpointCorrector) > (Math.Pow(10, -3) / resolution)) And (monitor.IsSketch3dhHealthy(oSk3D)) And (errorCounter < climit) And (counter < climit * 4))
                 pit.Value = pit.Value * calculateGainForMinimun(setPoint, dc.Parameter.Name)
                 oPartDoc.Update2()
                 AdjustResolution(dc.Parameter.Name, pit._Value)
@@ -645,7 +645,7 @@ Public Class SketchAdjust
 
     End Function
     Function IsLastAngleOk(ac As DimensionConstraint3D) As Boolean
-        Dim limit As Double = 0.06
+        Dim limit As Double = 0.1
         If (ac.Parameter._Value < limit Or ac.Parameter._Value > (Math.PI - limit)) Then
             Return True
         End If

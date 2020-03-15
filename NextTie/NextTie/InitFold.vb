@@ -195,7 +195,7 @@ Public Class InitFold
             p3 = ps.AddByProjectingEntity(mainSketch.secondLine.EndPoint)
             ln = ps.AddByProjectingEntity(mainSketch.bandLines.Item(2))
             v = ln.Geometry.Direction.AsVector
-            v.ScaleBy(-3 / 10)
+            v.ScaleBy(-12)
 
             p2.MoveBy(v)
             l2d = ps.SketchLines.AddByTwoPoints(p1.Geometry, p2)
@@ -204,7 +204,7 @@ Public Class InitFold
             dc = ps.DimensionConstraints.AddTwoPointDistance(l2d.StartSketchPoint, l2d.EndSketchPoint, DimensionOrientationEnum.kAlignedDim, p2.Geometry)
             dc.Parameter._Value = GetParameter("b")._Value / 1
             v.Normalize()
-            v.ScaleBy(-50)
+            v.ScaleBy(-76)
             p3.MoveBy(v)
             r = ps.SketchLines.AddAsThreePointRectangle(l2d.StartSketchPoint.Geometry, l2d.EndSketchPoint.Geometry, p3.Geometry)
 
@@ -233,7 +233,7 @@ Public Class InitFold
         compDef = oSheetMetalCompDef
         Dim oFaceFeatureDefinition As FaceFeatureDefinition
         oFaceFeatureDefinition = oSheetMetalFeatures.FaceFeatures.CreateFaceFeatureDefinition(pro)
-        If CalculateFaceDirection() < 0 Then
+        If CalculateFaceDirection() > 0 Then
             oFaceFeatureDefinition.Direction = PartFeatureExtentDirectionEnum.kPositiveExtentDirection
         Else
             oFaceFeatureDefinition.Direction = PartFeatureExtentDirectionEnum.kNegativeExtentDirection
@@ -250,7 +250,8 @@ Public Class InitFold
         Dim s As Integer
 
         Try
-            d = kanteLine.Geometry.Direction.AsVector.X
+
+            d = (kanteLine.Geometry.Direction.AsVector).DotProduct(mainWorkPlane.Plane.Normal.AsVector)
             If d < 0 Then
                 s = -1
             Else

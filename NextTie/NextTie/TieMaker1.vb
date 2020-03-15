@@ -48,6 +48,9 @@ Public Class TieMaker1
     Public foldFeatures As FoldFeatures
     Dim features As SheetMetalFeatures
     Dim lamp As Highlithing
+    Dim di As System.IO.DirectoryInfo
+    Dim fi As System.IO.File
+    Dim nf As System.IO.Path
 
     Dim foldFeature As FoldFeature
     Dim sections, esquinas, rails As ObjectCollection
@@ -67,6 +70,7 @@ Public Class TieMaker1
     Dim giro As TwistFold7
     Dim arrayFunctions As Collection
     Dim fullFileNames As String()
+    Public fullFileName As String
     Public Sub New(docu As Inventor.Document)
         doku = docu
         app = doku.Parent
@@ -104,8 +108,11 @@ Public Class TieMaker1
 
             If i < 1 Then
                 If GetInitialConditions() > 0 Then
+
                     If doblez1.MakeFirstFold(refDoc, qNext) Then
                         doku = doblez1.doku
+
+                        doku.Activate()
                         MakeRestTie(1)
 
                     End If
@@ -131,6 +138,7 @@ Public Class TieMaker1
             End If
             If compDef.Sketches3D.Item("last").SketchLines3D.Count > 0 Then
                 done = True
+                fullFileName = doku.FullFileName
             End If
 
             Return doku
@@ -305,6 +313,8 @@ Public Class TieMaker1
         max = 0
         max2 = 0
         Dim ltn, slt As String
+        ltn = doku.FullFileName
+        slt = ltn
         Dim lastTie As PartDocument
         fullFileNames = Directory.GetFiles(projectManager.ActiveDesignProject.WorkspacePath, "*.ipt")
         For Each s As String In fullFileNames
@@ -319,6 +329,8 @@ Public Class TieMaker1
                     slt = s
 
                 End If
+            Else
+
             End If
 
         Next
@@ -331,6 +343,40 @@ Public Class TieMaker1
 
         qLastTie = nombrador.GetQNumber(lastTie) - 1
         Return lastTie
+    End Function
+    Public Function MoveAllTies(i As Integer) As Integer
+        Try
+
+            Dim newFile, newFullFileName As String
+
+            Dim p As String = projectManager.ActiveDesignProject.WorkspacePath
+            Dim nd As String
+            nd = String.Concat(p, "\Iteration", i.ToString)
+            If (Directory.Exists(nd)) Then
+                Debug.Print("That path exists already.")
+                Directory.Delete(nd)
+            End If
+            di = Directory.CreateDirectory(nd)
+            fullFileNames = Directory.GetFiles(p, "*.ipt")
+            For Each s As String In fullFileNames
+                Try
+                    newFile = System.IO.Path.GetFileName(s)
+                    newFullFileName = System.IO.Path.Combine(di.FullName, newFile)
+                    If System.IO.File.Exists(newFullFileName) Then
+                        System.IO.File.Delete(newFullFileName)
+                    End If
+                    System.IO.File.Move(s, newFullFileName)
+                Catch ex As Exception
+                    MsgBox(ex.ToString())
+                    Return Nothing
+                End Try
+            Next
+            Return di.GetFiles.Count
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
     End Function
 
     Public Function IsLastTieFinish(d As PartDocument) As Boolean

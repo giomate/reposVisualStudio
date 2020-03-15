@@ -23,8 +23,8 @@ Public Class Curves3D
         DP.Dmin = 1
         Tr = (DP.Dmax + DP.Dmin) / 4
         Cr = (DP.Dmax - DP.Dmin) / 4
-        DP.p = 13
-        DP.q = 31
+        DP.p = 11
+        DP.q = 23
         DP.b = 25
         ' oDoc.ComponentDefinition.Parameters.ReferenceParameters.AddByValue(DP.q, UnitsTypeEnum.kUnitlessUnits, "q")
         ' oDoc.ComponentDefinition.Parameters.ReferenceParameters.AddByValue(DP.p, UnitsTypeEnum.kUnitlessUnits, "p")
@@ -84,7 +84,7 @@ Public Class Curves3D
         Dim t As Double = 2 * Math.PI * (q / (DP.q))
         r = String.Concat(Tr.ToString() & " + " & Cr.ToString() & "mm * cos( t * q * 1rad )")
         z = String.Concat("- " & Cr.ToString() & "mm * sin( t * q * 1rad )")
-        curve = sk.SketchEquationCurves3D.Add(CoordinateSystemTypeEnum.kCylindrical, r, " t * 1rad * p", z, (f - 7) * Math.PI / (DP.p * 16) * d + t, (f + 1 + g * 4 / 3) * Math.PI / (DP.p * 16) * d + t)
+        curve = sk.SketchEquationCurves3D.Add(CoordinateSystemTypeEnum.kCylindrical, r, " t * 1rad * p", z, (f - 8) * Math.PI / (DP.p * 16) * d + t, (f + 2 + g * 4 / 3) * Math.PI / (DP.p * 16) * d + t)
         curve.Construction = True
         sk.ExitEdit()
         Return curve

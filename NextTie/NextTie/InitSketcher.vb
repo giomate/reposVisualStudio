@@ -25,7 +25,7 @@ Public Class InitSketcher
     Dim startPoint As GeometricConstraint3D
     Dim sheetMetalFeatures As SheetMetalFeatures
     Dim compDef As SheetMetalComponentDefinition
-    Public ID1, ID2 As Integer
+    Public ID1, ID2, qvalue As Integer
     Dim k1(), k2() As Byte
     Dim backwards As Boolean
 
@@ -86,7 +86,7 @@ Public Class InitSketcher
         refSk = refDoc.OpenMainSketch(refDoc.oDoc)
         ' refCurve = refDoc.oDoc.ComponentDefinition.Sketches3D.Item("refCurve").SketchEquationCurves3D.Item(1)
         refLine = refDoc.GetKeyLine()
-
+        qvalue = q
         doku.Activate()
 
         DrawTrobinaCurve(q)
@@ -337,15 +337,18 @@ Public Class InitSketcher
             l = sk3D.SketchLines3D.AddByTwoPoints(refLine.StartSketchPoint.Geometry, refLine.EndSketchPoint.Geometry)
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, curve)
             gc = sk3D.GeometricConstraints3D.AddGround(l.StartPoint)
-            Try
-                gpc = sk3D.GeometricConstraints3D.AddParallel(l, refLine)
-            Catch ex As Exception
-                gpc.Delete()
-            End Try
-            If gc.Deletable Then
-                startPoint = gc
 
-            End If
+            Try
+                    gpc = sk3D.GeometricConstraints3D.AddParallel(l, refLine)
+                Catch ex As Exception
+                    gpc.Delete()
+                End Try
+                If gc.Deletable Then
+                    startPoint = gc
+
+                End If
+
+
             point1 = l.StartSketchPoint.Geometry
             point2 = l.EndSketchPoint.Geometry
             bandLines.Add(l)
@@ -483,17 +486,19 @@ Public Class InitSketcher
     Function DrawFourthConstructionLine() As SketchLine3D
         Try
             Dim l, fl As SketchLine3D
-            Dim ol, cl As SketchLine3D
+            Dim bl4, cl As SketchLine3D
             Dim dc As TwoPointDistanceDimConstraint3D
-            Dim dc2 As DimensionConstraint3D
-            ol = bandLines.Item(4)
+            Dim dc2, dccl4, ac As DimensionConstraint3D
+            Dim gcel As GeometricConstraint3D
+            bl4 = bandLines.Item(4)
             cl = constructionLines.Item(3)
-            l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.EndSketchPoint.Geometry, ol.StartSketchPoint.Geometry, False)
+            l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.EndSketchPoint.Geometry, bl4.StartSketchPoint.Geometry, False)
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, curve)
-            sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, ol)
+            sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, bl4)
             dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(l.EndPoint, cl.EndPoint)
-            If AdjustTwoPointsSmothly(dc, 1 / 10) Then
-                dc2 = sk3D.DimensionConstraints3D.AddLineLength(l)
+            adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value / 2)
+            AdjustTwoPointsSmothly(dc, 1 / 10)
+            dc2 = sk3D.DimensionConstraints3D.AddLineLength(l)
                 If dc2.Parameter._Value > curve3D.DP.b * 3 / 20 Then
                     If adjuster.AdjustDimensionConstraint3DSmothly(dc2, curve3D.DP.b * 5 / 40) Then
                         dc2.Driven = True
@@ -503,18 +508,61 @@ Public Class InitSketcher
                 Else
                     dc2.Driven = True
                 End If
-                sk3D.GeometricConstraints3D.AddPerpendicular(l, ol)
-                sk3D.GeometricConstraints3D.AddEqual(l, cl)
-                fl = bandLines.Item(4)
-                'sk3D.GeometricConstraints3D.AddCoincident(fl.EndPoint, curve)
+                ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, bl4)
+                adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2)
+                ac.Driven = True
+                sk3D.GeometricConstraints3D.AddPerpendicular(l, bl4)
+                dc2.Driven = False
+                adjuster.AdjustDimensionConstraint3DSmothly(dc2, GetParameter("b")._Value)
+                dc2.Driven = True
+                Try
+                    sk3D.GeometricConstraints3D.AddEqual(l, cl)
+                Catch ex2 As Exception
+                    adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM * 4)
+                    gapFold.Driven = True
+                    dc2.Driven = False
+                    adjuster.AdjustDimensionConstraint3DSmothly(dc2, GetParameter("b")._Value)
+                    dc2.Driven = True
+                    gapFold.Driven = False
+                    Try
+                        gcel = sk3D.GeometricConstraints3D.AddEqual(l, cl)
+
+                    Catch ex3 As Exception
+                        adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM * 4)
+                        gapFold.Driven = True
+                        dc2.Driven = False
+                        adjuster.AdjustDimensionConstraint3DSmothly(dc2, GetParameter("b")._Value)
+                        dc2.Driven = True
+                        gcel = sk3D.GeometricConstraints3D.AddEqual(l, cl)
+                    End Try
+
+                    gapFold.Driven = False
+                    Try
+                        gapFold.Parameter._Value = gapFold.Parameter._Value * 1.1
+                        adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
+                        If gapFold.Parameter._Value < gapFoldCM * 0.9 Then
+                            gcel.Delete()
+                            adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
+                            adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
+                        End If
+                    Catch ex As Exception
+                        gcel.Delete()
+                        adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
+                        adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
+                    End Try
+
+                    adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
+                    adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
+                End Try
+
                 l.Construction = True
 
                 constructionLines.Add(l)
 
                 lastLine = l
-                Return l
-            End If
-            Return Nothing
+
+
+            Return l
         Catch ex As Exception
             MsgBox(ex.ToString())
             Return Nothing
@@ -592,11 +640,26 @@ Public Class InitSketcher
     Function DrawFourthLine() As SketchLine3D
         Try
             Dim l, pl As SketchLine3D
+            Dim dcl, acl As DimensionConstraint3D
 
             pl = firstLine
             l = sk3D.SketchLines3D.AddByTwoPoints(pl.StartPoint, lastLine.EndSketchPoint.Geometry, False)
-            sk3D.GeometricConstraints3D.AddPerpendicular(l, lastLine)
-            sk3D.GeometricConstraints3D.AddCoincident(lastLine.EndPoint, l)
+            Try
+                sk3D.GeometricConstraints3D.AddPerpendicular(l, lastLine)
+            Catch ex As Exception
+                acl = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, lastLine)
+                adjuster.AdjustDimensionConstraint3DSmothly(acl, Math.PI / 2)
+                acl.Driven = True
+                sk3D.GeometricConstraints3D.AddPerpendicular(l, lastLine)
+            End Try
+            Try
+                sk3D.GeometricConstraints3D.AddCoincident(lastLine.EndPoint, l)
+            Catch ex As Exception
+                dcl = sk3D.DimensionConstraints3D.AddTwoPointDistance(lastLine.EndPoint, l.EndPoint)
+                adjuster.AdjustDimensionConstraint3DSmothly(dcl, gapFoldCM)
+                dcl.Delete()
+                sk3D.GeometricConstraints3D.AddCoincident(lastLine.EndPoint, l)
+            End Try
             lastLine = l
             bandLines.Add(l)
             Return l
@@ -660,7 +723,7 @@ Public Class InitSketcher
     End Function
     Function DrawSixthLine() As SketchLine3D
         Try
-            Dim l, pl, ml As SketchLine3D
+            Dim l, cl3, ml, bl4 As SketchLine3D
             Dim v As Vector
             Dim p As Plane
             Dim minDis, d As Double
@@ -674,9 +737,9 @@ Public Class InitSketcher
                     dc.Delete()
                 End If
             End If
-            pl = constructionLines.Item(3)
-            v = pl.Geometry.Direction.AsVector
-            p = tg.CreatePlane(pl.EndSketchPoint.Geometry, v)
+            cl3 = constructionLines.Item(3)
+            v = cl3.Geometry.Direction.AsVector
+            p = tg.CreatePlane(cl3.EndSketchPoint.Geometry, v)
 
             Dim puntos As ObjectsEnumerator
             puntos = p.IntersectWithCurve(curve.Geometry)
@@ -684,17 +747,18 @@ Public Class InitSketcher
             Dim o2 As Point = puntos.Item(puntos.Count)
             optpoint = o2
             ml = bandLines.Item(4)
-            Dim vc, vmjl As Vector
+            Dim vc, vmjl, vbl4 As Vector
             vmjl = thirdLine.Geometry.Direction.AsVector
             vmjl.ScaleBy(-1)
-
+            bl4 = bandLines.Item(4)
+            vbl4 = bl4.Geometry.Direction.AsVector
             For Each o As Point In puntos
-                ' l = sk3D.SketchLines3D.AddByTwoPoints(pl.EndSketchPoint.Geometry, o, False)
-                vc = pl.EndSketchPoint.Geometry.VectorTo(o)
-                d = vc.CrossProduct(vmjl).Length * vc.DotProduct(vmjl)
+                'l = sk3D.SketchLines3D.AddByTwoPoints(cl3.EndSketchPoint.Geometry, o, False)
+                vc = cl3.EndSketchPoint.Geometry.VectorTo(o)
+                d = vc.CrossProduct(vmjl).Length * vc.DotProduct(vbl4)
                 If d > 0 Then
-                    If o.DistanceTo(pl.EndSketchPoint.Geometry) < minDis Then
-                        minDis = o.DistanceTo(pl.EndSketchPoint.Geometry)
+                    If o.DistanceTo(cl3.EndSketchPoint.Geometry) < minDis Then
+                        minDis = o.DistanceTo(cl3.EndSketchPoint.Geometry)
 
                         optpoint = o
                     End If
@@ -705,9 +769,9 @@ Public Class InitSketcher
 
             vp = optpoint
 
-            pl = bandLines.Item(4)
-            l = sk3D.SketchLines3D.AddByTwoPoints(pl.EndSketchPoint.Geometry, vp, False)
-            sk3D.GeometricConstraints3D.AddCoincident(pl.EndPoint, l)
+            bl4 = bandLines.Item(4)
+            l = sk3D.SketchLines3D.AddByTwoPoints(bl4.EndSketchPoint.Geometry, vp, False)
+            sk3D.GeometricConstraints3D.AddCoincident(bl4.EndPoint, l)
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
             lastLine = l
             bandLines.Add(l)
@@ -753,8 +817,10 @@ Public Class InitSketcher
             Dim ac As DimensionConstraint3D
             Dim gc As GeometricConstraint3D
             Dim limit As Double = 0.1
+            Dim angleLimit As Double = 2.4
             Dim d As Double
             Dim counterLimit As Integer = 0
+            Dim lastAngle As Double
 
 
             Dim b As Boolean = False
@@ -781,6 +847,21 @@ Public Class InitSketcher
                     Catch ex As Exception
                     End Try
                     adjuster.AdjustGapSmothly(gapFold, gapFoldCM, dc)
+                    Try
+                        While (dc.Parameter._Value < angleLimit And dc.Parameter._Value > angleLimit / 2) And counterLimit < 4
+                            lastAngle = ac.Parameter._Value
+                            adjuster.AdjustGapSmothly(gapFold, gapFoldCM * 5 / 4, dc)
+                            If ac.Parameter._Value < lastAngle Then
+                                counterLimit = 4
+                            End If
+                            counterLimit = counterLimit + 1
+                        End While
+                        counterLimit = 0
+                    Catch ex As Exception
+                        Debug.Print(ex.ToString)
+                        ac.Driven = True
+
+                    End Try
                     b = True
                 Catch ex As Exception
                     Debug.Print(ex.ToString)
@@ -789,6 +870,27 @@ Public Class InitSketcher
                 dc.Driven = True
             Else
                 Try
+                    If dc.Parameter._Value < Math.PI / 2 Then
+                        Try
+                            gc.Delete()
+                            dc.Driven = False
+                            adjuster.AdjustDimensionConstraint3DSmothly(dc, Math.PI * 3 / 4)
+                            dc.Driven = True
+                            Try
+                                gc = sk3D.GeometricConstraints3D.AddPerpendicular(thirdLine, bl5)
+                            Catch ex As Exception
+
+                            End Try
+
+                        Catch ex As Exception
+                            Try
+                                dc.Driven = True
+                                gc = sk3D.GeometricConstraints3D.AddPerpendicular(thirdLine, bl5)
+                            Catch ex9 As Exception
+
+                            End Try
+                        End Try
+                    End If
                     dc.Driven = True
                     While ((d < 0 Or dc.Parameter._Value > Math.PI - limit / 2) And counterLimit < 32)
                         Try
