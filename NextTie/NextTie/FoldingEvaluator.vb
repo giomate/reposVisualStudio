@@ -58,7 +58,7 @@ Public Class FoldingEvaluator
         Try
             crucialAngle = GetCrossingAngle()
 
-            If crucialAngle.Parameter._Value > foldingAngle.Parameter._Value * 193 / 216 Then
+            If crucialAngle.Parameter._Value > foldingAngle.Parameter._Value * 128 / 219 Then
                 Return True
             Else
                 Return False

@@ -13,6 +13,7 @@ Public Class Konditor
 
     Dim monitor As DesignMonitoring
     Dim invFile As InventorFile
+    Dim adjuster As SketchAdjust
 
 
     Public wp1, wp2, wp3, wpConverge As WorkPoint
@@ -98,6 +99,8 @@ Public Class Konditor
         features = docu.ComponentDefinition.Features
         lamp = New Highlithing(doku)
         monitor = New DesignMonitoring(doku)
+        'adjuster = New SketchAdjust(doku)
+
         Return doku
     End Function
     Public Function MakeWedgesCake(i As Integer) As PartDocument
@@ -113,6 +116,7 @@ Public Class Konditor
             t.Update()
             doku = DocUpdate(t)
             MakeRing()
+
             If (Directory.Exists(nd)) Then
                 fullFileNames = Directory.GetFiles(nd, "*.ipt")
                 For Each s As String In fullFileNames
@@ -120,12 +124,25 @@ Public Class Konditor
                         MergeSingleWedge(s)
                     End If
                 Next
-                CombineBodies()
-                done = True
+                If monitor.IsFeatureHealthy(CombineBodies()) Then
+                    If monitor.IsFeatureHealthy(RemoveSpikes()) Then
+
+                        If doku.ComponentDefinition.SurfaceBodies.Count < 2 Then
+                            doku.SaveAs(String.Concat(p, "\Iteration", i.ToString, "\Subina23.ipt"), False)
+                            doku.Save()
+                            done = True
+                        End If
+                    End If
+
+                End If
+
+
+
             End If
 
         Catch ex As Exception
-
+            MsgBox(ex.ToString())
+            Return Nothing
         End Try
 
 
@@ -151,6 +168,91 @@ Public Class Konditor
         ' cf = doku.ComponentDefinition.Features.CombineFeatures.Add(doku.ComponentDefinition.SurfaceBodies.Item(1), surfaceBodies, PartFeatureOperationEnum.kJoinOperation)
 
         Return cf
+    End Function
+    Function RemoveSpikes() As RevolveFeature
+        Dim rf As RevolveFeature
+        Dim pro As Profile = DrawRemoveFace()
+
+        Try
+
+            rf = doku.ComponentDefinition.Features.RevolveFeatures.AddFull(pro, doku.ComponentDefinition.WorkAxes.Item(3), PartFeatureOperationEnum.kCutOperation)
+            Return rf
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+    End Function
+    Function DrawRemoveFace() As Profile
+        Dim pro As Profile
+        Dim skpl As PlanarSketch
+        Dim l, cl As SketchLine
+        Dim spt1, spt2, spt3 As SketchPoint
+        Dim pt1, pt2, pt3 As Point2d
+        Dim a, b, c, d, e As SketchArc
+        Dim dc As DimensionConstraint
+        Dim gc As GeometricConstraint
+        Try
+            skpl = doku.ComponentDefinition.Sketches.Add(doku.ComponentDefinition.WorkPlanes.Item(2))
+
+            spt1 = skpl.SketchPoints.Add(tg.CreatePoint2d(0, Cr))
+            spt2 = skpl.SketchPoints.Add(tg.CreatePoint2d(0, -Cr))
+            l = skpl.SketchLines.AddByTwoPoints(spt1, spt2)
+            cl = skpl.AddByProjectingEntity(doku.ComponentDefinition.WorkAxes.Item(3))
+            cl.Construction = True
+            gc = skpl.GeometricConstraints.AddCollinear(l, cl)
+
+            dc = skpl.DimensionConstraints.AddTwoPointDistance(l.StartSketchPoint, l.EndSketchPoint, DimensionOrientationEnum.kAlignedDim, l.EndSketchPoint.Geometry)
+            spt1 = skpl.SketchPoints.Add(tg.CreatePoint2d(0, Cr / 2))
+            spt2 = skpl.SketchPoints.Add(tg.CreatePoint2d(Cr / 2, Cr / 2))
+            a = skpl.SketchArcs.AddByCenterStartEndPoint(spt1, l.StartSketchPoint, spt2, False)
+            dc = skpl.DimensionConstraints.AddRadius(a, spt2.Geometry)
+
+            gc = skpl.GeometricConstraints.AddCoincident(a.CenterSketchPoint, l)
+            spt1 = skpl.SketchPoints.Add(tg.CreatePoint2d(0, -Cr / 2))
+            spt2 = skpl.SketchPoints.Add(tg.CreatePoint2d(Cr / 2, -Cr / 2))
+            b = skpl.SketchArcs.AddByCenterStartEndPoint(spt1, l.EndSketchPoint, spt2)
+            dc = skpl.DimensionConstraints.AddRadius(b, spt2.Geometry)
+            gc = skpl.GeometricConstraints.AddCoincident(b.CenterSketchPoint, l)
+            spt1 = skpl.SketchPoints.Add(tg.CreatePoint2d(Tr, 0))
+            spt2 = skpl.SketchPoints.Add(tg.CreatePoint2d(Tr, Cr / 2 - 5 / 10))
+            spt3 = skpl.SketchPoints.Add(tg.CreatePoint2d(Tr, -Cr / 2 + 5 / 10))
+            c = skpl.SketchArcs.AddByCenterStartEndPoint(spt1, spt2, spt3, False)
+            dc = skpl.DimensionConstraints.AddRadius(c, spt2.Geometry)
+            gc = skpl.GeometricConstraints.AddGround(c.CenterSketchPoint)
+            spt2 = skpl.SketchPoints.Add(tg.CreatePoint2d(Tr, Cr))
+            l = skpl.SketchLines.AddByTwoPoints(c.CenterSketchPoint, spt2)
+            l.Construction = True
+            cl = skpl.AddByProjectingEntity(doku.ComponentDefinition.WorkAxes.Item(1))
+            cl.Construction = True
+            gc = skpl.GeometricConstraints.AddPerpendicular(cl, l)
+
+            d = skpl.SketchArcs.AddByCenterStartEndPoint(l.EndSketchPoint, a.StartSketchPoint, c.EndSketchPoint)
+            gc = skpl.GeometricConstraints.AddTangent(a, d)
+            gc = skpl.GeometricConstraints.AddCoincident(d.EndSketchPoint, c)
+            gc = skpl.GeometricConstraints.AddTangent(d, c)
+            gc = skpl.GeometricConstraints.AddCoincident(c.EndSketchPoint, d)
+            gc = skpl.GeometricConstraints.AddCoincident(d.CenterSketchPoint, l)
+            spt2 = skpl.SketchPoints.Add(tg.CreatePoint2d(Tr, -Cr))
+            l = skpl.SketchLines.AddByTwoPoints(l.StartSketchPoint, spt2)
+            l.Construction = True
+            gc = skpl.GeometricConstraints.AddPerpendicular(cl, l)
+
+            e = skpl.SketchArcs.AddByCenterStartEndPoint(l.EndSketchPoint, b.EndSketchPoint, c.StartSketchPoint, False)
+            gc = skpl.GeometricConstraints.AddTangent(b, e)
+            gc = skpl.GeometricConstraints.AddCoincident(e.StartSketchPoint, c)
+            gc = skpl.GeometricConstraints.AddTangent(e, c)
+            gc = skpl.GeometricConstraints.AddCoincident(c.StartSketchPoint, e)
+            gc = skpl.GeometricConstraints.AddCoincident(e.CenterSketchPoint, l)
+            gc = skpl.GeometricConstraints.AddSymmetry(d, e, cl)
+            pro = skpl.Profiles.AddForSolid
+            Return pro
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
     End Function
     Public Function MergeSingleWedge(s As String) As DerivedPartComponent
         Dim derivedDefinition As DerivedPartDefinition

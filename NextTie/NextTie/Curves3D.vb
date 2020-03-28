@@ -77,7 +77,16 @@ Public Class Curves3D
     Public Function DrawTrobinaCurve(sk As Sketch3D, q As Integer, d As Double, f As Integer) As SketchEquationCurve3D
         Dim g As Integer = 0
         If f > 6 Then
-            g = f - 3
+            If f > 7 Then
+                If f > 8 Then
+                    g = f - 4
+                Else
+                    g = f - 3
+                End If
+            Else
+                g = f - 1
+            End If
+
         End If
         sk.Edit()
         Dim r, z As String

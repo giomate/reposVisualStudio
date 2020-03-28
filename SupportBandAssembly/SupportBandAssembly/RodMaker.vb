@@ -44,6 +44,7 @@ Public Class RodMaker
     Dim minorEdge, majorEdge, bendEdge, adjacentEdge, cutEdge1, cutEdge2, CutEsge3, leadingEdge, followEdge As Edge
     Dim bendAngle As DimensionConstraint
     Dim gapFold, gapVertex As DimensionConstraint3D
+    Dim largo As DimensionConstraint
     Dim folded As FoldFeature
     Public foldFeatures As FoldFeatures
     Dim features As SheetMetalFeatures
@@ -107,11 +108,14 @@ Public Class RodMaker
         Try
 
             tf = GetStartingface(ws)
+            MakeSingleRod(tf)
+            sk3D.Visible = False
+            tf = GetStartingface(ws)
             fc = tf.TangentiallyConnectedFaces
             fi = fc.Count
             For i = 1 To fi
                 If fc.Item(i).SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
-                    lamp.HighLighFace(fc.Item(i))
+                    ' lamp.HighLighFace(fc.Item(i))
                     MakeSingleRod(fc.Item(i))
                     sk3D.Visible = False
                     tf = GetStartingface(ws)
@@ -163,7 +167,7 @@ Public Class RodMaker
         Dim wa As WorkAxis
         Dim le As SketchLine3D
         Try
-            lamp.HighLighFace(f)
+            ' lamp.HighLighFace(f)
             wa = doku.ComponentDefinition.WorkAxes.AddByRevolvedFace(f)
             workAxis = wa
 
@@ -194,6 +198,9 @@ Public Class RodMaker
             Dim le2d, l2d, l32d, mne As SketchLine
             Dim gc, gccc As GeometricConstraint
             Dim r As SketchEntitiesEnumerator
+            Dim dc As DimensionConstraint
+            Dim d As Double = 0
+            Dim i As Integer
             wpl = doku.ComponentDefinition.WorkPlanes.AddByThreePoints(cl.EndPoint, cl.StartPoint, le.StartPoint)
             ps = doku.ComponentDefinition.Sketches.Add(wpl)
 
@@ -209,6 +216,7 @@ Public Class RodMaker
                 l32d = ps.SketchLines.AddByTwoPoints(le2d.StartSketchPoint.Geometry, l2d.StartSketchPoint.Geometry)
                 l32d.Construction = True
                 gccc = ps.GeometricConstraints.AddCoincident(l32d.StartSketchPoint, le2d)
+
             Else
                 l32d = ps.SketchLines.AddByTwoPoints(le2d.EndSketchPoint.Geometry, l2d.EndSketchPoint.Geometry)
                 l32d.Construction = True
@@ -219,9 +227,18 @@ Public Class RodMaker
             gc = ps.GeometricConstraints.AddPerpendicular(l32d, le2d)
             If mne.EndSketchPoint.Geometry.DistanceTo(l32d.EndSketchPoint.Geometry) > mne.StartSketchPoint.Geometry.DistanceTo(l32d.EndSketchPoint.Geometry) Then
                 ps.SketchLines.AddAsThreePointRectangle(l32d.StartSketchPoint.Geometry, l32d.EndSketchPoint.Geometry, mne.EndSketchPoint.Geometry)
+                ' dc = ps.DimensionConstraints.AddTwoPointDistance(l32d.EndSketchPoint, mne.EndSketchPoint, DimensionOrientationEnum.kAlignedDim, mne.EndSketchPoint.Geometry)
             Else
                 ps.SketchLines.AddAsThreePointRectangle(l32d.StartSketchPoint.Geometry, l32d.EndSketchPoint.Geometry, mne.StartSketchPoint.Geometry)
+                ' dc = ps.DimensionConstraints.AddTwoPointDistance(l32d.EndSketchPoint, mne.StartSketchPoint, DimensionOrientationEnum.kAlignedDim, mne.StartSketchPoint.Geometry)
             End If
+            i = ps.SketchLines.Count
+            If ps.SketchLines.Item(i).Length > ps.SketchLines.Item(i - 1).Length Then
+                largo = ps.DimensionConstraints.AddTwoPointDistance(ps.SketchLines.Item(i).StartSketchPoint, ps.SketchLines.Item(i).EndSketchPoint, DimensionOrientationEnum.kAlignedDim, mne.StartSketchPoint.Geometry)
+            Else
+                largo = ps.DimensionConstraints.AddTwoPointDistance(ps.SketchLines.Item(i - 1).StartSketchPoint, ps.SketchLines.Item(i - 1).EndSketchPoint, DimensionOrientationEnum.kAlignedDim, mne.StartSketchPoint.Geometry)
+            End If
+
 
             faceProfile = ps.Profiles.AddForSolid
             workAxis.Visible = False
@@ -239,8 +256,52 @@ Public Class RodMaker
             rf = doku.ComponentDefinition.Features.RevolveFeatures.AddFull(pro, workAxis, PartFeatureOperationEnum.kJoinOperation)
 
         Catch ex As Exception
-            MsgBox(ex.ToString())
-            Return Nothing
+            Try
+                largo.Parameter._Value = largo.Parameter._Value * 1.01
+                rf = doku.ComponentDefinition.Features.RevolveFeatures.AddFull(pro, workAxis, PartFeatureOperationEnum.kJoinOperation)
+
+            Catch ex2 As Exception
+                Try
+                    largo.Parameter._Value = largo.Parameter._Value / 1.01
+                    largo.Driven = True
+                    Dim dc1, dc2 As DimensionConstraint
+                    Dim ps As PlanarSketch
+                    Dim skpt, lpt1, lpt2 As SketchPoint
+                    Dim l1 As TwoPointDistanceDimConstraint
+                    Dim ls As LineSegment2d
+                    Dim gc As GeometricConstraint
+                    l1 = largo
+                    ps = largo.Parent
+                    lpt1 = l1.PointOne
+                    lpt2 = l1.PointTwo
+                    ls = tg.CreateLineSegment2d(lpt1.Geometry, lpt2.Geometry)
+                    skpt = ps.SketchPoints.Add(ls.MidPoint)
+                    gc = ps.GeometricConstraints.AddGround(skpt)
+                    dc1 = ps.DimensionConstraints.AddTwoPointDistance(lpt1, skpt, DimensionOrientationEnum.kAlignedDim, lpt1.Geometry)
+                    Try
+                        dc1.Parameter._Value = dc1.Parameter._Value * 1.01
+                        rf = doku.ComponentDefinition.Features.RevolveFeatures.AddFull(pro, workAxis, PartFeatureOperationEnum.kJoinOperation)
+                    Catch ex4 As Exception
+                        Try
+                            dc1.Parameter._Value = dc1.Parameter._Value / 1.02
+                            dc2 = ps.DimensionConstraints.AddTwoPointDistance(lpt2, skpt, DimensionOrientationEnum.kAlignedDim, lpt2.Geometry)
+                            dc2.Parameter._Value = dc2.Parameter._Value * 1.04
+                            doku.Update2(True)
+                            rf = doku.ComponentDefinition.Features.RevolveFeatures.AddFull(pro, workAxis, PartFeatureOperationEnum.kJoinOperation)
+                        Catch ex5 As Exception
+                            MsgBox(ex.ToString())
+                            Return Nothing
+                        End Try
+                    End Try
+
+
+                Catch ex3 As Exception
+                    MsgBox(ex.ToString())
+                    Return Nothing
+                End Try
+
+            End Try
+
         End Try
 
         Return rf

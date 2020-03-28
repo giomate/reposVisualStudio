@@ -22,7 +22,7 @@ Public Class Form1
         ' This call is required by the designer.
         InitializeComponent()
 
-        iteration = 2
+        iteration = 5
         ' Add any initialization after the InitializeComponent() call.
         Try
 

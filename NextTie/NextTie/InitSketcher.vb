@@ -21,7 +21,7 @@ Public Class InitSketcher
     Public bandLines, constructionLines As ObjectCollection
     Dim comando As Commands
     Dim nombrador As Nombres
-    Dim metro, gapFold As DimensionConstraint3D
+    Dim metro, gapFold, dcThirdLine As DimensionConstraint3D
     Dim startPoint As GeometricConstraint3D
     Dim sheetMetalFeatures As SheetMetalFeatures
     Dim compDef As SheetMetalComponentDefinition
@@ -337,8 +337,8 @@ Public Class InitSketcher
             l = sk3D.SketchLines3D.AddByTwoPoints(refLine.StartSketchPoint.Geometry, refLine.EndSketchPoint.Geometry)
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, curve)
             gc = sk3D.GeometricConstraints3D.AddGround(l.StartPoint)
-
-            Try
+            If qvalue > 23 Then
+                Try
                     gpc = sk3D.GeometricConstraints3D.AddParallel(l, refLine)
                 Catch ex As Exception
                     gpc.Delete()
@@ -347,6 +347,8 @@ Public Class InitSketcher
                     startPoint = gc
 
                 End If
+            End If
+
 
 
             point1 = l.StartSketchPoint.Geometry
@@ -394,7 +396,8 @@ Public Class InitSketcher
             Dim v1, v2, v3 As Vector
             Dim p As Plane
             Dim l As SketchLine3D = Nothing
-            Dim optpoint As Point = Nothing
+            Dim optpoint As Point = curve.EndSketchPoint.Geometry
+            Dim dc As DimensionConstraint3D
             Dim d As Double
             v1 = lastLine.StartSketchPoint.Geometry.VectorTo(lastLine.EndSketchPoint.Geometry)
             v3 = doku.ComponentDefinition.WorkPoints.Item(1).Point.VectorTo(lastLine.EndSketchPoint.Geometry)
@@ -414,9 +417,28 @@ Public Class InitSketcher
 
 
             Next
+            If Math.Abs(firstLine.Length - GetParameter("b")._Value) < 1 / GetParameter("b")._Value Then
+                dc = sk3D.DimensionConstraints3D.AddLineLength(firstLine)
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value * 24 / 25)
+                dc.Delete()
+            End If
+            Try
+                l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.EndPoint, optpoint, False)
+            Catch ex As Exception
+                dc = sk3D.DimensionConstraints3D.AddLineLength(firstLine)
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value * 23 / 25)
+                dc.Delete()
+                l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.EndPoint, optpoint, False)
 
-            l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.EndPoint, optpoint, False)
+            End Try
+
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
+            If l.Length > GetParameter("b")._Value Then
+                dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value)
+                dc.Delete()
+
+            End If
             metro = sk3D.DimensionConstraints3D.AddLineLength(l)
             metro.Driven = True
 
@@ -729,12 +751,12 @@ Public Class InitSketcher
             Dim minDis, d As Double
             Dim optpoint As Point
             Dim dc As DimensionConstraint3D
-            dc = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
-            If dc.Parameter._Value > curve3D.DP.b * 2 / 10 Then
-                If adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 4 / 5) Then
-                    dc.Driven = True
+            dcThirdLine = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
+            If dcThirdLine.Parameter._Value > curve3D.DP.b * 2 / 10 Then
+                If adjuster.AdjustDimensionConstraint3DSmothly(dcThirdLine, dcThirdLine.Parameter._Value * 4 / 5) Then
+                    dcThirdLine.Driven = True
                 Else
-                    dc.Delete()
+                    dcThirdLine.Delete()
                 End If
             End If
             cl3 = constructionLines.Item(3)
@@ -813,8 +835,8 @@ Public Class InitSketcher
     Function AdjustlastAngle() As Boolean
         Try
             Dim fourLine, sixthLine, cl2, cl3, bl5 As SketchLine3D
-            Dim dc As TwoLineAngleDimConstraint3D
-            Dim ac As DimensionConstraint3D
+
+            Dim ac, dc, acl4l6 As DimensionConstraint3D
             Dim gc As GeometricConstraint3D
             Dim limit As Double = 0.1
             Dim angleLimit As Double = 2.4
@@ -830,12 +852,35 @@ Public Class InitSketcher
             sixthLine = bandLines.Item(6)
             cl2 = constructionLines.Item(2)
             ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(thirdLine, bl5)
-            If adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2) Then
-                ac.Delete()
-                gc = sk3D.GeometricConstraints3D.AddPerpendicular(thirdLine, bl5)
-            Else
-                ac.Driven = True
-            End If
+            Try
+                dcThirdLine.Delete()
+            Catch ex As Exception
+
+            End Try
+            dc = sk3D.DimensionConstraints3D.AddLineLength(sixthLine)
+            Try
+                acl4l6 = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
+
+            Catch ex As Exception
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 17 / 16)
+                doku.Update2(True)
+
+                acl4l6 = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
+
+            End Try
+            acl4l6.Driven = True
+            Try
+                While ((acl4l6.Parameter._Value > angleLimit And acl4l6.Parameter._Value < Math.PI - limit) And counterLimit < 8)
+
+                    adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2 * (1 - Math.Exp(-16 * ac.Parameter._Value / (Math.PI * 1))))
+                    counterLimit = counterLimit + 1
+                End While
+            Catch ex As Exception
+
+            End Try
+
+            acl4l6.Delete()
+            dc.Delete()
             dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
             dc.Driven = True
             d = CalculateRoof()

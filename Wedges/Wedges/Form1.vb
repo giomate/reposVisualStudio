@@ -71,14 +71,12 @@ Public Class Form1
         Dim b As Boolean
         Try
             If (started) Then
-
                 Dim p As String = oDesignProjectMgr.ActiveDesignProject.WorkspacePath
-
                 Dim ffn As String
-                ffn = String.Concat(p, "\Iteration1\Band9.ipt")
+                ffn = String.Concat(p, "\Iteration5\Band9.ipt")
                 oDoc = invDoc.OpenFullFileName(ffn)
                 piedra = New Wedges(oDoc)
-                piedra.MakeWedgesIteration(1)
+                piedra.MakeWedgesIteration(5)
                 b = piedra.done
             End If
             Return b

@@ -219,11 +219,17 @@ Public Class OriginSketch
 
         Dim l As SketchLine3D
         Dim sp As SketchPoint3D
+        Dim dc As DimensionConstraint3D
         centroPoint = tg.CreatePoint(0, 0, 0)
         sp = sk3D.SketchPoints3D.Add(centroPoint)
         sk3D.GeometricConstraints3D.AddGround(sp)
         l = sk3D.SketchLines3D.AddByTwoPoints(refLine.StartPoint, sp, False)
         l.Construction = True
+        If l.Length > GetParameter("b")._Value * 7 / 3 Then
+            dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+            adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value * 2)
+            dc.Delete()
+        End If
 
         ' endPoint.TranslateBy(v)s Vector
         'v = firstLine.Geometry.Direction.AsVector
@@ -283,6 +289,7 @@ Public Class OriginSketch
             ' Dim dc As DimensionConstraint3D
             Dim gc As GeometricConstraint3D
             Dim v1, v2, v3 As Vector
+            Dim ac As DimensionConstraint3D
             v1 = doblezline.Geometry.Direction.AsVector
             v2 = twistLine.Geometry.Direction.AsVector
             v3 = v1.CrossProduct(v2)
@@ -293,10 +300,17 @@ Public Class OriginSketch
             'dc = sk3D.DimensionConstraints3D.AddLineLength(l)
             ' dc.Parameter._Value = curve3D.DP.b / 10
             doku.Update2(True)
+            ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, twistLine)
+            adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2)
+            ac.Delete()
             gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, twistLine)
+
             doku.Update2(True)
             gc.Delete()
             doku.Update2(True)
+            ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, centroLine)
+            adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2)
+            ac.Delete()
             gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, centroLine)
             doku.Update2(True)
             gc.Delete()
@@ -304,7 +318,13 @@ Public Class OriginSketch
             bandLines.Add(l)
             firstLine = l
             lastLine = l
+            If sk3D.Name = "s7" Then
+                If IsFirstLineInside() Then
+                Else
+                    ForceFirstLineInside()
 
+                End If
+            End If
 
             Return l
         Catch ex As Exception
@@ -313,22 +333,62 @@ Public Class OriginSketch
         End Try
         Return Nothing
     End Function
+    Function IsFirstLineInside() As Boolean
+
+        If firstLine.EndSketchPoint.Geometry.DistanceTo(curve.EndSketchPoint.Geometry) < firstLine.StartSketchPoint.Geometry.DistanceTo(curve.EndSketchPoint.Geometry) Then
+            Return True
+        Else
+            Return False
+
+        End If
+
+    End Function
+    Function ForceFirstLineInside() As Boolean
+        Dim limit As Integer = 0
+        Dim dc As DimensionConstraint3D
+        Try
+            While (Not IsFirstLineInside() And limit < 8)
+                Try
+                    dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(firstLine.EndPoint, curve.EndSketchPoint)
+                    adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 3 / 4)
+                    dc.Delete()
+                    Try
+                        dc.Delete()
+                    Catch ex2 As Exception
+
+                    End Try
+                    limit = limit + 1
+                Catch ex As Exception
+                    limit = limit + 1
+                End Try
+
+            End While
+        Catch ex As Exception
+            Try
+                dc.Delete()
+            Catch ex2 As Exception
+
+            End Try
+        End Try
+        Return IsFirstLineInside()
+    End Function
+
     Function DrawSecondLine() As SketchLine3D
         Try
             Dim v1, v2, v3 As Vector
             v1 = lastLine.StartSketchPoint.Geometry.VectorTo(lastLine.EndSketchPoint.Geometry)
             v3 = twistLine.StartSketchPoint.Geometry.VectorTo(twistLine.EndSketchPoint.Geometry)
-            Dim l As SketchLine3D = Nothing
+            Dim l As SketchLine3D
             Dim d As Double
-            Dim dc As DimensionConstraint3D
-            Dim optpoint As Point = Nothing
+            Dim dc, ac As DimensionConstraint3D
+            Dim optpoint As Point
             Dim p As Plane
             p = tg.CreatePlane(lastLine.EndSketchPoint.Geometry, v1)
             Dim minDis As Double = 9999999999
             For Each o As Point In p.IntersectWithCurve(curve.Geometry)
                 'l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.EndPoint, o, False)
                 v2 = lastLine.EndSketchPoint.Geometry.VectorTo(o)
-                d = v2.DotProduct(v3)
+                d = v2.DotProduct(v3) * v1.CrossProduct(v2).Length
                 If d > 0 Then
                     If d < minDis Then
                         minDis = d
@@ -336,8 +396,29 @@ Public Class OriginSketch
                     End If
                 End If
             Next
-            l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.EndPoint, optpoint, False)
+            Try
+                l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.EndPoint, optpoint, False)
+            Catch ex As Exception
+                l = sk3D.SketchLines3D.AddByTwoPoints(lastLine.EndPoint, curve.EndSketchPoint.Geometry, False)
+                sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
+                dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value / 2)
+                dc.Delete()
+                Try
+                    dc.Delete()
+                Catch ex3 As Exception
+
+                End Try
+            End Try
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
+            Try
+                ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, firstLine)
+                adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2)
+                ac.Delete()
+            Catch ex2 As Exception
+                ac.Delete()
+            End Try
+
             Try
                 dc = sk3D.DimensionConstraints3D.AddLineLength(l)
                 If dc.Parameter._Value > GetParameter("b")._Value * 2 Then
@@ -355,7 +436,12 @@ Public Class OriginSketch
             lastLine = l
             bandLines.Add(l)
             secondLine = lastLine
-
+            If sk3D.Name = "s7" Then
+                If IsFirstLineInside() Then
+                Else
+                    ForceFirstLineInside()
+                End If
+            End If
 
             Return l
         Catch ex As Exception
@@ -368,7 +454,7 @@ Public Class OriginSketch
         Try
             Dim l As SketchLine3D = Nothing
             Dim endPoint As Point
-            Dim dc As DimensionConstraint3D
+            Dim dc, ac As DimensionConstraint3D
 
             'Dim v As Vector
             'v = firstLine.Geometry.Direction.AsVector
@@ -377,9 +463,19 @@ Public Class OriginSketch
             'endPoint.TranslateBy(v)
             l = sk3D.SketchLines3D.AddByTwoPoints(firstLine.StartPoint, firstLine.EndSketchPoint.Geometry, False)
             ' endPoint.TranslateBy(v)
-
+            ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, secondLine)
+            adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2)
+            ac.Delete()
             sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
-            sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, secondLine)
+            Try
+                sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, secondLine)
+            Catch ex As Exception
+                dc = sk3D.DimensionConstraints3D.AddLineLength(firstLine)
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 6 / 5)
+                dc.Delete()
+                sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, secondLine)
+            End Try
+
             dc = sk3D.DimensionConstraints3D.AddLineLength(l)
             If adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value) Then
                 dc.Parameter._Value = GetParameter("b")._Value
@@ -393,6 +489,13 @@ Public Class OriginSketch
 
 
             lastLine = l
+            If sk3D.Name = "s7" Then
+                If IsFirstLineInside() Then
+                Else
+                    ForceFirstLineInside()
+
+                End If
+            End If
             Return l
         Catch ex As Exception
             MsgBox(ex.ToString())
@@ -419,7 +522,16 @@ Public Class OriginSketch
                 ac.Driven = False
                 adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2)
                 ac.Driven = True
-                sk3D.GeometricConstraints3D.AddPerpendicular(l, bl4)
+                Try
+                    sk3D.GeometricConstraints3D.AddPerpendicular(l, bl4)
+                Catch ex3 As Exception
+                    dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+                    adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value * 2 / 3)
+                    dc.Delete()
+                    sk3D.GeometricConstraints3D.AddPerpendicular(l, bl4)
+                End Try
+
+
             End Try
 
             dc = sk3D.DimensionConstraints3D.AddLineLength(l)
@@ -446,6 +558,7 @@ Public Class OriginSketch
 
     End Function
     Function DrawFourthConstructionLine() As SketchLine3D
+        Dim dcwo1 As DimensionConstraint3D
         Try
             Dim c As Integer
             Dim l, fl As SketchLine3D
@@ -538,14 +651,27 @@ Public Class OriginSketch
                                             dcbl1.Driven = True
                                             dcbl4.Driven = True
                                         End Try
-
                                         dcbl4.Delete()
-
                                         dcbl1.Delete()
-                                        gc = sk3D.GeometricConstraints3D.AddEqual(l, cl3)
+                                        Try
+                                            dc2.Driven = True
+                                            gc = sk3D.GeometricConstraints3D.AddEqual(l, cl3)
+                                        Catch ex6 As Exception
+                                            dc2.Driven = False
+                                            adjuster.AdjustDimensionConstraint3DSmothly(dc2, GetParameter("b")._Value * 1.01)
+                                            adjuster.AdjustDimensionConstraint3DSmothly(dc2, GetParameter("b")._Value)
+                                            dc2.Driven = True
+                                            gc = sk3D.GeometricConstraints3D.AddEqual(l, cl3)
+                                        End Try
+
                                     Catch ex2 As Exception
-                                        dcbl1.Driven = True
-                                        dcbl4.Driven = True
+                                        Try
+                                            dcbl1.Driven = True
+                                            dcbl4.Driven = True
+                                        Catch ex7 As Exception
+
+                                        End Try
+
                                     End Try
                                 End Try
                             End Try
@@ -563,34 +689,45 @@ Public Class OriginSketch
                 dcl = sk3D.DimensionConstraints3D.AddLineLength(fl)
                 adjuster.AdjustDimensionConstraint3DSmothly(dcl, GetParameter("b")._Value * 3)
                 dcl.Delete()
+                Dim bl5 As SketchLine3D = bandLines.Item(5)
                 Try
                     gc = sk3D.GeometricConstraints3D.AddCoincident(fl.EndPoint, curve)
                 Catch ex4 As Exception
-                    Dim v, v2 As Vector
-                    Dim bl5 As SketchLine3D = bandLines.Item(5)
-                    v = bl5.Geometry.Direction.AsVector
-                    Dim pl As Plane
-                    pl = tg.CreatePlane(bl5.StartSketchPoint.Geometry, v)
-                    Dim opt As Point
-                    Dim dMin As Double = 99999999
-                    For Each o As Point In pl.IntersectWithCurve(curve.Geometry)
-                        If o.DistanceTo(bl5.StartSketchPoint.Geometry) < dMin Then
-                            dMin = o.DistanceTo(bl5.StartSketchPoint.Geometry)
-                            opt = o
-                        End If
-                    Next
-                    Dim skpt As SketchPoint3D
-                    skpt = sk3D.SketchPoints3D.Add(opt)
-                    Dim dcwo1 As DimensionConstraint3D
-                    dcwo1 = sk3D.DimensionConstraints3D.AddTwoPointDistance(bl5.StartPoint, skpt)
-                    adjuster.AdjustDimensionConstraint3DSmothly(dcwo1, dcwo1.Parameter._Value / 4)
-                    dcwo1.Driven = True
-                    gc = sk3D.GeometricConstraints3D.AddCoincident(fl.EndPoint, curve)
+                    If sk3D.Name = "s9" Then
+                        Dim v, v2 As Vector
+
+                        v = bl5.Geometry.Direction.AsVector
+                        Dim pl As Plane
+                        pl = tg.CreatePlane(bl5.StartSketchPoint.Geometry, v)
+                        Dim opt As Point
+                        Dim dMin As Double = 99999999
+                        For Each o As Point In pl.IntersectWithCurve(curve.Geometry)
+                            If o.DistanceTo(bl5.StartSketchPoint.Geometry) < dMin Then
+                                dMin = o.DistanceTo(bl5.StartSketchPoint.Geometry)
+                                opt = o
+                            End If
+                        Next
+                        Dim skpt As SketchPoint3D
+                        skpt = sk3D.SketchPoints3D.Add(opt)
+                        sk3D.GeometricConstraints3D.AddGround(skpt)
+
+                        dcwo1 = sk3D.DimensionConstraints3D.AddTwoPointDistance(bl5.StartPoint, skpt)
+                        adjuster.AdjustDimensionConstraint3DSmothly(dcwo1, dcwo1.Parameter._Value / 4)
+                        dcwo1.Delete()
+
+                        gc = sk3D.GeometricConstraints3D.AddCoincident(fl.EndPoint, curve)
+                    Else
+
+                        dcwo1 = sk3D.DimensionConstraints3D.AddTwoPointDistance(bl5.StartPoint, curve.EndSketchPoint)
+                        adjuster.AdjustDimensionConstraint3DSmothly(dcwo1, dcwo1.Parameter._Value / 4)
+                        dcwo1.Delete()
+                        gc = sk3D.GeometricConstraints3D.AddCoincident(fl.EndPoint, curve)
+                    End If
 
                 End Try
 
-            End Try
 
+            End Try
 
             l.Construction = True
             constructionLines.Add(l)
@@ -626,30 +763,49 @@ Public Class OriginSketch
             Dim l, pl As SketchLine3D
             Dim endPoint As Point
             Dim dc As DimensionConstraint3D
-            v1 = firstLine.EndSketchPoint.Geometry.VectorTo(firstLine.StartSketchPoint.Geometry)
-            v2 = secondLine.EndSketchPoint.Geometry.VectorTo(secondLine.StartSketchPoint.Geometry)
-            v3 = gapFoldLine.Geometry.Direction.AsVector
-            v3.ScaleBy(-1 * gapFoldCM)
+            Dim gc As GeometricConstraint3D
+            v1 = twistLine.Geometry.Direction.AsVector
+            v3 = doblezline.Geometry.Direction.AsVector
+            v2 = gapFoldLine.Geometry.Direction.AsVector
+            v1.AddVector(v2)
+            v1.AddVector(v3)
+
+            v1.ScaleBy(-1 * gapFoldCM)
             If sk3D.Name = "s9" Then
                 ' v3.ScaleBy(-1)
             End If
             endPoint = secondLine.StartSketchPoint.Geometry
-            endPoint.TranslateBy(v3)
+            endPoint.TranslateBy(v1)
             l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.StartSketchPoint.Geometry, endPoint, False)
-            endPoint.TranslateBy(v3)
+
             gapFold = sk3D.DimensionConstraints3D.AddLineLength(l)
 
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, secondLine)
-            sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, firstLine)
+            gc = sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, firstLine)
             Try
+                dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, secondLine)
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, Math.PI / 2)
+                dc.Delete()
                 sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
             Catch ex As Exception
                 dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, secondLine)
                 adjuster.AdjustDimensionConstraint3DSmothly(dc, Math.PI / 2)
-                dc.Driven = True
-                sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
-            End Try
 
+
+            End Try
+            Try
+                dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, firstLine)
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, Math.PI / 2)
+                dc.Delete()
+
+            Catch ex As Exception
+                Try
+                    dc.Delete()
+                Catch ex3 As Exception
+
+                End Try
+            End Try
+            adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
 
             lastLine = l
             constructionLines.Add(l)
@@ -684,6 +840,9 @@ Public Class OriginSketch
             pl = firstLine
             l = sk3D.SketchLines3D.AddByTwoPoints(pl.StartPoint, lastLine.EndSketchPoint.Geometry, False)
             Try
+                acl = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, lastLine)
+                adjuster.AdjustDimensionConstraint3DSmothly(acl, Math.PI / 2)
+                acl.Delete()
                 sk3D.GeometricConstraints3D.AddPerpendicular(l, lastLine)
             Catch ex As Exception
                 acl = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, lastLine)
@@ -698,7 +857,15 @@ Public Class OriginSketch
                 dcl = sk3D.DimensionConstraints3D.AddTwoPointDistance(lastLine.EndPoint, l.EndPoint)
                 adjuster.AdjustDimensionConstraint3DSmothly(dcl, gapFoldCM)
                 dcl.Delete()
-                sk3D.GeometricConstraints3D.AddCoincident(lastLine.EndPoint, l)
+                Try
+                    sk3D.GeometricConstraints3D.AddCoincident(lastLine.EndPoint, l)
+                Catch ex2 As Exception
+                    dcl = sk3D.DimensionConstraints3D.AddTwoPointDistance(lastLine.EndPoint, l.EndPoint)
+                    adjuster.AdjustDimensionConstraint3DSmothly(dcl, gapFoldCM / 8)
+                    dcl.Delete()
+                    sk3D.GeometricConstraints3D.AddCoincident(lastLine.EndPoint, l)
+                End Try
+
             End Try
 
             'sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)

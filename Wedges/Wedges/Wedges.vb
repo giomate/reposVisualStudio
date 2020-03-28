@@ -44,7 +44,7 @@ Public Class Wedges
     Dim workPointFace As WorkPoint
     Dim minorEdge, majorEdge, bendEdge, adjacentEdge, cutEdge1, cutEdge2, CutEsge3, closestEdge As Edge
     Dim minorLine, majorLine, cutLine3D, kante3D, tante3D As SketchLine3D
-    Dim workFace, adjacentFace, bendFace, frontBendFace, cutFace, cylinderFace As Face
+    Dim workFace, adjacentFace, bendFace, frontBendFace, cutFace, cylinderFace, sideMajorFace, sideMinorFace As Face
     Dim workFaces As FaceCollection
     Dim bendAngle As DimensionConstraint
     Dim gapFold, gapVertex As DimensionConstraint3D
@@ -114,8 +114,8 @@ Public Class Wedges
         DP.Dmin = 1 / 10
         Tr = (DP.Dmax + DP.Dmin) / 4
         Cr = (DP.Dmax - DP.Dmin) / 4
-        DP.p = 13
-        DP.q = 31
+        DP.p = 11
+        DP.q = 23
         DP.b = 25
 
         done = False
@@ -143,33 +143,34 @@ Public Class Wedges
 
                 For Each s As String In fullFileNames
                     If nombrador.ContainBand(s) Then
-                        doku = MakeSingleWedge(s)
-                        doku.ComponentDefinition.WorkSurfaces.Item(2).Visible = False
-                        'FillVoids()
+                        If Not IsWedgeDone(nombrador.MakeWedgeFileName(s)) Then
+                            doku = MakeSingleWedge(s)
+                            doku.ComponentDefinition.WorkSurfaces.Item(2).Visible = False
+                            'FillVoids()
 
-                        CombineBodies()
+                            CombineBodies()
 
-                        '  CombineBodiesDuo()
-                        palito.MakeAllRods(doku.ComponentDefinition.WorkSurfaces.Item(1))
+                            '  CombineBodiesDuo()
+                            palito.MakeAllRods(doku.ComponentDefinition.WorkSurfaces.Item(1))
 
-                        monitor = New DesignMonitoring(doku)
-                        doku.Update2(True)
+                            monitor = New DesignMonitoring(doku)
+                            doku.Update2(True)
 
-                        MakeHole()
+                            MakeHole()
 
-                        bandFaces = doku.ComponentDefinition.WorkSurfaces.Item(1)
-                        RemoveExcessFaces(doku.ComponentDefinition.WorkSurfaces.Item(1))
-                        If monitor.IsFeatureHealthy(EmbossNumber(s)) Then
-                            doku.SaveAs(nombrador.MakeWedgeFileName(s), False)
-                            doku.Close(True)
-                            app.Documents.CloseAll()
+                            bandFaces = doku.ComponentDefinition.WorkSurfaces.Item(1)
+                            RemoveExcessFaces(doku.ComponentDefinition.WorkSurfaces.Item(1))
+                            If monitor.IsFeatureHealthy(EmbossNumber(s)) Then
+                                app.SilentOperation = True
+                                doku.SaveAs(nombrador.MakeWedgeFileName(s), False)
+                                doku.Save()
+                                doku.Close(True)
+                                app.Documents.CloseAll()
 
+                            End If
                         End If
-
-
-
-
                     End If
+
                 Next
 
                 done = True
@@ -181,6 +182,15 @@ Public Class Wedges
             Return Nothing
         End Try
 
+    End Function
+    Function IsWedgeDone(s As String) As Boolean
+        For Each ffn As String In fullFileNames
+            If ffn.Equals(s) Then
+                Return True
+            End If
+        Next
+
+        Return False
     End Function
     Function GetStartingface(ws As WorkSurface) As Face
         Dim min2, min1 As Double
@@ -243,12 +253,13 @@ Public Class Wedges
 
                         Next
                         v = wpf.Point.VectorTo(wptpf.Point)
-                        v.ScaleBy(f.Evaluator.Area * 3)
+                        v.ScaleBy(f.Evaluator.Area * 24)
                         pt = wpf.Point
                         pt.TranslateBy(v)
                         wpt = doku.ComponentDefinition.WorkPoints.AddFixed(pt)
                         ef = RemoveFakeMaterial(f, wpt)
                         If monitor.IsFeatureHealthy(ef) Then
+                            RemoveBorders(f, wpt, ef)
                             v.ScaleBy(1)
                             wpt.Visible = False
                         Else
@@ -282,6 +293,277 @@ Public Class Wedges
 
 
         Return ef
+    End Function
+    Function GetRealNormal(f As Face, ws As WorkSurface) As Vector
+        Dim v As Vector
+        Dim wpf, wpt, wptpf As WorkPoint
+        Dim pt As Point
+        Dim pl, plw As Plane
+        Try
+            Try
+                wpf = doku.ComponentDefinition.WorkPoints.AddAtCentroid(f.EdgeLoops.Item(1))
+                pl = f.Geometry
+
+                ' If IsPointContained(pt, doku.ComponentDefinition.SurfaceBodies.Item(1)) Then
+
+                For Each fw As Face In ws.SurfaceBodies.Item(1).Faces
+                    If fw.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                        If Not fw.Equals(f) Then
+                            If Math.Abs(f.Evaluator.Area - fw.Evaluator.Area) < 0.01 Then
+                                plw = fw.Geometry
+                                If Math.Abs(plw.Normal.AsVector.DotProduct(pl.Normal.AsVector)) > 0.999 Then
+                                    wptpf = doku.ComponentDefinition.WorkPoints.AddAtCentroid(fw.EdgeLoops.Item(1))
+                                    Exit For
+                                End If
+                            End If
+                        End If
+
+                    End If
+
+                Next
+                v = wpf.Point.VectorTo(wptpf.Point)
+                Try
+                    wpf.Delete()
+                    wptpf.Delete()
+                Catch ex2 As Exception
+
+                End Try
+                Return v
+            Catch ex As Exception
+                Try
+                    wpf.Delete()
+                    wptpf.Delete()
+                Catch ex2 As Exception
+                    MsgBox(ex.ToString())
+                    Return Nothing
+                End Try
+            End Try
+        Catch ex As Exception
+            Try
+                wpf.Delete()
+                wptpf.Delete()
+            Catch ex2 As Exception
+                MsgBox(ex.ToString())
+                Return Nothing
+            End Try
+        End Try
+        Return Nothing
+    End Function
+    Function RemoveBorders(f As Face, wpt As WorkPoint, ef As ExtrudeFeature) As ExtrudeFeature
+
+
+        Dim d, e, dmin, dp, npls As Double
+        Dim ve, vc, vd As Vector
+        Dim mpt As Point
+        Dim ls As LineSegment
+        Dim plfr, plfd As Plane
+
+        Dim spl As PlanarSketch
+        Dim skl As SketchLine
+        Dim fr, fd As Face
+        dmin = 9999999
+        Try
+
+
+
+            For Each ed As Edge In f.Edges
+                e = CalculateEntryDistance(ed)
+                If e < dmin Then
+                    dmin = e
+                End If
+
+
+
+            Next
+
+            If ef.SideFaces.Count > 1 Then
+
+                fr = GetMajorFace(ef)
+                fd = sideMinorFace
+                plfd = sideMinorFace.Geometry
+                plfr = sideMajorFace.Geometry
+                npls = (plfd.Normal.AsVector).CrossProduct(plfr.Normal.AsVector).Length
+                If npls > 0.5 Then
+                    Dim sb As SurfaceBody = doku.ComponentDefinition.WorkSurfaces.Item(2).SurfaceBodies.Item(1)
+                    For Each ed As Edge In f.Edges
+                        d = ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point)
+                        For Each fs As Face In sb.Faces
+                            If fs.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                                For Each eds As Edge In fs.Edges
+                                    e = eds.StartVertex.Point.DistanceTo(eds.StopVertex.Point)
+                                    If Math.Abs(d - e) < 1 / 128 Then
+                                        Dim vg, vs As Vector
+                                        vg = ed.StartVertex.Point.VectorTo(ed.StopVertex.Point)
+                                        vs = eds.StartVertex.Point.VectorTo(eds.StopVertex.Point)
+                                        dp = Math.Abs(vg.DotProduct(vs))
+                                        If dp > 0.9 Then
+                                            If eds.GetClosestPointTo(ed.StartVertex.Point).DistanceTo(ed.StartVertex.Point) < 25 / 10 Then
+                                                Return MakeBandEntrance(ef, ed)
+                                            End If
+
+                                        End If
+                                    End If
+                                Next
+                            End If
+                        Next
+                        e = CalculateEntryDistance(ed)
+                        If e <= dmin Then
+                            Return MakeBandEntrance(ef, ed)
+                        End If
+                    Next
+                End If
+            End If
+
+
+
+            Try
+                spl.Visible = False
+            Catch ex As Exception
+
+            End Try
+
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+        Return Nothing
+    End Function
+    Function MakeBandEntrance(ef As ExtrudeFeature, ed As Edge) As ExtrudeFeature
+        Dim spl As PlanarSketch
+        Dim skl As SketchLine
+        Dim edt As Edge = ed
+        Dim fr, fd As Face
+        Dim mpt As Point
+        Dim ls As LineSegment
+        Dim plfr, plfd As Plane
+        Dim ve, vc, vd As Vector
+        Dim pt1, pt2, pt3, pt4 As Point
+        Dim spt1, spt2, spt3 As SketchPoint3D
+        Dim dmin As Double = 9999999
+        Dim d, e As Double
+        Try
+            sk3D = doku.ComponentDefinition.Sketches3D.Add()
+            d = CalculateClosestFace(GetMajorFace(ef))
+            e = CalculateClosestFace(sideMinorFace)
+            If d > e Then
+                fd = sideMinorFace
+                plfd = sideMinorFace.Geometry
+                fr = sideMajorFace
+                plfr = sideMajorFace.Geometry
+            Else
+                fd = sideMajorFace
+                plfd = sideMajorFace.Geometry
+                fr = sideMinorFace
+                plfr = sideMinorFace.Geometry
+
+            End If
+
+            lamp.HighLighObject(edt)
+            For Each vt As Vertex In fd.Vertices
+                d = vt.Point.DistanceTo(edt.StartVertex.Point)
+                e = vt.Point.DistanceTo(edt.StopVertex.Point)
+                If (d < dmin) Or (e < dmin) Then
+                    If e < d Then
+                        dmin = e
+                        pt4 = edt.StartVertex.Point
+                    Else
+                        dmin = d
+                        pt4 = edt.StopVertex.Point
+                    End If
+                    pt1 = vt.Point
+                End If
+            Next
+            spt1 = sk3D.SketchPoints3D.Add(pt1)
+            vc = plfd.Normal.AsVector.CrossProduct(plfr.Normal.AsVector)
+            pt2 = pt1
+            pt2.TranslateBy(vc)
+
+
+
+
+            spt2 = sk3D.SketchPoints3D.Add(pt2)
+            pt3 = pt1
+            pt3.TranslateBy(plfd.Normal.AsVector)
+            spt3 = sk3D.SketchPoints3D.Add(pt3)
+            sk3D.Visible = False
+            Dim wpl As WorkPlane = doku.ComponentDefinition.WorkPlanes.AddByThreePoints(spt1, spt2, spt3)
+            wpl.Visible = False
+
+            d = wpl.Plane.DistanceTo(pt4)
+            If d < 0 Then
+                d = d * -1
+            Else
+                d = 1 / 128
+            End If
+            spl = doku.ComponentDefinition.Sketches.Add(wpl)
+            'RemoveFaceExtend(fr)
+            Return RemoveEntryMaterial(spl, edt, d)
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+    End Function
+    Function CalculateEntryDistance(ed As Edge) As Double
+
+        Dim ve, vc As Vector
+        Dim mpt As Point
+        Dim ls As LineSegment
+        Dim e As Double
+        ls = ed.Geometry
+        mpt = ls.MidPoint
+        ve = ls.Direction.AsVector
+        vc = doku.ComponentDefinition.WorkPoints.Item(1).Point.VectorTo(mpt)
+        e = (Math.Abs(vc.DotProduct(ve))) * vc.Length
+
+        Return e
+    End Function
+    Function CalculateClosestFace(f As Face) As Double
+
+        Dim vp, vc As Vector
+        Dim mpt As Point
+        Dim pl As Plane
+        Dim wptfc As WorkPoint
+
+        Dim e As Double
+        pl = f.Geometry
+        wptfc = doku.ComponentDefinition.WorkPoints.AddAtCentroid(f.EdgeLoops.Item(1))
+        wptfc.Visible = False
+        mpt = wptfc.Point
+        vp = pl.Normal.AsVector
+        vc = doku.ComponentDefinition.WorkPoints.Item(1).Point.VectorTo(mpt)
+        e = Math.Abs(vc.DotProduct(vp)) / (vc.Length)
+
+        Return e
+    End Function
+    Function RemovePatch(spl As PlanarSketch, skl As SketchLine, wpt As WorkPoint) As ExtrudeFeature
+        Try
+
+            Dim v As Vector2d = skl.Geometry.Direction.AsVector
+            Dim spt As SketchPoint = spl.SketchPoints.Add(skl.Geometry.MidPoint)
+            Dim m As Matrix2d = tg.CreateMatrix2d
+            m.SetToRotation(Math.PI / 2, spt.Geometry)
+            v.TransformBy(m)
+            v.ScaleBy(skl.Length)
+            Dim pt2d As Point2d = skl.StartSketchPoint.Geometry
+            pt2d.TranslateBy(v)
+            spl.SketchPoints.Add(pt2d)
+            spl.SketchLines.AddAsThreePointCenteredRectangle(spt, skl.StartSketchPoint, pt2d)
+
+            Dim pro As Profile
+
+            pro = spl.Profiles.AddForSolid
+            Dim oExtrudeDef As ExtrudeDefinition
+            oExtrudeDef = doku.ComponentDefinition.Features.ExtrudeFeatures.CreateExtrudeDefinition(pro, PartFeatureOperationEnum.kCutOperation)
+            oExtrudeDef.SetToExtent(wpt)
+            Dim oExtrude As ExtrudeFeature
+            oExtrude = doku.ComponentDefinition.Features.ExtrudeFeatures.Add(oExtrudeDef)
+            Return oExtrude
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
     End Function
     Function GetWorkFace() As Face
         Try
@@ -356,6 +638,64 @@ Public Class Wedges
             MsgBox(ex.ToString())
             Return Nothing
         End Try
+
+
+
+    End Function
+    Function GetMajorFace(ef As ExtrudeFeature) As Face
+
+        Try
+            Dim maxArea1, maxArea2, maxArea3 As Double
+
+            Dim maxface1, maxface2, maxface3 As Face
+
+
+            maxface1 = ef.SideFaces.Item(1)
+            maxface2 = maxface1
+            maxArea2 = 0
+            maxArea1 = maxArea2
+            maxArea3 = maxArea2
+
+
+
+
+
+            For Each f As Face In ef.SideFaces
+                If f.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                    If f.Evaluator.Area > maxArea3 Then
+                        If f.Evaluator.Area > maxArea2 Then
+                            If f.Evaluator.Area > maxArea1 Then
+                                maxface3 = maxface2
+                                maxface2 = maxface1
+                                maxface1 = f
+                                maxArea3 = maxArea2
+                                maxArea2 = maxArea1
+                                maxArea1 = f.Evaluator.Area
+                            Else
+                                maxface3 = maxface2
+                                maxface2 = f
+                                maxArea3 = maxArea2
+                                maxArea2 = f.Evaluator.Area
+                            End If
+                        Else
+                            maxface3 = f
+                            maxArea3 = f.Evaluator.Area
+                        End If
+                    End If
+
+                End If
+            Next
+            sideMinorFace = maxface2
+            sideMajorFace = maxface1
+
+            lamp.HighLighFace(sideMajorFace)
+            lamp.HighLighFace(sideMinorFace)
+            Return sideMajorFace
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
 
 
 
@@ -597,9 +937,47 @@ Public Class Wedges
         majorEdge = e1
         Return e1
     End Function
+    Function GetMinorEdge(f As Face) As Edge
+        Dim e1, e2, e3 As Edge
+        Dim min1, min2, min3 As Double
+        min1 = 999999
+        min2 = 99999
+        min3 = 999999
+        e1 = f.EdgeLoops.Item(1).Edges.Item(1)
+        e2 = e1
+        e3 = e2
+        For Each ed As Edge In f.EdgeLoops.Item(1).Edges
+            If ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point) < min2 Then
+
+                If ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point) < min1 Then
+                    min3 = min2
+                    e3 = e2
+                    min2 = min1
+                    e2 = e1
+                    min1 = ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point)
+                    e1 = ed
+                Else
+                    min3 = min2
+                    e3 = e2
+                    min2 = ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point)
+                    e2 = ed
+                End If
+
+
+
+            End If
+
+        Next
+
+        minorEdge = e1
+
+        Return e1
+    End Function
     Function GetClosestEdge(f As Face) As Edge
         Dim e1, e2, e3 As Edge
-        Dim mine1, mine2, mine3 As Double
+        Dim mine1, mine2, mine3, d As Double
+        Dim ve, vc As Vector
+        Dim ls As LineSegment
         mine1 = 99999
         mine2 = 9999999
         mine3 = 999999
@@ -607,23 +985,28 @@ Public Class Wedges
         e2 = e1
         e3 = e2
         For Each ed As Edge In f.EdgeLoops.Item(1).Edges
-            If ed.GetClosestPointTo(wpConverge.Point).DistanceTo(wpConverge.Point) < mine2 Then
 
-                If ed.GetClosestPointTo(wpConverge.Point).DistanceTo(wpConverge.Point) < mine1 Then
+            ve = ed.StartVertex.Point.VectorTo(ed.StopVertex.Point)
+            ls = tg.CreateLineSegment(ed.StartVertex.Point, ed.StopVertex.Point)
+            vc = ls.MidPoint.VectorTo(wpConverge.Point)
+            d = ls.MidPoint.DistanceTo(wpConverge.Point)
+            If d < mine2 Then
+
+                If d < mine1 Then
                     mine3 = mine2
                     e3 = e2
                     mine2 = mine1
                     e2 = e1
-                    mine1 = ed.GetClosestPointTo(wpConverge.Point).DistanceTo(wpConverge.Point)
+                    mine1 = d
                     e1 = ed
                 Else
                     mine3 = mine2
                     e3 = e2
-                    mine2 = ed.GetClosestPointTo(wpConverge.Point).DistanceTo(wpConverge.Point)
+                    mine2 = d
                     e2 = ed
                 End If
             Else
-                mine3 = ed.GetClosestPointTo(wpConverge.Point).DistanceTo(wpConverge.Point)
+                mine3 = d
                 e3 = ed
 
 
@@ -668,6 +1051,65 @@ Public Class Wedges
 
 
         Return oExtrude
+    End Function
+    Function RemoveFaceExtend(f As Face) As ExtrudeFeature
+        Dim spl As PlanarSketch
+        spl = doku.ComponentDefinition.Sketches.Add(f)
+        Dim skl As SketchLine
+        For Each ed As Edge In f.Edges
+            skl = spl.AddByProjectingEntity(ed)
+        Next
+        Dim pro As Profile
+        pro = spl.Profiles.AddForSolid
+        Dim oExtrudeDef As ExtrudeDefinition
+        oExtrudeDef = doku.ComponentDefinition.Features.ExtrudeFeatures.CreateExtrudeDefinition(pro, PartFeatureOperationEnum.kCutOperation)
+        oExtrudeDef.SetDistanceExtent(25 / 10, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
+        Dim oExtrude As ExtrudeFeature
+        oExtrude = doku.ComponentDefinition.Features.ExtrudeFeatures.Add(oExtrudeDef)
+
+        Return oExtrude
+    End Function
+    Function RemoveEntryMaterial(spl As PlanarSketch, ed As Edge, d As Double) As ExtrudeFeature
+        Try
+            Dim skl As SketchLine
+            lamp.HighLighObject(ed)
+            skl = spl.AddByProjectingEntity(ed)
+            skl.Construction = True
+            Dim v As Vector2d = skl.Geometry.Direction.AsVector
+            Dim pt2 As Point2d = skl.EndSketchPoint.Geometry
+            Dim v2 As Vector2d = v
+            v2.ScaleBy(25 / 10)
+            pt2.TranslateBy(v2)
+            Dim spt2 As SketchPoint = spl.SketchPoints.Add(pt2)
+            Dim spt As SketchPoint = spl.SketchPoints.Add(skl.Geometry.MidPoint)
+            Dim m As Matrix2d = tg.CreateMatrix2d
+            m.SetToRotation(Math.PI / 2, spt2.Geometry)
+            v.TransformBy(m)
+            v.ScaleBy(skl.Length * 1 / 2)
+            Dim pt3 As Point2d = pt2
+            pt3.TranslateBy(v)
+            spl.SketchPoints.Add(pt3)
+            spl.SketchLines.AddAsThreePointCenteredRectangle(spt, spt2, pt3)
+
+            Dim pro As Profile
+
+            pro = spl.Profiles.AddForSolid
+            Dim oExtrudeDef As ExtrudeDefinition
+            oExtrudeDef = doku.ComponentDefinition.Features.ExtrudeFeatures.CreateExtrudeDefinition(pro, PartFeatureOperationEnum.kCutOperation)
+            oExtrudeDef.SetDistanceExtent(25 / 10, PartFeatureExtentDirectionEnum.kPositiveExtentDirection)
+            oExtrudeDef.SetDistanceExtentTwo(d)
+            Dim oExtrude As ExtrudeFeature
+            oExtrude = doku.ComponentDefinition.Features.ExtrudeFeatures.Add(oExtrudeDef)
+
+
+
+            Return oExtrude
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
     End Function
     Function MakeHole() As RevolveFeature
         Dim rf As RevolveFeature
@@ -1098,8 +1540,8 @@ Public Class Wedges
         Dim pl As Plane
         pl = fc.Geometry
         Dim v As Vector
-        v = pl.Normal.AsVector
-        v.ScaleBy(-1 * fc.Evaluator.Area / 16)
+        v = GetRealNormal(fc, doku.ComponentDefinition.WorkSurfaces.Item(1))
+        v.ScaleBy(-2 * fc.Evaluator.Area)
         pt = convergePoint
         pt.TranslateBy(v)
         Dim wptlf As WorkPoint = doku.ComponentDefinition.WorkPoints.AddFixed(pt)

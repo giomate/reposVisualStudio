@@ -630,15 +630,15 @@ Public Class MacroFold5
             dcl = sk3D.DimensionConstraints3D.AddLineLength(l)
             d = Math.Abs(initialPlane.Normal.AsVector.DotProduct(adjacentPlane.Normal.AsVector))
             If d > 0.01 Then
-                adjuster.AdjustDimensionConstraint3DSmothly(dcl, dcl.Parameter._Value * 15 / 16)
+                adjuster.AdjustDimensionConstraint3DSmothly(dcl, dcl.Parameter._Value * 31 / 32)
                 If d > 0.1 Then
-                    adjuster.AdjustDimensionConstraint3DSmothly(dcl, dcl.Parameter._Value * 7 / 8)
+                    adjuster.AdjustDimensionConstraint3DSmothly(dcl, dcl.Parameter._Value * 15 / 16)
                     If d > 0.6 Then
-                        adjuster.AdjustDimensionConstraint3DSmothly(dcl, dcl.Parameter._Value * 3 / 4)
+                        adjuster.AdjustDimensionConstraint3DSmothly(dcl, dcl.Parameter._Value * 7 / 8)
                         If d > 0.8 Then
-                            adjuster.AdjustDimensionConstraint3DSmothly(dcl, dcl.Parameter._Value * 2 / 3)
+                            adjuster.AdjustDimensionConstraint3DSmothly(dcl, dcl.Parameter._Value * 3 / 4)
                             If d > 0.9 Then
-                                adjuster.AdjustDimensionConstraint3DSmothly(dcl, dcl.Parameter._Value * 1 / 2)
+                                adjuster.AdjustDimensionConstraint3DSmothly(dcl, dcl.Parameter._Value * 2 / 3)
                             End If
                         End If
                     End If
@@ -690,11 +690,11 @@ Public Class MacroFold5
                 vf = vfl.CrossProduct(vbl2)
                 ve = vnap.CrossProduct(vf)
                 e = ve.DotProduct(vfl)
-                If e < 0 Then
+                If (e < -1 / 16 And firstLine.Length < GetParameter("b")._Value * 2) Then
                     dcl = sk3D.DimensionConstraints3D.AddLineLength(l)
-                    While e < (1 / (limit * limit + 1)) And limit < 8
+                    While e < (1 / (limit * limit + 4)) And limit < 4
                         Try
-                            adjuster.AdjustDimensionConstraint3DSmothly(dcl, dcl.Parameter._Value * 9 / 8)
+                            adjuster.AdjustDimensionConstraint3DSmothly(dcl, dcl.Parameter._Value * 17 / 16)
                             vbl2 = secondLine.Geometry.Direction.AsVector
                             vbl2.ScaleBy(-1)
                             vnap = adjacentPlane.Normal.AsVector
@@ -771,7 +771,7 @@ Public Class MacroFold5
                 l.Delete()
                 Try
 
-                    adjuster.AdjustDimensionConstraint3DSmothly(dc2, gap1CM * 3)
+                    adjuster.AdjustDimensionConstraint3DSmothly(dc2, gap1CM * 4)
                     gapFold = dc2
                         ol.Construction = True
                         constructionLines.Add(ol)
@@ -779,7 +779,7 @@ Public Class MacroFold5
                         l = ol
 
                 Catch ex As Exception
-                    adjuster.AdjustDimensionConstraint3DSmothly(dc2, gap1CM * 3)
+                    adjuster.AdjustDimensionConstraint3DSmothly(dc2, gap1CM * 4)
                     gapFold = dc2
                         ol.Construction = True
                         constructionLines.Add(ol)
@@ -791,14 +791,14 @@ Public Class MacroFold5
                 ol.Delete()
                 Try
 
-                    adjuster.AdjustDimensionConstraint3DSmothly(dc1, gap1CM * 3)
+                    adjuster.AdjustDimensionConstraint3DSmothly(dc1, gap1CM * 4)
                     gapFold = dc1
                         l.Construction = True
                         constructionLines.Add(l)
                         lastLine = l
 
                 Catch ex As Exception
-                    adjuster.AdjustDimensionConstraint3DSmothly(dc1, gap1CM * 3)
+                    adjuster.AdjustDimensionConstraint3DSmothly(dc1, gap1CM * 4)
                     gapFold = dc1
                         l.Construction = True
                         constructionLines.Add(l)
@@ -942,7 +942,17 @@ Public Class MacroFold5
                 dc = sk3D.DimensionConstraints3D.AddLineLength(l)
                 If adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value / 1) Then
                     dc.Delete()
-                    sk3D.GeometricConstraints3D.AddEqual(l, cl)
+                    Try
+                        sk3D.GeometricConstraints3D.AddEqual(l, cl)
+                    Catch ex As Exception
+                        gapVertex.Driven = True
+                        dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+                        adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value)
+                        dc.Delete()
+                        sk3D.GeometricConstraints3D.AddEqual(l, cl)
+                        gapVertex.Driven = False
+                    End Try
+
 
                 End If
             End If
@@ -984,10 +994,10 @@ Public Class MacroFold5
             cl2 = constructionLines.Item(2)
             ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
             ac.Driven = True
-            gapVertex.Driven = True
+            gapVertex.Driven = False
             d = CalculateRoof()
             If d > 0 Then
-                If adjuster.AdjustGapSmothly(gapFold, gap1CM * 2, ac) Then
+                If adjuster.AdjustGapSmothly(gapFold, gap1CM * 2.1, ac) Then
                     Try
                         While (ac.Parameter._Value < angleLimit And ac.Parameter._Value > angleLimit / 2) And counterLimit < 4
                             lastAngle = ac.Parameter._Value
@@ -1004,6 +1014,8 @@ Public Class MacroFold5
                     End Try
                     b = True
                 Else
+                    gapVertex.Driven = True
+                    adjuster.AdjustGapSmothly(gapFold, gap1CM * 2, ac)
                     ac.Driven = True
                     gapFold.Delete()
                     gapFold = sk3D.DimensionConstraints3D.AddLineLength(cl3)

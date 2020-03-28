@@ -185,7 +185,9 @@ Public Class RodMaker
         sk3D = doku.ComponentDefinition.Sketches3D.Add()
 
         le = sk3D.Include(GetMajorEdge(f))
+        le.Construction = True
         l = sk3D.SketchLines3D.AddByTwoPoints(le.StartSketchPoint.Geometry, le.EndSketchPoint.Geometry, False)
+        l.Construction = True
         gc = sk3D.GeometricConstraints3D.AddCollinear(l, a)
         centroLine = l
         Return le
@@ -287,7 +289,17 @@ Public Class RodMaker
                             dc2 = ps.DimensionConstraints.AddTwoPointDistance(lpt2, skpt, DimensionOrientationEnum.kAlignedDim, lpt2.Geometry)
                             dc2.Parameter._Value = dc2.Parameter._Value * 1.04
                             doku.Update2(True)
-                            rf = doku.ComponentDefinition.Features.RevolveFeatures.AddFull(pro, workAxis, PartFeatureOperationEnum.kJoinOperation)
+                            Try
+                                rf = doku.ComponentDefinition.Features.RevolveFeatures.AddFull(pro, workAxis, PartFeatureOperationEnum.kJoinOperation)
+
+                            Catch ex5 As Exception
+                                dc1.Parameter._Value = dc1.Parameter._Value * 24 / 27
+                                dc2.Parameter._Value = dc2.Parameter._Value * 24 / 28
+                                doku.Update2(True)
+                                rf = doku.ComponentDefinition.Features.RevolveFeatures.AddFull(pro, workAxis, PartFeatureOperationEnum.kJoinOperation)
+
+                            End Try
+
                         Catch ex5 As Exception
                             MsgBox(ex.ToString())
                             Return Nothing

@@ -492,7 +492,7 @@ Public Class MicroFold6
     End Function
     Function DrawThirdLine() As SketchLine3D
         Try
-            Dim dc As DimensionConstraint3D
+            Dim dc, ac As DimensionConstraint3D
             Dim gc As GeometricConstraint3D
             direction = lastLine.Geometry.Direction.AsVector()
             direction.ScaleBy(thickness * 10)
@@ -509,6 +509,18 @@ Public Class MicroFold6
                 adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 2)
                 dc.Driven = True
                 gc = sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
+            End Try
+            Try
+                ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, minorLine)
+                adjuster.AdjustDimensionConstraint3DSmothly(ac, 1 / 32)
+                ac.Delete()
+
+            Catch ex As Exception
+                Try
+                    ac.Delete()
+                Catch ex2 As Exception
+
+                End Try
             End Try
 
             TryParallel(l)
