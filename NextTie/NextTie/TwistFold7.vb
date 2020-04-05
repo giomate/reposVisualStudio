@@ -1678,7 +1678,8 @@ Public Class TwistFold7
             Dim acbl2bl3 As DimensionConstraint3D
             Dim acbl3cl4, acl2l3, dcl, dccl4 As DimensionConstraint3D
             Dim gc, cc, gccll2, gcplcl4 As GeometricConstraint3D
-            Dim d As Double
+            Dim d, e As Double
+            Dim v1, v2 As Vector
             Dim limit As Integer = 0
             bl2 = bandLines.Item(2)
             cl4 = constructionLines.Item(4)
@@ -1793,33 +1794,66 @@ Public Class TwistFold7
                     acbl3cl4.Driven = False
                     adjuster.AdjustDimensionConstraint3DSmothly(acbl3cl4, Math.PI / 2)
                     acbl3cl4.Driven = True
-                    If acbl2bl3.Parameter._Value < Math.PI / 2 Then
-                        gccll2.Delete()
-                        acbl2bl3.Driven = False
-                        acbl2bl3.Parameter._Value = 0.1
-                        doku.Update2(True)
-                        adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI / 3)
-                        adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI * 2 / 3)
-                        adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI)
-                        acbl2bl3.Driven = True
-                        gccll2 = sk3D.GeometricConstraints3D.AddCollinear(l, bl2)
-                    Else
-                        gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, cl4)
-                    End If
+                    v1 = bl2.Geometry.Direction.AsVector
+                    v2 = l.Geometry.Direction.AsVector
+                    e = v2.DotProduct(v1)
+                    If e > 0.99 Then
+                        dccl4 = sk3D.DimensionConstraints3D.AddLineLength(cl4)
+                        adjuster.AdjustDimensionConstraint3DSmothly(dccl4, dccl4.Parameter._Value * 3 / 2)
+                        dccl4.Delete()
 
-                    dcl.Driven = False
-                Catch ex As Exception
-                    Try
-                        If acbl2bl3.Parameter._Value < Math.PI / 2 Then
+                        If (acbl2bl3.Parameter._Value < Math.PI / 2) Then
                             gccll2.Delete()
                             acbl2bl3.Driven = False
-                            acbl2bl3.Parameter._Value = 0.1
+                            acbl2bl3.Parameter._Value = 0.01
                             doku.Update2(True)
                             adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI / 3)
                             adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI * 2 / 3)
                             adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI)
                             acbl2bl3.Driven = True
                             gccll2 = sk3D.GeometricConstraints3D.AddCollinear(l, bl2)
+                        Else
+                            gccll2.Delete()
+                            acbl2bl3.Driven = False
+                            acbl2bl3.Parameter._Value = 0.01
+                            doku.Update2(True)
+
+                            acbl2bl3.Driven = True
+                            gccll2 = sk3D.GeometricConstraints3D.AddCollinear(l, bl2)
+                        End If
+                    Else
+                        gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, cl4)
+                    End If
+
+
+                    dcl.Driven = False
+                Catch ex As Exception
+                    Try
+                        If e > 0.99 Then
+                            dccl4 = sk3D.DimensionConstraints3D.AddLineLength(cl4)
+                            adjuster.AdjustDimensionConstraint3DSmothly(dccl4, dccl4.Parameter._Value * 3 / 2)
+                            dccl4.Delete()
+                            If (acbl2bl3.Parameter._Value < Math.PI / 2) Then
+                                gccll2.Delete()
+                                acbl2bl3.Driven = False
+                                acbl2bl3.Parameter._Value = 0.01
+                                doku.Update2(True)
+                                adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI / 3)
+                                adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI * 2 / 3)
+                                adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI)
+                                acbl2bl3.Driven = True
+                                gccll2 = sk3D.GeometricConstraints3D.AddCollinear(l, bl2)
+                            Else
+                                gccll2.Delete()
+                                acbl2bl3.Driven = False
+                                acbl2bl3.Parameter._Value = 0.01
+                                doku.Update2(True)
+
+                                acbl2bl3.Driven = True
+                                gccll2 = sk3D.GeometricConstraints3D.AddCollinear(l, bl2)
+                            End If
+                        Else
+                            gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, cl4)
                         End If
 
                     Catch ex6 As Exception
@@ -1866,17 +1900,35 @@ Public Class TwistFold7
                 End If
 
                 Try
+                    v1 = bl2.Geometry.Direction.AsVector
+                    v2 = l.Geometry.Direction.AsVector
+                    e = v2.DotProduct(v1)
                     Try
-                        If acbl2bl3.Parameter._Value < Math.PI / 2 Then
-                            gccll2.Delete()
-                            acbl2bl3.Driven = False
-                            acbl2bl3.Parameter._Value = 0.1
-                            doku.Update2(True)
-                            adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI / 3)
-                            adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI * 2 / 3)
-                            adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI)
-                            acbl2bl3.Driven = True
-                            gccll2 = sk3D.GeometricConstraints3D.AddCollinear(l, bl2)
+                        If e > 0.99 Then
+                            dccl4 = sk3D.DimensionConstraints3D.AddLineLength(cl4)
+                            adjuster.AdjustDimensionConstraint3DSmothly(dccl4, dccl4.Parameter._Value * 3 / 2)
+                            dccl4.Delete()
+                            If (acbl2bl3.Parameter._Value < Math.PI / 2) Then
+                                gccll2.Delete()
+                                acbl2bl3.Driven = False
+                                acbl2bl3.Parameter._Value = 0.01
+                                doku.Update2(True)
+                                adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI / 3)
+                                adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI * 2 / 3)
+                                adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI)
+                                acbl2bl3.Driven = True
+                                gccll2 = sk3D.GeometricConstraints3D.AddCollinear(l, bl2)
+                            Else
+                                gccll2.Delete()
+                                acbl2bl3.Driven = False
+                                acbl2bl3.Parameter._Value = 0.01
+                                doku.Update2(True)
+
+                                acbl2bl3.Driven = True
+                                gccll2 = sk3D.GeometricConstraints3D.AddCollinear(l, bl2)
+                            End If
+                        Else
+                            gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, cl4)
                         End If
 
                     Catch ex6 As Exception

@@ -186,7 +186,7 @@ Public Class TieMaker1
                     End If
                 Case 6
                     manager.Update(doblez6.doku)
-                    If manager.IsReadyForLastFold() Then
+                    If (manager.IsReadyForLastFold() Or True) Then
                         comando.MakeInvisibleSketches(doku)
                         MakeRestTie(10)
                     Else

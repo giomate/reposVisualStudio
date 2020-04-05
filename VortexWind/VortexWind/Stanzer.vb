@@ -5,7 +5,7 @@ Imports System.IO
 Imports System.Text
 Imports System.IO.Directory
 
-Public Class Wedges
+Public Class Stanzer
     Public doku As PartDocument
     Public projectManager As DesignProjectManager
     Dim app As Application
@@ -29,7 +29,7 @@ Public Class Wedges
     Dim bandLines, constructionLines As ObjectCollection
     Dim comando As Commands
     Public nombrador As Nombres
-    Dim nextSketch As OriginSketch
+
     Dim cutProfile As Profile
 
 
@@ -42,7 +42,7 @@ Public Class Wedges
     Dim sheetMetalFeatures As SheetMetalFeatures
     Dim mainWorkPlane As WorkPlane
     Dim workPointFace As WorkPoint
-    Dim minorEdge, majorEdge, bendEdge, adjacentEdge, cutEdge1, cutEdge2, CutEsge3, closestEdge As Edge
+    Dim minorEdge, majorEdge, bendEdge, adjacentEdge, cutEdge1, cutEdge2, outerEdge, closestEdge As Edge
     Dim minorLine, majorLine, cutLine3D, kante3D, tante3D As SketchLine3D
     Dim workFace, adjacentFace, bendFace, frontBendFace, cutFace, cylinderFace, sideMajorFace, sideMinorFace As Face
     Dim workFaces As FaceCollection
@@ -62,10 +62,7 @@ Public Class Wedges
 
     Dim edgeColl As EdgeCollection
     Dim twistPlane As WorkPlane
-    Dim refDoc As FindReferenceLine
 
-    Dim manager As FoldingEvaluator
-    Dim giro As TwistFold7
     Dim arrayFunctions As Collection
     Dim garras As VortexRod
     Dim fullFileNames As String()
@@ -106,9 +103,9 @@ Public Class Wedges
         lamp = New Highlithing(doku)
 
         gap1CM = 3 / 10
-        refDoc = New FindReferenceLine(doku)
+
         nombrador = New Nombres(doku)
-        manager = New FoldingEvaluator(doku)
+
         trobinaCurve = New Curves3D(doku)
         palito = New RodMaker(doku)
         DP.Dmax = 200 / 10
@@ -434,82 +431,7 @@ Public Class Wedges
         End Try
         Return Nothing
     End Function
-    Function MakeBandEntrance(ef As ExtrudeFeature, ed As Edge) As ExtrudeFeature
-        Dim spl As PlanarSketch
-        Dim skl As SketchLine
-        Dim edt As Edge = ed
-        Dim fr, fd As Face
-        Dim mpt As Point
-        Dim ls As LineSegment
-        Dim plfr, plfd As Plane
-        Dim ve, vc, vd As Vector
-        Dim pt1, pt2, pt3, pt4 As Point
-        Dim spt1, spt2, spt3 As SketchPoint3D
-        Dim dmin As Double = 9999999
-        Dim d, e As Double
-        Try
-            sk3D = doku.ComponentDefinition.Sketches3D.Add()
-            d = CalculateClosestFace(GetMajorFace(ef))
-            e = CalculateClosestFace(sideMinorFace)
-            If d > e Then
-                fd = sideMinorFace
-                plfd = sideMinorFace.Geometry
-                fr = sideMajorFace
-                plfr = sideMajorFace.Geometry
-            Else
-                fd = sideMajorFace
-                plfd = sideMajorFace.Geometry
-                fr = sideMinorFace
-                plfr = sideMinorFace.Geometry
 
-            End If
-
-            lamp.HighLighObject(edt)
-            For Each vt As Vertex In fd.Vertices
-                d = vt.Point.DistanceTo(edt.StartVertex.Point)
-                e = vt.Point.DistanceTo(edt.StopVertex.Point)
-                If (d < dmin) Or (e < dmin) Then
-                    If e < d Then
-                        dmin = e
-                        pt4 = edt.StartVertex.Point
-                    Else
-                        dmin = d
-                        pt4 = edt.StopVertex.Point
-                    End If
-                    pt1 = vt.Point
-                End If
-            Next
-            spt1 = sk3D.SketchPoints3D.Add(pt1)
-            vc = plfd.Normal.AsVector.CrossProduct(plfr.Normal.AsVector)
-            pt2 = pt1
-            pt2.TranslateBy(vc)
-
-
-
-
-            spt2 = sk3D.SketchPoints3D.Add(pt2)
-            pt3 = pt1
-            pt3.TranslateBy(plfd.Normal.AsVector)
-            spt3 = sk3D.SketchPoints3D.Add(pt3)
-            sk3D.Visible = False
-            Dim wpl As WorkPlane = doku.ComponentDefinition.WorkPlanes.AddByThreePoints(spt1, spt2, spt3)
-            wpl.Visible = False
-
-            d = wpl.Plane.DistanceTo(pt4)
-            If d < 0 Then
-                d = d * -1
-            Else
-                d = 1 / 128
-            End If
-            spl = doku.ComponentDefinition.Sketches.Add(wpl)
-            'RemoveFaceExtend(fr)
-            Return RemoveEntryMaterial(spl, edt, d)
-        Catch ex As Exception
-            MsgBox(ex.ToString())
-            Return Nothing
-        End Try
-
-    End Function
     Function CalculateEntryDistance(ed As Edge) As Double
 
         Dim ve, vc As Vector
@@ -846,6 +768,24 @@ Public Class Wedges
         End Try
         Return ef
     End Function
+    Public Function EmbossLetter(q As Integer, spt As SketchPoint3D, f As Face) As ExtrudeFeature
+        Dim ef As ExtrudeFeature
+        Dim s As String
+        Try
+            If spt.Geometry.Z > 0 Then
+                s = nombrador.ConvertQNumberLetter(q + 1)
+            Else
+                s = nombrador.ConvertQNumberLetter(q)
+
+            End If
+            ef = ExtrudeNumber(SketchLetter(s, f, spt))
+
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+        Return ef
+    End Function
     Function SketchNumber(q As Integer) As Profile
         Dim oProfile As Profile
 
@@ -873,6 +813,61 @@ Public Class Wedges
             oStyle = oSketch.TextBoxes.Item(1).Style
             oTextBox.Delete()
             oStyle.FontSize = 0.81197733879089
+            oStyle.Bold = True
+            doku.Update2(True)
+            Dim ptBox As Point2d
+            ptBox = tg.CreatePoint2d(spt.Geometry.X - oStyle.FontSize / 2, -1 / 10)
+            oTextBox = oSketch.TextBoxes.AddFitted(ptBox, sText, oStyle)
+            Dim reflex As TextBox
+            ptBox = tg.CreatePoint2d(spt.Geometry.X - oStyle.FontSize / 2, 1 / 10)
+            reflex = oSketch.TextBoxes.AddFitted(ptBox, sText, oStyle)
+            reflex.Rotation = Math.PI
+
+
+            ' oTextBox.Rotation = Math.PI
+
+
+
+            Dim oPaths As ObjectCollection
+            oPaths = app.TransientObjects.CreateObjectCollection
+            oPaths.Add(oTextBox)
+            oPaths.Add(reflex)
+
+
+            oProfile = oSketch.Profiles.AddForSolid(False, oPaths)
+
+
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+        Return oProfile
+    End Function
+    Function SketchLetter(s As String, f As Face, spti As SketchPoint3D) As Profile
+        Dim oProfile As Profile
+
+        Dim a, b As Double
+        Try
+
+            Dim spt As SketchPoint
+            Dim oSketch As PlanarSketch
+            Dim l As Line
+            Dim edMax As Edge
+            edMax = GetOuterEdge(f, spti.Geometry)
+            oSketch = doku.ComponentDefinition.Sketches.AddWithOrientation(f, edMax, True, True, spti.Geometry,)
+            spt = oSketch.AddByProjectingEntity(spti)
+            l = oSketch.AxisEntityGeometry
+
+            Dim oTextBox As TextBox
+            Dim oStyle As TextStyle
+            Dim sText As String
+            sText = s
+
+            oTextBox = oSketch.TextBoxes.AddFitted(spt.Geometry, sText)
+            oStyle = oSketch.TextBoxes.Item(1).Style
+            oTextBox.Delete()
+            oStyle.FontSize = 0.4
             oStyle.Bold = True
             doku.Update2(True)
             Dim ptBox As Point2d
@@ -1029,10 +1024,69 @@ Public Class Wedges
         closestEdge = e1
         Return e1
     End Function
+    Function GetOuterEdge(f As Face, pti As Point) As Edge
+        Dim e1, e2, e3 As Edge
+        Dim mine1, mine2, mine3, d, e As Double
+        Dim ve, vc As Vector
+        Dim pt1, pt2, pt3 As Point
+        Dim ls As LineSegment
+        mine1 = 99999
+        mine2 = 9999999
+        mine3 = 999999
+        e1 = f.EdgeLoops.Item(1).Edges.Item(1)
+        e2 = e1
+        e3 = e2
+        pt1 = f.GetClosestPointTo(pti)
+        e = pt1.DistanceTo(pti)
+        ' sk3D.SketchPoints3D.Add(pt1)
+        For Each ed As Edge In f.EdgeLoops.Item(1).Edges
+            d = ed.GetClosestPointTo(pti).DistanceTo(pti)
+            If Math.Abs(d - e) < 1 / 10 Then
+
+                If d < mine2 Then
+                    If d < mine1 Then
+                        mine3 = mine2
+                        e3 = e2
+                        mine2 = mine1
+                        e2 = e1
+                        mine1 = d
+                        e1 = ed
+                    Else
+                        mine3 = mine2
+                        e3 = e2
+                        mine2 = d
+                        e2 = ed
+                    End If
+                Else
+                    mine3 = d
+                    e3 = ed
+                End If
+
+            End If
+
+
+        Next
+        lamp.HighLighObject(e1)
+
+        outerEdge = e1
+        Return e1
+    End Function
     Function ExtrudeNumber(pro As Profile) As ExtrudeFeature
         Dim oExtrudeDef As ExtrudeDefinition
         oExtrudeDef = doku.ComponentDefinition.Features.ExtrudeFeatures.CreateExtrudeDefinition(pro, PartFeatureOperationEnum.kCutOperation)
         oExtrudeDef.SetThroughAllExtent(PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
+        'oExtrudeDef.SetDistanceExtent(0.12, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
+        Dim oExtrude As ExtrudeFeature
+        oExtrude = doku.ComponentDefinition.Features.ExtrudeFeatures.Add(oExtrudeDef)
+
+
+
+        Return oExtrude
+    End Function
+    Function ExtrudeLetter(pro As Profile) As ExtrudeFeature
+        Dim oExtrudeDef As ExtrudeDefinition
+        oExtrudeDef = doku.ComponentDefinition.Features.ExtrudeFeatures.CreateExtrudeDefinition(pro, PartFeatureOperationEnum.kCutOperation)
+        oExtrudeDef.SetDistanceExtent(12 / 10, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
         'oExtrudeDef.SetDistanceExtent(0.12, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
         Dim oExtrude As ExtrudeFeature
         oExtrude = doku.ComponentDefinition.Features.ExtrudeFeatures.Add(oExtrudeDef)

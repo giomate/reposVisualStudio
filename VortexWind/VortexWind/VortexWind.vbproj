@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{8EFC4968-EA9F-442E-A7E2-928CC8C580B8}</ProjectGuid>
+    <ProjectGuid>{8F194B33-0457-4B90-9F43-A45E380E5CC9}</ProjectGuid>
     <OutputType>WinExe</OutputType>
-    <StartupObject>Wedges.My.MyApplication</StartupObject>
-    <RootNamespace>Wedges</RootNamespace>
-    <AssemblyName>Wedges</AssemblyName>
+    <StartupObject>VortexWind.My.MyApplication</StartupObject>
+    <RootNamespace>VortexWind</RootNamespace>
+    <AssemblyName>VortexWind</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <MyType>WindowsForms</MyType>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
@@ -22,7 +22,7 @@
     <DefineDebug>true</DefineDebug>
     <DefineTrace>true</DefineTrace>
     <OutputPath>bin\Debug\</OutputPath>
-    <DocumentationFile>Wedges.xml</DocumentationFile>
+    <DocumentationFile>VortexWind.xml</DocumentationFile>
     <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
@@ -32,7 +32,7 @@
     <DefineTrace>true</DefineTrace>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DocumentationFile>Wedges.xml</DocumentationFile>
+    <DocumentationFile>VortexWind.xml</DocumentationFile>
     <NoWarn>42016,41999,42017,42018,42019,42032,42036,42020,42021,42022</NoWarn>
   </PropertyGroup>
   <PropertyGroup>
@@ -80,13 +80,8 @@
   <ItemGroup>
     <Compile Include="Commands.vb" />
     <Compile Include="Conversions.vb" />
-    <Compile Include="Cortador.vb" />
     <Compile Include="Curves3D.vb" />
-    <Compile Include="DesignDoctor.vb" />
     <Compile Include="DesignMonitoring.vb" />
-    <Compile Include="Doblador.vb" />
-    <Compile Include="FindReferenceLine.vb" />
-    <Compile Include="FoldingEvaluator.vb" />
     <Compile Include="Form1.vb">
       <SubType>Form</SubType>
     </Compile>
@@ -95,11 +90,8 @@
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Highlithing.vb" />
-    <Compile Include="InitFold.vb" />
-    <Compile Include="InitSketcher.vb" />
     <Compile Include="InventorFile.vb" />
-    <Compile Include="MacroFold5.vb" />
-    <Compile Include="MicroFold6.vb" />
+    <Compile Include="Konditor.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
@@ -116,14 +108,10 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <Compile Include="Nombres.vb" />
-    <Compile Include="OriginSketch.vb" />
     <Compile Include="RodMaker.vb" />
     <Compile Include="SketchAdjust.vb" />
-    <Compile Include="Sketcher3D.vb" />
-    <Compile Include="TieMaker1.vb" />
-    <Compile Include="TwistFold7.vb" />
     <Compile Include="VortexRod.vb" />
-    <Compile Include="Wedges.vb" />
+    <Compile Include="Stanzer.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="My Project\Resources.resx">

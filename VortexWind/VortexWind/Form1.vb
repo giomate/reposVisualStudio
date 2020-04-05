@@ -13,8 +13,8 @@ Public Class Form1
     Dim oDesignProjectMgr As DesignProjectManager
     Dim invDoc As InventorFile
     Dim iteration As Integer
-    Dim piedra As Wedges
-
+    Dim vortice As VortexRod
+    Dim monitor As DesignMonitoring
     Public Sub New()
         ' This call is required by the designer.
         InitializeComponent()
@@ -30,6 +30,7 @@ Public Class Form1
 
                 oApp = CreateInstance(oInvAppType)
                 oApp.Visible = True
+
 
                 'Note: if you shut down the Inventor session that was started
                 'this(way) there is still an Inventor.exe running. We will use
@@ -54,9 +55,8 @@ Public Class Form1
 
     Private Sub Form1_Activated(sender As Object, e As EventArgs) Handles Me.Activated
         Try
-            oDesignProjectMgr = oApp.DesignProjectManager
-            invDoc = New InventorFile(oApp)
-            done = MakeAllWedges()
+
+            done = MakeTort()
             If done Then
                 Me.Close()
             End If
@@ -67,17 +67,23 @@ Public Class Form1
             MsgBox("Unable to find Document")
         End Try
     End Sub
-    Public Function MakeAllWedges() As Boolean
+
+    Public Function MakeTort() As Boolean
         Dim b As Boolean
         Try
             If (started) Then
+                oDesignProjectMgr = oApp.DesignProjectManager
                 Dim p As String = oDesignProjectMgr.ActiveDesignProject.WorkspacePath
                 Dim ffn As String
-                ffn = String.Concat(p, "\Iteration6\Band9.ipt")
+                ffn = String.Concat(p, "\Iteration6\Sabina.ipt")
+                invDoc = New InventorFile(oApp)
                 oDoc = invDoc.OpenFullFileName(ffn)
-                piedra = New Wedges(oDoc)
-                piedra.MakeWedgesIteration(6)
-                b = piedra.done
+                vortice = New VortexRod(oDoc)
+                monitor = New DesignMonitoring(vortice.doku)
+                If monitor.IsFeatureHealthy(vortice.MakeAllWiresGuides(vortice.doku)) Then
+                    b = vortice.done
+                End If
+
             End If
             Return b
         Catch ex As Exception

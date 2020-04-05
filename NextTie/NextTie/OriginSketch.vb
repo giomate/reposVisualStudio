@@ -721,7 +721,15 @@ Public Class OriginSketch
                         dcwo1 = sk3D.DimensionConstraints3D.AddTwoPointDistance(bl5.StartPoint, curve.EndSketchPoint)
                         adjuster.AdjustDimensionConstraint3DSmothly(dcwo1, dcwo1.Parameter._Value / 4)
                         dcwo1.Delete()
-                        gc = sk3D.GeometricConstraints3D.AddCoincident(fl.EndPoint, curve)
+                        Try
+                            gc = sk3D.GeometricConstraints3D.AddCoincident(fl.EndPoint, curve)
+                        Catch ex6 As Exception
+                            gapFold.Driven = True
+                            gc = sk3D.GeometricConstraints3D.AddCoincident(fl.EndPoint, curve)
+                            doku.Update2(True)
+                            gapFold.Driven = False
+                        End Try
+
                     End If
 
                 End Try

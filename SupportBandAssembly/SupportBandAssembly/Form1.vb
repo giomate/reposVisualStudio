@@ -76,11 +76,11 @@ Public Class Form1
                 oDesignProjectMgr = oApp.DesignProjectManager
                 Dim p As String = oDesignProjectMgr.ActiveDesignProject.WorkspacePath
                 Dim ffn As String
-                ffn = String.Concat(p, "\Iteration5\Wedge1.ipt")
+                ffn = String.Concat(p, "\Iteration6\Wedge1.ipt")
                 invDoc = New InventorFile(oApp)
                 oDoc = invDoc.OpenFullFileName(ffn)
                 torta = New Konditor(oDoc)
-                torta.MakeWedgesCake(5)
+                torta.MakeWedgesCake(6)
                 b = torta.done
             End If
             Return b

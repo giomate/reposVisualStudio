@@ -13,7 +13,7 @@ Public Class Konditor
 
     Dim monitor As DesignMonitoring
     Dim invFile As InventorFile
-    Dim adjuster As SketchAdjust
+
 
 
     Public wp1, wp2, wp3, wpConverge As WorkPoint
