@@ -41,4 +41,41 @@ Public Class Highlithing
         oEndHLSet.Delete()
 
     End Sub
+    Public Sub LookAtFace(f As Face)
+        Dim oSSet As SelectSet
+        If f.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+            oSSet = doku.SelectSet
+
+
+            oSSet.Select(f)
+
+            'change active view camera orientation
+            Dim oControlDef As ControlDefinition
+            oControlDef = app.CommandManager.ControlDefinitions.Item("AppLookAtCmd")
+            oControlDef.Execute()
+            Beep()
+            oSSet.Clear()
+        End If
+
+
+
+    End Sub
+    Public Sub LookAtPlane(wpl As WorkPlane)
+        Dim oSSet As SelectSet
+
+        oSSet = doku.SelectSet
+
+
+        oSSet.Select(wpl)
+
+        'change active view camera orientation
+        Dim oControlDef As ControlDefinition
+        oControlDef = app.CommandManager.ControlDefinitions.Item("AppLookAtCmd")
+        oControlDef.Execute()
+        Beep()
+        oSSet.Clear()
+
+
+
+    End Sub
 End Class

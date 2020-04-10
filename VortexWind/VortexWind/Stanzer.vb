@@ -19,7 +19,7 @@ Public Class Stanzer
     Dim invFile As InventorFile
 
     Public trobinaCurve As Curves3D
-    Dim palito As RodMaker
+
 
     Public wp1, wp2, wp3, wpConverge As WorkPoint
     Public farPoint, point1, point2, point3, curvePoint, convergePoint As Point
@@ -107,7 +107,7 @@ Public Class Stanzer
         nombrador = New Nombres(doku)
 
         trobinaCurve = New Curves3D(doku)
-        palito = New RodMaker(doku)
+
         DP.Dmax = 200 / 10
         DP.Dmin = 1 / 10
         Tr = (DP.Dmax + DP.Dmin) / 4
@@ -126,66 +126,7 @@ Public Class Stanzer
 
         Return doku
     End Function
-    Public Function MakeWedgesIteration(i As Integer) As PartDocument
-        Try
-            Dim p As String = projectManager.ActiveDesignProject.WorkspacePath
-            Dim q As Integer
-            Dim nd As String
 
-            nd = String.Concat(p, "\Iteration", i.ToString)
-
-            If (Directory.Exists(nd)) Then
-
-                fullFileNames = Directory.GetFiles(nd, "*.ipt")
-
-
-                For Each s As String In fullFileNames
-                    If nombrador.ContainBand(s) Then
-                        If Not IsWedgeDone(nombrador.MakeWedgeFileName(s)) Then
-                            doku = MakeSingleWedge(s)
-                            doku.ComponentDefinition.WorkSurfaces.Item(2).Visible = False
-                            'FillVoids()
-
-                            CombineBodies()
-
-                            '  CombineBodiesDuo()
-                            palito.MakeAllRods(doku.ComponentDefinition.WorkSurfaces.Item(1))
-
-                            monitor = New DesignMonitoring(doku)
-                            doku.Update2(True)
-
-                            MakeHole()
-
-                            bandFaces = doku.ComponentDefinition.WorkSurfaces.Item(1)
-
-                            If monitor.IsFeatureHealthy(EmbossNumber(s)) Then
-                                app.SilentOperation = True
-                                doku.SaveAs(nombrador.MakeWedgeFileName(s), False)
-                                doku.Save()
-                                doku.Close(True)
-                                app.Documents.CloseAll()
-                                app.SilentOperation = False
-
-                            End If
-
-
-
-
-                        End If
-                    End If
-
-                Next
-
-                done = True
-            End If
-
-            Return doku
-        Catch ex As Exception
-            MsgBox(ex.ToString())
-            Return Nothing
-        End Try
-
-    End Function
     Function IsWedgeDone(s As String) As Boolean
         For Each ffn As String In fullFileNames
             If ffn.Equals(s) Then
@@ -224,79 +165,7 @@ Public Class Stanzer
             Return Nothing
         End Try
     End Function
-    Function RemoveExcessFaces(ws As WorkSurface) As ExtrudeFeature
-        Dim ef As ExtrudeFeature
-        Dim wpf, wpt, wptpf As WorkPoint
-        Dim pt As Point
-        Dim pl, plw As Plane
-        Dim v As Vector
-        Try
-            workFaces = GetStartingface(ws).TangentiallyConnectedFaces
-            For Each f As Face In workFaces
-                If f.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
-                    Try
-                        wpf = doku.ComponentDefinition.WorkPoints.AddAtCentroid(f.EdgeLoops.Item(1))
-                        pl = f.Geometry
 
-                        ' If IsPointContained(pt, doku.ComponentDefinition.SurfaceBodies.Item(1)) Then
-
-                        For Each fw As Face In ws.SurfaceBodies.Item(1).Faces
-                            If fw.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
-                                If Not fw.Equals(f) Then
-                                    If Math.Abs(f.Evaluator.Area - fw.Evaluator.Area) < 0.01 Then
-                                        plw = fw.Geometry
-                                        If Math.Abs(plw.Normal.AsVector.DotProduct(pl.Normal.AsVector)) > 0.999 Then
-                                            wptpf = doku.ComponentDefinition.WorkPoints.AddAtCentroid(fw.EdgeLoops.Item(1))
-                                            Exit For
-                                        End If
-                                    End If
-                                End If
-
-                            End If
-
-                        Next
-                        v = wpf.Point.VectorTo(wptpf.Point)
-                        v.ScaleBy(f.Evaluator.Area * 24)
-                        pt = wpf.Point
-                        pt.TranslateBy(v)
-                        wpt = doku.ComponentDefinition.WorkPoints.AddFixed(pt)
-                        ef = RemoveFakeMaterial(f, wpt)
-                        If monitor.IsFeatureHealthy(ef) Then
-                            RemoveBorders(f, wpt, ef)
-                            v.ScaleBy(1)
-                            wpt.Visible = False
-                        Else
-                            ef.Delete()
-                            Try
-                                wpt.Delete()
-                            Catch ex As Exception
-
-                            End Try
-                        End If
-
-
-                        ' End If
-                        wpf.Delete()
-                        wptpf.Delete()
-                    Catch ex As Exception
-                        Try
-                            wpf.Delete()
-                            wptpf.Delete()
-                        Catch ex2 As Exception
-
-                        End Try
-                    End Try
-                End If
-
-            Next
-        Catch ex As Exception
-            MsgBox(ex.ToString())
-            Return Nothing
-        End Try
-
-
-        Return ef
-    End Function
     Function GetRealNormal(f As Face, ws As WorkSurface) As Vector
         Dim v As Vector
         Dim wpf, wpt, wptpf As WorkPoint
@@ -349,85 +218,6 @@ Public Class Stanzer
                 MsgBox(ex.ToString())
                 Return Nothing
             End Try
-        End Try
-        Return Nothing
-    End Function
-    Function RemoveBorders(f As Face, wpt As WorkPoint, ef As ExtrudeFeature) As ExtrudeFeature
-
-
-        Dim d, e, dmin, dp, npls As Double
-        Dim ve, vc, vd As Vector
-        Dim mpt As Point
-        Dim ls As LineSegment
-        Dim plfr, plfd As Plane
-
-        Dim spl As PlanarSketch
-        Dim skl As SketchLine
-        Dim fr, fd As Face
-        dmin = 9999999
-        Try
-
-
-
-            For Each ed As Edge In f.Edges
-                e = CalculateEntryDistance(ed)
-                If e < dmin Then
-                    dmin = e
-                End If
-
-
-
-            Next
-
-            If ef.SideFaces.Count > 1 Then
-
-                fr = GetMajorFace(ef)
-                fd = sideMinorFace
-                plfd = sideMinorFace.Geometry
-                plfr = sideMajorFace.Geometry
-                npls = (plfd.Normal.AsVector).CrossProduct(plfr.Normal.AsVector).Length
-                If npls > 0.5 Then
-                    Dim sb As SurfaceBody = doku.ComponentDefinition.WorkSurfaces.Item(2).SurfaceBodies.Item(1)
-                    For Each ed As Edge In f.Edges
-                        d = ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point)
-                        For Each fs As Face In sb.Faces
-                            If fs.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
-                                For Each eds As Edge In fs.Edges
-                                    e = eds.StartVertex.Point.DistanceTo(eds.StopVertex.Point)
-                                    If Math.Abs(d - e) < 1 / 128 Then
-                                        Dim vg, vs As Vector
-                                        vg = ed.StartVertex.Point.VectorTo(ed.StopVertex.Point)
-                                        vs = eds.StartVertex.Point.VectorTo(eds.StopVertex.Point)
-                                        dp = Math.Abs(vg.DotProduct(vs))
-                                        If dp > 0.9 Then
-                                            If eds.GetClosestPointTo(ed.StartVertex.Point).DistanceTo(ed.StartVertex.Point) < 25 / 10 Then
-                                                Return MakeBandEntrance(ef, ed)
-                                            End If
-
-                                        End If
-                                    End If
-                                Next
-                            End If
-                        Next
-                        e = CalculateEntryDistance(ed)
-                        If e <= dmin Then
-                            Return MakeBandEntrance(ef, ed)
-                        End If
-                    Next
-                End If
-            End If
-
-
-
-            Try
-                spl.Visible = False
-            Catch ex As Exception
-
-            End Try
-
-        Catch ex As Exception
-            MsgBox(ex.ToString())
-            Return Nothing
         End Try
         Return Nothing
     End Function
@@ -778,7 +568,8 @@ Public Class Stanzer
                 s = nombrador.ConvertQNumberLetter(q)
 
             End If
-            ef = ExtrudeNumber(SketchLetter(s, f, spt))
+            lamp.HighLighFace(f)
+            ef = ExtrudeLetter(SketchLetter(s, f, spt))
 
         Catch ex As Exception
             MsgBox(ex.ToString())
@@ -847,18 +638,37 @@ Public Class Stanzer
     Function SketchLetter(s As String, f As Face, spti As SketchPoint3D) As Profile
         Dim oProfile As Profile
 
-        Dim a, b As Double
+
+        Dim a, b, d, w, h As Double
+        Dim natural As Boolean
+        Dim pt2d As Point2d
+        Dim v2d As Vector2d
         Try
 
             Dim spt As SketchPoint
+            Dim skl As SketchLine
             Dim oSketch As PlanarSketch
+            Dim v, vy, ve As Vector
+            Dim pl As Plane = f.Geometry
+
             Dim l As Line
             Dim edMax As Edge
             edMax = GetOuterEdge(f, spti.Geometry)
-            oSketch = doku.ComponentDefinition.Sketches.AddWithOrientation(f, edMax, True, True, spti.Geometry,)
-            spt = oSketch.AddByProjectingEntity(spti)
-            l = oSketch.AxisEntityGeometry
+            ve = edMax.StartVertex.Point.VectorTo(edMax.StopVertex.Point)
+            vy = ve.CrossProduct(pl.Normal.AsVector)
+            v = spti.Geometry.VectorTo(compDef.WorkPoints.Item(1).Point)
+            d = v.DotProduct(vy)
+            If d < 0 Then
+                natural = False
+            Else
+                natural = True
+            End If
+            oSketch = doku.ComponentDefinition.Sketches.AddWithOrientation(f, edMax, natural, True, edMax.StartVertex,)
 
+            spt = oSketch.AddByProjectingEntity(spti)
+
+            skl = oSketch.AddByProjectingEntity(edMax)
+            skl.Construction = True
             Dim oTextBox As TextBox
             Dim oStyle As TextStyle
             Dim sText As String
@@ -867,16 +677,18 @@ Public Class Stanzer
             oTextBox = oSketch.TextBoxes.AddFitted(spt.Geometry, sText)
             oStyle = oSketch.TextBoxes.Item(1).Style
             oTextBox.Delete()
-            oStyle.FontSize = 0.4
+            oStyle.FontSize = 0.2
             oStyle.Bold = True
             doku.Update2(True)
             Dim ptBox As Point2d
-            ptBox = tg.CreatePoint2d(spt.Geometry.X - oStyle.FontSize / 2, -1 / 10)
+            ptBox = tg.CreatePoint2d(spt.Geometry.X - oStyle.FontSize / 4, -0.5 / 10)
             oTextBox = oSketch.TextBoxes.AddFitted(ptBox, sText, oStyle)
+            w = oTextBox.Width
+            h = oTextBox.Height
             Dim reflex As TextBox
-            ptBox = tg.CreatePoint2d(spt.Geometry.X - oStyle.FontSize / 2, 1 / 10)
+            ptBox = tg.CreatePoint2d(spt.Geometry.X - w / 2, 0.5 / 10 + h)
             reflex = oSketch.TextBoxes.AddFitted(ptBox, sText, oStyle)
-            reflex.Rotation = Math.PI
+
 
 
             ' oTextBox.Rotation = Math.PI
@@ -898,6 +710,48 @@ Public Class Stanzer
         End Try
 
         Return oProfile
+    End Function
+    Function GetClosestVertexFace(f As Face, spt As SketchPoint3D) As Vertex
+        Dim cv As Vertex
+        Dim d, dMin As Double
+        dMin = 999999
+        Try
+            For Each ver As Vertex In f.Vertices
+                d = spt.Geometry.DistanceTo(ver.Point)
+                If d < dMin Then
+                    dMin = d
+                    cv = ver
+                End If
+            Next
+            lamp.HighLighObject(cv)
+            Return cv
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+    End Function
+    Function GetClosestVertexEdge(ed As Edge, spt As SketchPoint3D) As Vertex
+        Dim cv As Vertex
+        Dim d, e, dMin As Double
+        dMin = 999999
+        Try
+
+            d = spt.Geometry.DistanceTo(ed.StartVertex.Point)
+            e = spt.Geometry.DistanceTo(ed.StopVertex.Point)
+            If d < e Then
+                Return ed.StartVertex
+            Else
+                Return ed.StopVertex
+            End If
+
+            lamp.HighLighObject(cv)
+            Return cv
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
     End Function
     Function GetMajorEdge(f As Face) As Edge
         Dim e1, e2, e3 As Edge
@@ -1026,7 +880,7 @@ Public Class Stanzer
     End Function
     Function GetOuterEdge(f As Face, pti As Point) As Edge
         Dim e1, e2, e3 As Edge
-        Dim mine1, mine2, mine3, d, e As Double
+        Dim mine1, mine2, mine3, d, e, dis As Double
         Dim ve, vc As Vector
         Dim pt1, pt2, pt3 As Point
         Dim ls As LineSegment
@@ -1040,29 +894,34 @@ Public Class Stanzer
         e = pt1.DistanceTo(pti)
         ' sk3D.SketchPoints3D.Add(pt1)
         For Each ed As Edge In f.EdgeLoops.Item(1).Edges
-            d = ed.GetClosestPointTo(pti).DistanceTo(pti)
-            If Math.Abs(d - e) < 1 / 10 Then
+            dis = ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point)
+            If dis > 20 / 10 Then
 
-                If d < mine2 Then
-                    If d < mine1 Then
-                        mine3 = mine2
-                        e3 = e2
-                        mine2 = mine1
-                        e2 = e1
-                        mine1 = d
-                        e1 = ed
+                d = ed.GetClosestPointTo(pti).DistanceTo(pti)
+                If Math.Abs(d - e) < 1 / 10 Then
+
+                    If d < mine2 Then
+                        If d < mine1 Then
+                            mine3 = mine2
+                            e3 = e2
+                            mine2 = mine1
+                            e2 = e1
+                            mine1 = d
+                            e1 = ed
+                        Else
+                            mine3 = mine2
+                            e3 = e2
+                            mine2 = d
+                            e2 = ed
+                        End If
                     Else
-                        mine3 = mine2
-                        e3 = e2
-                        mine2 = d
-                        e2 = ed
+                        mine3 = d
+                        e3 = ed
                     End If
-                Else
-                    mine3 = d
-                    e3 = ed
-                End If
 
+                End If
             End If
+
 
 
         Next
@@ -1085,15 +944,22 @@ Public Class Stanzer
     End Function
     Function ExtrudeLetter(pro As Profile) As ExtrudeFeature
         Dim oExtrudeDef As ExtrudeDefinition
-        oExtrudeDef = doku.ComponentDefinition.Features.ExtrudeFeatures.CreateExtrudeDefinition(pro, PartFeatureOperationEnum.kCutOperation)
-        oExtrudeDef.SetDistanceExtent(12 / 10, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
-        'oExtrudeDef.SetDistanceExtent(0.12, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
-        Dim oExtrude As ExtrudeFeature
-        oExtrude = doku.ComponentDefinition.Features.ExtrudeFeatures.Add(oExtrudeDef)
+        Try
+            oExtrudeDef = doku.ComponentDefinition.Features.ExtrudeFeatures.CreateExtrudeDefinition(pro, PartFeatureOperationEnum.kCutOperation)
+            oExtrudeDef.SetDistanceExtent(8 / 10, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
+            'oExtrudeDef.SetDistanceExtent(0.12, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
+            Dim oExtrude As ExtrudeFeature
+            oExtrude = doku.ComponentDefinition.Features.ExtrudeFeatures.Add(oExtrudeDef)
+            Return oExtrude
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
 
 
 
-        Return oExtrude
+
+
     End Function
     Function RemoveFakeMaterial(f As Face, wpt As WorkPoint) As ExtrudeFeature
         Dim spl As PlanarSketch

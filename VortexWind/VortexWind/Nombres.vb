@@ -7,10 +7,7 @@ Public Class Nombres
     Dim app As Application
     Dim compDef As ComponentDefinition
 
-    Public Sub New()
-        newName = "noname"
-        datei = ".ipt"
-    End Sub
+
     Public Sub New(docu As Inventor.Document)
         doku = docu
         app = doku.Parent
@@ -88,6 +85,13 @@ Public Class Nombres
 
         Return CInt(s(0)) + 1
     End Function
+    Public Function GetQWire(ef As ExtrudeFeature) As Integer
+        Dim s() As String
+        s = Strings.Split(ef.Name, "rw")
+
+
+        Return CInt(s(1))
+    End Function
     Public Function GetQNumberString(ffn As String) As Integer
         Dim s() As String
         s = Strings.Split(ffn, "Band")
@@ -112,8 +116,8 @@ Public Class Nombres
         Dim c As Char
         Dim m As Integer
         Dim s As String
-        Math.DivRem(q, 25, m)
-        c = ChrW(m + 65)
+        Math.DivRem(q, 97, m)
+        c = ChrW(m + 33)
         s = c.ToString
         Return s
     End Function
