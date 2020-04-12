@@ -10,37 +10,61 @@ Public Class ExcelInterface
 
     Public Sub New(name As String)
         oExcel = CreateObject("Excel.Application")
-
-        path = name & "\keys.xls"
+        oExcel.Visible = False
+        path = name & "\keys.xlsx"
         If File.Exists(path) Then
             oBook = oExcel.Workbooks.Open(path)
         Else
             oBook = oExcel.Workbooks.Add
-            oBook.SaveAs(path)
+
         End If
 
 
     End Sub
     Public Function SaveArray(tans() As Long, rods() As Long) As Integer
         Try
-            Dim h() As String = {"tans", "rods"}
-            Dim t As Object = tans.ToList
-            oSheet = oBook.Worksheets.Add
-            oSheet.Range("A1").Value = "tans"
-            oSheet.Range("B2").Value = "rods"
+            Dim r As Range
+
+
+
             Try
-                oSheet.Range("A2").Resize(tans.Length, 1).Value = t
+                oSheet = oBook.Worksheets.Add
+                r = oSheet.Cells(1, 1)
+                r.Value = "tans"
+                WriteArray(tans, 1)
+                r = oSheet.Cells(1, 2)
+                r.Value = "rods"
+                WriteArray(rods, 2)
+                If File.Exists(path) Then
+                    oBook.Save()
+                Else
+                    oBook.SaveAs(path)
+                End If
+
+
             Catch ex As Exception
-                Long2Variant(tans)
-                oSheet.Range("A2").Resize(tans.Length, 1).Value = col
+
             End Try
-            oBook.Save()
-            oExcel.Quit()
-            'oSheet.Range("B2").Resize(rods.Length, 1).Value = rods
+
         Catch ex As Exception
-            MsgBox(ex.ToString())
+
         End Try
 
+        Return 0
+    End Function
+    Function WriteArray(a() As Long, c As Long) As Integer
+        Dim arr() As Long
+        Dim r As Range
+        Try
+        ReDim arr(a.Length - 1)
+            arr = a
+            For i = 1 To arr.Length
+                r = oSheet.Cells(i + 1, c)
+                r.Value = arr(i - 1)
+            Next
+        Catch ex As Exception
+
+        End Try
         Return 0
     End Function
     Function Long2Variant(a() As Long) As Integer
