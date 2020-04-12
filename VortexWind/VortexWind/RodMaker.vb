@@ -30,12 +30,12 @@ Public Class RodMaker
 
     Dim cutProfile, faceProfile, rodProfile As Profile
 
-    Dim pro As Profile
+    Dim profile As Profile
     Dim direction As Vector
     Dim feature As FaceFeature
     Dim cutfeature As CutFeature
     Dim bendLine, cutLine As SketchLine
-    Public compDef As ComponentDefinition
+    Public compDef As PartComponentDefinition
     Dim sheetMetalFeatures As SheetMetalFeatures
     Dim mainWorkPlane As WorkPlane
     Dim workAxis As WorkAxis
@@ -54,7 +54,7 @@ Public Class RodMaker
     Dim nf As System.IO.Path
 
     Dim foldFeature As FoldFeature
-    Dim sections, esquinas, rails, caras, surfaceBodies As ObjectCollection
+    Dim sections, esquinas, rails, caras, surfaceBodies, arcPoints As ObjectCollection
 
     Dim edgeColl As EdgeCollection
     Dim twistPlane As WorkPlane
@@ -70,8 +70,7 @@ Public Class RodMaker
         projectManager = app.DesignProjectManager
 
         compDef = doku.ComponentDefinition
-        sheetMetalFeatures = compDef.Features
-        foldFeatures = sheetMetalFeatures.FoldFeatures
+
         tg = app.TransientGeometry
         bandLines = app.TransientObjects.CreateObjectCollection
         constructionLines = app.TransientObjects.CreateObjectCollection
@@ -80,9 +79,9 @@ Public Class RodMaker
         rails = app.TransientObjects.CreateObjectCollection
         caras = app.TransientObjects.CreateObjectCollection
         surfaceBodies = app.TransientObjects.CreateObjectCollection
+        arcPoints = app.TransientObjects.CreateObjectCollection
         lamp = New Highlithing(doku)
-        thicknessCM = compDef.Thickness._Value
-        gap1CM = 3 / 10
+
 
         nombrador = New Nombres(doku)
 
@@ -175,6 +174,128 @@ Public Class RodMaker
             Return Nothing
         End Try
     End Function
+    Function MakeBridge(f As Face) As ExtrudeFeature
+        Dim wa As WorkAxis
+        Dim le As SketchLine3D
+        Dim pro As Profile
+        Try
+            ' lamp.HighLighFace(f)
+            wa = doku.ComponentDefinition.WorkAxes.AddByRevolvedFace(f)
+            workAxis = wa
+            wa.Visible = False
+            GetArcPoints(f)
+            pro = DrawArcSketch(f, wa)
+            Return ExtrudeSurface(pro)
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+    End Function
+    Function GetArcPoints(fi As Face) As Point
+        Dim min1, min2, min3, min4, d As Double
+        Dim pt1, pt2, pt3, pt4, ptc As Point
+        Dim ver1, ver2 As Vertex
+        Dim l As Line
+        Dim c As Cylinder
+        Dim fc As FaceCollection = app.TransientObjects.CreateFaceCollection
+        Dim b As Boolean = False
+        min1 = 99999999
+        min2 = min1
+        min3 = min2
+        min4 = min3
+
+
+        pt1 = fi.Vertices.Item(1).Point
+        pt2 = pt1
+        pt3 = pt2
+        pt4 = pt3
+        If fi.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
+            c = fi.Geometry
+            ptc = c.BasePoint
+        End If
+        l = tg.CreateLine(c.BasePoint, c.AxisVector.AsVector)
+        arcPoints.Clear()
+        ver1 = fi.Vertices.Item(1)
+        fc = fi.TangentiallyConnectedFaces
+        For Each f As Face In fc
+            If f.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                For Each ver As Vertex In f.Vertices
+                    d = l.DistanceTo(ver.Point)
+                    If d < min2 Then
+                        If d < min1 Then
+                            min1 = d
+
+                            pt2 = pt1
+                            pt1 = ver.Point
+                            ver2 = ver1
+                            ver1 = ver
+                        Else
+                            min2 = d
+                            pt2 = ver.Point
+                            ver2 = ver
+                        End If
+
+                    End If
+                Next
+            End If
+
+
+        Next
+
+        sk3D = doku.ComponentDefinition.Sketches3D.Add()
+
+        arcPoints.Add(sk3D.SketchPoints3D.Add(pt1))
+        arcPoints.Add(sk3D.SketchPoints3D.Add(pt2))
+        For Each f As Face In ver1.Faces
+
+            For Each f3 As Face In fc
+                If f.Equals(f3) Then
+                    fc.RemoveByObject(f3)
+                    b = True
+                    Exit For
+                End If
+
+            Next
+            If b Then
+                Exit For
+            End If
+        Next
+        min1 = 99999999
+        min2 = min1
+
+        For Each f As Face In fc
+            If f.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                For Each ver As Vertex In f.Vertices
+                    d = l.DistanceTo(ver.Point)
+                    If d < min2 Then
+                        If d < min1 Then
+                            min1 = d
+
+                            pt2 = pt1
+                            pt1 = ver.Point
+                            ver2 = ver1
+                            ver1 = ver
+                        Else
+                            min2 = d
+                            pt2 = ver.Point
+                            ver2 = ver
+                        End If
+
+                    End If
+                Next
+            End If
+
+        Next
+
+        arcPoints.Add(sk3D.SketchPoints3D.Add(pt1))
+        arcPoints.Add(sk3D.SketchPoints3D.Add(pt2))
+
+        Return pt1
+    End Function
+    Function GetRadiusPoint(pt As Point, r As Double) As Double
+        Dim radius As Double = Math.Pow(Math.Pow(pt.X, 2) + Math.Pow(pt.Y, 2), 1 / 2)
+        Return radius
+    End Function
     Function DrawRodSketch(f As Face, a As WorkAxis) As SketchLine3D
         Dim l, le As SketchLine3D
         Dim gc As GeometricConstraint3D
@@ -187,6 +308,109 @@ Public Class RodMaker
         gc = sk3D.GeometricConstraints3D.AddCollinear(l, a)
         centroLine = l
         Return le
+    End Function
+    Function ExtrudeSurface(pro As Profile) As ExtrudeFeature
+        Dim oExtrudeDef As ExtrudeDefinition
+        Dim spt As SketchPoint3D = GetFarPoint()
+        Try
+
+            oExtrudeDef = doku.ComponentDefinition.Features.ExtrudeFeatures.CreateExtrudeDefinition(pro, PartFeatureOperationEnum.kSurfaceOperation)
+            oExtrudeDef.SetToExtent(spt)
+
+            'oExtrudeDef.SetDistanceExtent(0.12, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
+            Dim oExtrude As ExtrudeFeature
+            oExtrude = doku.ComponentDefinition.Features.ExtrudeFeatures.Add(oExtrudeDef)
+            Return oExtrude
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+
+
+
+    End Function
+    Function GetFarPoint() As SketchPoint3D
+        Dim ptMax2 As SketchPoint3D
+        Dim d, dMax As Double
+        dMax = 0
+        Dim fpt As SketchPoint3D = arcPoints.Item(1)
+        Try
+        For Each spt As SketchPoint3D In arcPoints
+                d = fpt.Geometry.DistanceTo(spt.Geometry)
+                If d > dMax Then
+                    dMax = d
+                    ptMax2 = spt
+                End If
+            Next
+
+            Return ptMax2
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+    End Function
+    Function DrawArcSketch(f As Face, wa As WorkAxis) As Profile
+        Try
+            Dim wpl As WorkPlane
+            Dim ps As PlanarSketch
+            Dim v As Vector
+            Dim skpt3D, skpt3DStart As SketchPoint3D
+            Dim sp1, sp2, sp3, spc As SketchPoint
+            Dim le2d, l2d, l32d, mne As SketchLine
+            Dim skAxis As SketchLine3D
+            Dim gc, gccc As GeometricConstraint
+            Dim r As SketchEntitiesEnumerator
+            Dim sa As SketchArc
+            Dim dc As DimensionConstraint
+            Dim pro As Profile
+            Dim pt3D As Point
+            Dim d As Double = 0
+            Dim i As Integer
+            Dim c As Cylinder
+            Dim pl As Plane
+            Dim dis As Double
+            Dim b As Boolean
+            c = f.Geometry
+            sk3D.Visible = False
+
+            pt3D = c.BasePoint
+            pt3D.TranslateBy(c.AxisVector.AsVector)
+
+            skAxis = sk3D.SketchLines3D.AddByTwoPoints(c.BasePoint, pt3D, False)
+            skAxis.Construction = True
+            wpl = doku.ComponentDefinition.WorkPlanes.AddByNormalToCurve(skAxis, skAxis.StartPoint)
+            wpl.Visible = False
+            skpt3DStart = arcPoints.Item(1)
+            wpl = compDef.WorkPlanes.AddByPlaneAndPoint(wpl, skpt3DStart)
+            wpl.Visible = False
+            ps = doku.ComponentDefinition.Sketches.Add(wpl)
+            sp1 = ps.AddByProjectingEntity(arcPoints.Item(1))
+            sp2 = ps.AddByProjectingEntity(arcPoints.Item(3))
+            spc = ps.AddByProjectingEntity(skAxis.StartPoint)
+            v = c.BasePoint.VectorTo(sp1.Geometry3d)
+            If v.DotProduct(c.AxisVector.AsVector) < 0 Then
+                b = True
+            Else
+                b = False
+            End If
+            sa = ps.SketchArcs.AddByCenterStartEndPoint(spc, sp1, sp2, b)
+            If sa.Length > c.Radius Then
+                sa.Delete()
+                b = Not b
+                sa = ps.SketchArcs.AddByCenterStartEndPoint(spc, sp1, sp2, b)
+            End If
+
+            pro = ps.Profiles.AddForSurface(sa)
+            ps.Visible = False
+            Return pro
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
     End Function
     Function DrawPlannSketch(cl As SketchLine3D, le As SketchLine3D) As Profile
         Try

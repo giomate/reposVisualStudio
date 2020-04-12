@@ -1,4 +1,5 @@
 ﻿Imports Inventor
+
 Imports System.Text.RegularExpressions
 Imports System
 Imports System.IO
@@ -11,6 +12,7 @@ Public Class VortexRod
     Dim app As Application
     Dim sk3D, refSk As Sketch3D
 
+
     Dim curve, refCurve As SketchEquationCurve3D
     Public done, healthy As Boolean
 
@@ -18,8 +20,8 @@ Public Class VortexRod
     Dim invFile As InventorFile
     Dim windings, driftAngle, passes As Double
     Dim estampa As Stanzer
-
-
+    Dim puente As RodMaker
+    Dim lista As ExcelInterface
 
     Public wp1, wp2, wp3, wpConverge As WorkPoint
     Public farPoint, point1, point2, point3, curvePoint, ptzFront, ptzBack, ptZMax, ptRMax As Point
@@ -28,6 +30,7 @@ Public Class VortexRod
     Dim gap1CM, thicknessCM As Double
     Public partNumber, qNext, qLastTie As Integer
     Dim bandLines, constructionLines As ObjectCollection
+    Dim tangents, bands, rods As WorkSurface
     Dim comando As Commands
     Public nombrador As Nombres
 
@@ -45,6 +48,7 @@ Public Class VortexRod
     Dim workAxis As WorkAxis
     Dim faceRod As Face
     Dim workFace, adjacentFace, bendFace, frontBendFace, cutFace, twistFace As Face
+    Dim tangentFaces As FaceCollection
     Dim minorEdge, majorEdge, inputEdge As Edge
     Dim bendAngle As DimensionConstraint
     Dim gapFold, gapVertex As DimensionConstraint3D
@@ -57,11 +61,12 @@ Public Class VortexRod
     Dim di As System.IO.DirectoryInfo
     Dim fi As System.IO.File
     Dim nf As System.IO.Path
-    Dim pValue, qvalue As Integer
+    Dim pValue, qvalue, nTanFaces As Integer
 
     Dim foldFeature As FoldFeature
-    Dim sections, stamPoints, rails, caras, guidePoints As ObjectCollection
+    Dim sections, stamPoints, rails, caras, guidePoints, cylinders, planarFaces, wedges, tangentials, arcPoints As ObjectCollection
 
+    Dim tanKeys(), bandKeys(), rodKeys() As Long
     Dim edgeColl As EdgeCollection
     Dim twistPlane As WorkPlane
     Dim spt2dHigh, spt2dLow As SketchPoint
@@ -83,6 +88,12 @@ Public Class VortexRod
         tg = app.TransientGeometry
         sections = app.TransientObjects.CreateObjectCollection
         guidePoints = app.TransientObjects.CreateObjectCollection
+        cylinders = app.TransientObjects.CreateObjectCollection
+        planarFaces = app.TransientObjects.CreateObjectCollection
+        wedges = app.TransientObjects.CreateObjectCollection
+        tangentials = app.TransientObjects.CreateObjectCollection
+        arcPoints = app.TransientObjects.CreateObjectCollection
+
         lamp = New Highlithing(doku)
         windings = 257
         passes = 109
@@ -92,6 +103,7 @@ Public Class VortexRod
         qvalue = 0
         done = False
         guidePoints.Clear()
+
     End Sub
     Function SetConvergePoint(wp As WorkPoint) As WorkPoint
         Try
@@ -261,11 +273,10 @@ Public Class VortexRod
         lamp = New Highlithing(doku)
         monitor = New DesignMonitoring(doku)
         estampa = New Stanzer(doku)
-        If compDef.Features.ExtrudeFeatures.Count > 1 Then
-            fourWorkAxis = compDef.WorkAxes.Item(4)
-        End If
+
 
         nombrador = New Nombres(doku)
+        puente = New RodMaker(doku)
         'adjuster = New SketchAdjust(doku)
 
         Return doku
@@ -275,12 +286,44 @@ Public Class VortexRod
         Dim w As Parameter
         Dim rw As Integer
 
+
         doku = DocUpdate(docu)
         comando.WireFrameView(doku)
 
         Try
             Try
                 skpt1 = compDef.Sketches3D.Item("HighestPoint").SketchPoints3D.Item(1)
+                Try
+                    tangents = compDef.WorkSurfaces.Item("tangents")
+                    ' CreateTangenFaceCollection()
+                    Try
+                        rods = compDef.WorkSurfaces.Item("cylinders")
+                        Try
+                            'bands = compDef.WorkSurfaces.Item("bands")
+                            Try
+                                CreateKeys(rods, rodKeys)
+                                'CreateKeys(bands, bandKeys)
+                            Catch ex As Exception
+
+                            End Try
+                        Catch ex As Exception
+                            'bands = MakePlanarFaces()
+                            CreateKeys(rods, rodKeys)
+                            ' CreateKeys(bands, bandKeys)
+                        End Try
+                    Catch ex As Exception
+                        rods = MakeCylinders()
+
+                    End Try
+
+                Catch ex As Exception
+                    tangents = MakeTangentials()
+                    rods = MakeCylinders()
+                    'bands = MakePlanarFaces()
+                    CreateKeys(rods, rodKeys)
+                    'CreateKeys(bands, bandKeys)
+
+                End Try
             Catch ex2 As Exception
                 sk3D = compDef.Sketches3D.Add()
                 sk3D.Name = "HighestPoint"
@@ -289,8 +332,12 @@ Public Class VortexRod
                 End If
             End Try
 
-
-            If compDef.Features.ExtrudeFeatures.Count < 1 Then
+            Try
+                If monitor.IsFeatureHealthy(compDef.Features.ExtrudeFeatures.Item("rw1")) Then
+                    qvalue = FindLastRW()
+                    ef = MakeNextWireHole(qvalue)
+                End If
+            Catch ex As Exception
                 sk3D = compDef.Sketches3D.Add()
                 sk3D.Name = "FirstWire"
 
@@ -304,11 +351,8 @@ Public Class VortexRod
                     doku.Save2(True)
                     ef = MakeNextWireHole(qvalue)
                 End If
-            Else
-                qvalue = FindLastRW()
+            End Try
 
-                ef = MakeNextWireHole(qvalue)
-            End If
 
 
 
@@ -321,6 +365,459 @@ Public Class VortexRod
             Return Nothing
         End Try
 
+    End Function
+    Function CreateTangenFaceCollection() As Integer
+        Dim n As Integer = compDef.Features.NonParametricBaseFeatures.Item("tangentials").Faces.Count
+        Dim i As Integer = 0
+        ReDim tanKeys(n - 1)
+        tangentFaces = app.TransientObjects.CreateFaceCollection
+        tangentFaces.Clear()
+
+
+        For Each sb As SurfaceBody In tangents.SurfaceBodies
+            For Each f As Face In sb.Faces
+                i = i + 1
+                tangentFaces.Add(f)
+
+                tanKeys(i - 1) = f.TransientKey
+            Next
+        Next
+        nTanFaces = n
+        Return n
+    End Function
+    Function CreateKeys(ws As WorkSurface, ByRef keys() As Long) As Integer
+        Dim t As WorkSurface
+        Dim n As Integer = compDef.Features.NonParametricBaseFeatures.Item("tangentials").Faces.Count
+        Dim i As Integer = 0
+
+        Dim j As Integer = 0
+        Dim k As Integer
+        nTanFaces = n
+
+        Dim fc As FaceCollection = app.TransientObjects.CreateFaceCollection
+        Try
+            For Each sb As SurfaceBody In ws.SurfaceBodies
+                For Each fr As Face In sb.Faces
+                    fc.Add(fr)
+                Next
+            Next
+            k = fc.Count
+            ReDim tanKeys(n - 1)
+            ReDim keys(n - 1)
+            For Each sb As SurfaceBody In tangents.SurfaceBodies
+                For Each f As Face In sb.Faces
+                    i = i + 1
+                    tanKeys(i - 1) = f.TransientKey
+
+                    keys(i - 1) = 0
+                    If f.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
+                        If fc.Count > 0 Then
+                            For Each f2 As Face In fc
+                                ' lamp.HighLighFace(f)
+                                If IsSameFace(f, f2) Then
+                                    '  lamp.HighLighFace(f)
+                                    '  lamp.HighLighFace(f2)
+                                    keys(i - 1) = f2.TransientKey
+                                    fc.RemoveByObject(f2)
+                                    j = j + 1
+                                    Exit For
+                                End If
+
+                            Next
+                        End If
+                    End If
+
+                Next
+
+            Next
+
+
+
+            If j = k Then
+                ' SaveKeys(tanKeys, rodKeys)
+                Return j
+
+            Else
+                MsgBox(j.ToString())
+                Return Nothing
+            End If
+
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+        Return 0
+    End Function
+    Function SaveKeys(tans() As Long, rods() As Long) As Integer
+        Dim path As String = projectManager.ActiveDesignProject.WorkspacePath
+        lista = New ExcelInterface(path)
+        lista.SaveArray(tans, rods)
+        Return 0
+    End Function
+    Function IsSameFace(f1 As Face, f2 As Face) As Boolean
+        Dim b As Boolean = False
+        Dim d As Double
+        Dim c1, c2 As Cylinder
+        Dim pl1, pl2 As Plane
+        Try
+            If f1.Vertices.Count = f2.Vertices.Count Then
+                d = Math.Abs(f1.Evaluator.Area - f2.Evaluator.Area)
+                If d < 0.001 Then
+                    If f1.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
+                        If f2.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
+                            c1 = f1.Geometry
+                            c2 = f2.Geometry
+                            d = Math.Abs(c1.AxisVector.AsVector.DotProduct(c2.AxisVector.AsVector))
+                            If d > 0.99 Then
+                                d = c1.BasePoint.DistanceTo(c2.BasePoint)
+                                If d < 1 / 1000 Then
+                                    b = True
+                                End If
+
+                            End If
+                        End If
+                    Else
+                        If f1.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                            If f2.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                                pl1 = f1.Geometry
+                                pl2 = f2.Geometry
+                                d = Math.Abs(pl1.Normal.AsVector.DotProduct(pl2.Normal.AsVector))
+                                If d > 0.99 Then
+                                    d = pl1.RootPoint.DistanceTo(pl2.RootPoint)
+                                    If d < 1 / 1000 Then
+                                        b = True
+                                    End If
+
+                                End If
+                            End If
+
+                        End If
+                    End If
+                End If
+            End If
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+        Return b
+    End Function
+    Function AreDifferentFaces(f1 As Face, f2 As Face) As Double
+        Dim b As Boolean = False
+        Dim d, e, f As Double
+        Dim c1, c2 As Cylinder
+        Dim pl1, pl2 As Plane
+        d = 9999999
+        e = d
+        f = e
+        Try
+            If f1.Vertices.Count = f2.Vertices.Count Then
+                d = Math.Abs(f1.Evaluator.Area - f2.Evaluator.Area)
+                If d < 0.1 Then
+                    If f1.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
+                        If f2.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
+                            c1 = f1.Geometry
+                            c2 = f2.Geometry
+                            e = (c1.AxisVector.AsVector.CrossProduct(c2.AxisVector.AsVector)).Length
+                            f = c1.BasePoint.DistanceTo(c2.BasePoint)
+                        End If
+                    Else
+                        If f1.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                            If f2.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                                pl1 = f1.Geometry
+                                pl2 = f2.Geometry
+                                e = pl1.Normal.AsVector.CrossProduct(pl2.Normal.AsVector).Length
+                                f = pl1.RootPoint.DistanceTo(pl2.RootPoint)
+                            End If
+                        End If
+                    End If
+                End If
+            End If
+            Return e * d * f
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+        Return b
+    End Function
+    Function MakeCylinders() As WorkSurface
+        Dim ws As WorkSurface
+        Dim sb1 As SurfaceBody
+        Dim sb As SurfaceBody = compDef.SurfaceBodies.Item(1)
+        Dim np As NonParametricBaseFeature
+        Dim npDef As NonParametricBaseFeatureDefinition = compDef.Features.NonParametricBaseFeatures.CreateDefinition
+        Try
+            cylinders.Clear()
+            For Each f As Face In sb.Faces
+                If f.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
+                    If f.Evaluator.Area > 0.5 And f.Evaluator.Area < 1 Then
+                        cylinders.Add(f)
+                    End If
+                End If
+            Next
+
+            npDef.BRepEntities = cylinders
+            npDef.OutputType = BaseFeatureOutputTypeEnum.kCompositeOutputType
+            npDef.IsAssociative = False
+            np = compDef.Features.NonParametricBaseFeatures.AddByDefinition(npDef)
+            np.Name = "rodillos"
+            ws = compDef.WorkSurfaces.Item(compDef.WorkSurfaces.Count)
+            sb1 = ws.SurfaceBodies.Item(1)
+            sb1.Name = "cylinders"
+            Return ws
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+    End Function
+    Function MakePlanarFaces() As WorkSurface
+        Dim ws As WorkSurface
+        Dim sb1 As SurfaceBody
+        Dim sb As SurfaceBody = compDef.SurfaceBodies.Item(1)
+        Dim np As NonParametricBaseFeature
+        Dim npDef As NonParametricBaseFeatureDefinition = compDef.Features.NonParametricBaseFeatures.CreateDefinition
+        Try
+            planarFaces.Clear()
+            For Each f As Face In sb.Faces
+                If f.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                    If f.Evaluator.Area > 2 And f.Evaluator.Area < 9 Then
+                        If f.TangentiallyConnectedFaces.Count > 7 Then
+                            planarFaces.Add(f)
+                        End If
+
+                    End If
+                End If
+            Next
+
+            npDef.BRepEntities = planarFaces
+            npDef.OutputType = BaseFeatureOutputTypeEnum.kCompositeOutputType
+            npDef.IsAssociative = False
+            np = compDef.Features.NonParametricBaseFeatures.AddByDefinition(npDef)
+            np.Name = "bandas"
+            ws = compDef.WorkSurfaces.Item(compDef.WorkSurfaces.Count)
+            sb1 = ws.SurfaceBodies.Item(1)
+            sb1.Name = "bands"
+            Return ws
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+    End Function
+    Function MakeTangentials() As WorkSurface
+        Dim ws As WorkSurface
+        Dim sbtan As SurfaceBody
+        Dim sb As SurfaceBody = compDef.SurfaceBodies.Item(1)
+        Dim np, npAUx As NonParametricBaseFeature
+        Dim npDef As NonParametricBaseFeatureDefinition = compDef.Features.NonParametricBaseFeatures.CreateDefinition
+
+
+        Try
+            tangentials.Clear()
+            For Each f As Face In sb.Faces
+                If f.Evaluator.Area > 0.09 And f.Evaluator.Area < 9 Then
+                    If f.SurfaceType = SurfaceTypeEnum.kPlaneSurface Or f.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
+                        Try
+                            If f.TangentiallyConnectedFaces.Count > 13 Then
+                                tangentials.Add(f)
+                            End If
+                        Catch ex As Exception
+
+                        End Try
+                    End If
+
+
+
+                End If
+
+            Next
+
+            npDef.BRepEntities = tangentials
+            npDef.OutputType = BaseFeatureOutputTypeEnum.kCompositeOutputType
+            npDef.IsAssociative = False
+            np = compDef.Features.NonParametricBaseFeatures.AddByDefinition(npDef)
+
+            ' npAUx = CheckSurfaceValidity(np)
+            '  If monitor.IsFeatureHealthy(npAUx) Then
+            '   np = npAUx
+            '   End If
+
+            np.Name = "tangentials"
+            ws = compDef.WorkSurfaces.Item(compDef.WorkSurfaces.Count)
+            sb = ws.SurfaceBodies.Item(1)
+            sb.Name = "tangents"
+
+            Return ws
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+    End Function
+    Function CheckSurfaceValidity(npi As NonParametricBaseFeature) As NonParametricBaseFeature
+        Dim fc As FaceCollection = app.TransientObjects.CreateFaceCollection
+        Dim badFaces As ObjectCollection = app.TransientObjects.CreateObjectCollection
+        Dim goodFaces As ObjectCollection = app.TransientObjects.CreateObjectCollection
+        Dim oe As ObjectsEnumerator
+        Dim ef As ExtrudeFeature
+        Dim sb As SurfaceBody
+        Dim ws As WorkSurface
+        Dim bf, gf, tf As Face
+        Dim npDef As NonParametricBaseFeatureDefinition = compDef.Features.NonParametricBaseFeatures.CreateDefinition
+        Dim wd As Boolean
+        Dim d As Double
+        Dim c1, c2 As Cylinder
+
+
+        Dim np As NonParametricBaseFeature
+        Dim count As Integer = npi.Faces.Count
+
+        Try
+            badFaces.Clear()
+            goodFaces.Clear()
+            fc.Clear()
+
+            For Each f As Face In npi.Faces
+
+                sb = f.SurfaceBody
+                If Not sb.IsEntityValid(f, , oe) Then
+                    badFaces.Add(f)
+                    lamp.HighLighFace(f)
+                    ef = puente.MakeBridge(f)
+                    If monitor.IsFeatureHealthy(ef) Then
+                        lamp.HighLighFace(ef.Faces.Item(1))
+                        goodFaces.Add(ef.Faces.Item(1))
+                        lamp.HighLighObject(goodFaces.Item(goodFaces.Count))
+                        'compDef.WorkSurfaces.Item(compDef.WorkSurfaces.Count).SurfaceBodies.Item(1).Visible = False
+                    End If
+
+                End If
+
+            Next
+
+            'npi.Delete()
+            tangentials.Clear()
+            For Each f As Face In compDef.SurfaceBodies.Item(1).Faces
+                If f.SurfaceType = SurfaceTypeEnum.kPlaneSurface Or f.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
+                    If f.Evaluator.Area > 0.09 And f.Evaluator.Area < 9 Then
+                        Try
+                            If f.TangentiallyConnectedFaces.Count > 13 Then
+                                wd = False
+                                If f.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
+                                    For i = 1 To badFaces.Count
+
+                                        bf = badFaces.Item(i)
+                                        If f.Vertices.Count = bf.Vertices.Count Then
+                                            d = Math.Abs(f.Evaluator.Area - bf.Evaluator.Area)
+
+                                            If d < 0.001 Then
+                                                c1 = f.Geometry
+                                                c2 = bf.Geometry
+                                                d = Math.Abs(c1.AxisVector.AsVector.DotProduct(c2.AxisVector.AsVector))
+                                                If d > 0.99 Then
+                                                    lamp.HighLighFace(f)
+                                                    tangentials.Add(goodFaces.Item(i))
+                                                    wd = True
+                                                    Exit For
+                                                End If
+
+                                            End If
+                                        End If
+
+
+                                    Next
+                                End If
+
+                                If Not wd Then
+                                    tangentials.Add(f)
+                                End If
+
+                            End If
+                        Catch ex As Exception
+
+                        End Try
+
+
+                    End If
+                End If
+
+
+            Next
+
+
+
+            npDef.BRepEntities = tangentials
+            npDef.OutputType = BaseFeatureOutputTypeEnum.kCompositeOutputType
+            npDef.IsAssociative = False
+            Try
+                np = compDef.Features.NonParametricBaseFeatures.AddByDefinition(npDef)
+            Catch ex As Exception
+                npDef.OutputType = BaseFeatureOutputTypeEnum.kSurfaceOutputType
+                Try
+                    np = compDef.Features.NonParametricBaseFeatures.AddByDefinition(npDef)
+                Catch ex2 As Exception
+                    npDef.DeleteOriginal = True
+                    npDef.OutputType = BaseFeatureOutputTypeEnum.kCompositeOutputType
+                    Try
+                        np = compDef.Features.NonParametricBaseFeatures.AddByDefinition(npDef)
+                    Catch ex3 As Exception
+                        npDef.BRepEntities = goodFaces
+                        np = compDef.Features.NonParametricBaseFeatures.AddByDefinition(npDef)
+                    End Try
+                End Try
+
+            End Try
+            If Not monitor.IsFeatureHealthy(np) Then
+                CheckSurfaceValidity(np)
+            Else
+                npi.Delete()
+            End If
+
+            Return np
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+    End Function
+    Function GetArcPoints(fi As Face) As Point
+        Dim min1, min2, min3, min4, d As Double
+        Dim pt1, pt2, pt3, pt4 As Point
+        min1 = 99999999
+        min2 = min1
+        min3 = min2
+        min4 = min3
+        pt1 = fi.Vertices.Item(1).Point
+        pt2 = pt1
+        pt3 = pt2
+        pt4 = pt3
+        For Each f As Face In fi.TangentiallyConnectedFaces
+            For Each ver As Vertex In fi.Vertices
+                For Each ver2 As Vertex In f.Vertices
+                    d = ver.Point.DistanceTo(ver2.Point)
+                    If d < min4 Then
+                        If d < min3 Then
+                            If d < min2 Then
+                                If d < min1 Then
+                                    min1 = d
+                                    pt4 = pt3
+                                    pt2 = pt1
+                                    pt2 = pt1
+                                    pt1 = ver
+                                End If
+                            End If
+
+                        End If
+
+                    End If
+                Next
+
+            Next
+        Next
+        Return pt1
     End Function
     Function FindLastRW() As Integer
         Dim q, rws As Integer
@@ -427,6 +924,7 @@ Public Class VortexRod
             wa = compDef.WorkAxes.AddByTwoPoints(spt3, spt2)
             wa.Visible = False
             lastWorkAxis = wa
+            wa.Name = "wa1"
             wpl = compDef.WorkPlanes.AddByThreePoints(spt3, skpt, spt2)
             wpl.Visible = False
             wpl.Name = "wpl1"
@@ -456,7 +954,7 @@ Public Class VortexRod
         Try
             sk3D = compDef.Sketches3D.Add
             sk3D.Name = String.Concat("sk3D", (qvalue + 1).ToString)
-            pt1 = compDef.WorkPlanes.Item(3).Plane.IntersectWithLine(compDef.WorkAxes.Item(4).Line)
+            pt1 = compDef.WorkPlanes.Item(3).Plane.IntersectWithLine(compDef.WorkAxes.Item("wa1").Line)
             m = tg.CreateMatrix()
             m.SetToIdentity()
             vz = tg.CreateVector(0, 0, 1)
@@ -469,7 +967,7 @@ Public Class VortexRod
             wa = compDef.WorkAxes.AddByTwoPoints(spt1, spt2)
             wa.Visible = False
             nextWorkAxis = wa
-
+            wa.Name = String.Concat("wa", (qvalue + 1).ToString)
             wpl = GetNextWorkPlane(wa)
             wpl.Visible = False
             wpl.Name = String.Concat("wpl", (qvalue + 1).ToString)
@@ -488,7 +986,7 @@ Public Class VortexRod
     Function GetNextWorkPlane(wa As WorkAxis) As WorkPlane
         Dim wplo As WorkPlane
 
-        wplo = compDef.WorkPlanes.AddByLinePlaneAndAngle(wa, compDef.WorkPlanes.Item(4), driftAngle * qvalue)
+        wplo = compDef.WorkPlanes.AddByLinePlaneAndAngle(wa, compDef.WorkPlanes.Item("wpl1"), driftAngle * qvalue)
         wplo.Visible = False
         Return wplo
     End Function
@@ -529,7 +1027,6 @@ Public Class VortexRod
         Dim dMax1, dMax2, dMin1, dMin2, rMinFront, rMinBack, e, dis As Double
         Dim pt, ptMax1, ptMax2, ptMin1, ptMin2, ptRBack, ptRFront As Point
         Dim f1, f2, b1, b2, ff, fb As Face
-        Dim sb As SurfaceBody = compDef.SurfaceBodies.Item(1)
         Dim vnp, vpt, vr, vr2, vtc As Vector
         Dim cpt As Point = compDef.WorkPoints.Item(1).Point
         Dim spt, sptRBack, sptRFront As SketchPoint3D
@@ -549,7 +1046,7 @@ Public Class VortexRod
             ptMin1 = ptMax1
             ptMin2 = ptMin1
             ptMax2 = ptMax1
-            f1 = sb.Faces.Item(1)
+            f1 = rods.SurfaceBodies.Item(1).Faces.Item(1)
             f2 = f1
             b1 = f1
             b2 = f2
@@ -566,150 +1063,151 @@ Public Class VortexRod
                 End If
                 sk3D.SketchPoints3D.Add(ptz)
             Next
-            For Each f As Face In sb.Faces
-                If f.Evaluator.Area > 0.42 Then
-                    If f.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
-                        pt = f.GetClosestPointTo(skpt.Geometry)
-                        dis = wpl.Plane.DistanceTo(pt)
-                        If dis < 15 / 10 Then
-                            vpt = skpt.Geometry.VectorTo(pt)
-                            vr = vnp.CrossProduct(vpt)
-                            If (pt.Z * vr.Z) > 0 And Math.Abs(pt.Z) > 1 Then
-                                Try
+            For Each sb As SurfaceBody In rods.SurfaceBodies
+                For Each f As Face In sb.Faces
 
-                                    ic = sk3D.IntersectionCurves.Add(wpl, f)
-                                    '   lamp.HighLighFace(f)
-                                    pt = GetLargerPoints(f, ic)
-                                    vpt = skpt.Geometry.VectorTo(pt)
-                                    vr = vnp.CrossProduct(vpt)
-                                    If pt.Z > 13 / 10 Then
+                    If f.Evaluator.Area > 0.4 Then
+                        If f.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
+                            pt = f.GetClosestPointTo(skpt.Geometry)
+                            dis = wpl.Plane.DistanceTo(pt)
+                            If dis < 18 / 10 Then
+                                vpt = skpt.Geometry.VectorTo(pt)
+                                vr = vnp.CrossProduct(vpt)
+                                If (pt.Z * vr.Z) > 0 And Math.Abs(pt.Z) > 9 / 10 Then
+                                    Try
 
-                                        If vr.Z > 0 Then
-                                            Try
-                                                For Each se As SketchEntity3D In ic.SketchEntities
-                                                    se.Construction = True
-                                                    If se.Type = ObjectTypeEnum.kSketchPoint3DObject Then
-                                                        spt = se
-                                                        pt = spt.Geometry
-                                                        e = pt.Z / pt.DistanceTo(skpt.Geometry)
-                                                        If (e > dMax2) Then
-                                                            If (e > dMax1) Then
-                                                                dMax2 = dMax1
-                                                                dMax1 = e
-                                                                f2 = f1
-                                                                f1 = f
-                                                                ptMax2 = ptMax1
-                                                                ptMax1 = pt
-                                                                lamp.HighLighFace(f)
-                                                            Else
-                                                                dMax2 = e
-                                                                f2 = f
-                                                                ptMax2 = pt
+                                        ic = sk3D.IntersectionCurves.Add(wpl, f)
+                                        '   lamp.HighLighFace(f)
+                                        pt = GetLargerPoints(f, ic)
+                                        vpt = skpt.Geometry.VectorTo(pt)
+                                        vr = vnp.CrossProduct(vpt)
+                                        If pt.Z > 10 / 10 Then
+
+                                            If vr.Z > 0 Then
+                                                Try
+                                                    For Each se As SketchEntity3D In ic.SketchEntities
+                                                        se.Construction = True
+                                                        If se.Type = ObjectTypeEnum.kSketchPoint3DObject Then
+                                                            spt = se
+                                                            pt = spt.Geometry
+                                                            e = pt.Z / pt.DistanceTo(skpt.Geometry)
+                                                            If (e > dMax2) Then
+                                                                If (e > dMax1) Then
+                                                                    dMax2 = dMax1
+                                                                    dMax1 = e
+                                                                    f2 = f1
+                                                                    f1 = f
+                                                                    ptMax2 = ptMax1
+                                                                    ptMax1 = pt
+                                                                    lamp.HighLighFace(f)
+                                                                Else
+                                                                    dMax2 = e
+                                                                    f2 = f
+                                                                    ptMax2 = pt
+                                                                End If
                                                             End If
                                                         End If
-                                                    End If
 
-                                                Next
-                                            Catch ex As Exception
+                                                    Next
+                                                Catch ex As Exception
 
-                                            End Try
-                                        End If
+                                                End Try
+                                            End If
 
-                                    ElseIf pt.Z < -12 / 10 Then
+                                        ElseIf pt.Z < -9 / 10 Then
 
-                                        'lamp.HighLighFace(f)
-                                        If vr.Z < 0 Then
+                                            'lamp.HighLighFace(f)
+                                            If vr.Z < 0 Then
 
-                                            Try
-                                                'lamp.HighLighFace(f)
-                                                For Each se As SketchEntity3D In ic.SketchEntities
-                                                    se.Construction = True
-                                                    If se.Type = ObjectTypeEnum.kSketchPoint3DObject Then
-                                                        spt = se
-                                                        pt = spt.Geometry
-                                                        e = pt.Z / pt.DistanceTo(skpt.Geometry)
-                                                        If (e < dMin2) Then
-                                                            If (e < dMin1) Then
-                                                                dMin2 = dMin1
-                                                                dMin1 = e
-                                                                b2 = b1
-                                                                b1 = f
-                                                                ptMin2 = ptMin1
-                                                                ptMin1 = pt
-                                                                lamp.HighLighFace(f)
-                                                            Else
-                                                                dMin2 = e
-                                                                b2 = f
-                                                                ptMin2 = pt
+                                                Try
+                                                    'lamp.HighLighFace(f)
+                                                    For Each se As SketchEntity3D In ic.SketchEntities
+                                                        se.Construction = True
+                                                        If se.Type = ObjectTypeEnum.kSketchPoint3DObject Then
+                                                            spt = se
+                                                            pt = spt.Geometry
+                                                            e = pt.Z / pt.DistanceTo(skpt.Geometry)
+                                                            If (e < dMin2) Then
+                                                                If (e < dMin1) Then
+                                                                    dMin2 = dMin1
+                                                                    dMin1 = e
+                                                                    b2 = b1
+                                                                    b1 = f
+                                                                    ptMin2 = ptMin1
+                                                                    ptMin1 = pt
+                                                                    lamp.HighLighFace(f)
+                                                                Else
+                                                                    dMin2 = e
+                                                                    b2 = f
+                                                                    ptMin2 = pt
+                                                                End If
                                                             End If
                                                         End If
-                                                    End If
 
-                                                Next
-                                            Catch ex As Exception
+                                                    Next
+                                                Catch ex As Exception
 
-                                            End Try
+                                                End Try
 
-                                        End If
-                                    End If
-                                    vpt = skpt.Geometry.VectorTo(ptRMax)
-                                    vr = vnp.CrossProduct(vpt)
-                                    If ptRMax.Z > 0 Then
-
-                                        If vr.Z > 0 Then
-                                            e = ptRMax.DistanceTo(ptzFront)
-                                            If e < rMinFront Then
-                                                rMinFront = e
-                                                ptRFront = ptRMax
-                                                ff = f
-                                                tkf = f.TransientKey
-                                                lamp.HighLighFace(f)
                                             End If
                                         End If
-                                    Else
-                                        If vr.Z < 0 Then
-                                            e = ptRMax.DistanceTo(ptzBack)
-                                            If e < rMinBack Then
-                                                rMinBack = e
-                                                ptRBack = ptRMax
-                                                fb = f
-                                                tkb = f.TransientKey
-                                                lamp.HighLighFace(f)
-                                                '  DrawStampPoint(fb, wpl, sk3D.SketchPoints3D.Add(ptRBack))
+                                        vpt = skpt.Geometry.VectorTo(ptRMax)
+                                        vr = vnp.CrossProduct(vpt)
+                                        If ptRMax.Z > 0 Then
+
+                                            If vr.Z > 0 Then
+                                                e = ptRMax.DistanceTo(ptzFront)
+                                                If e < rMinFront Then
+                                                    rMinFront = e
+                                                    ptRFront = ptRMax
+                                                    ff = f
+                                                    tkf = f.TransientKey
+                                                    lamp.HighLighFace(f)
+                                                End If
+                                            End If
+                                        Else
+                                            If vr.Z < 0 Then
+                                                e = ptRMax.DistanceTo(ptzBack)
+                                                If e < rMinBack Then
+                                                    rMinBack = e
+                                                    ptRBack = ptRMax
+                                                    fb = f
+                                                    tkb = f.TransientKey
+                                                    lamp.HighLighFace(f)
+                                                    '  DrawStampPoint(fb, wpl, sk3D.SketchPoints3D.Add(ptRBack))
+                                                End If
                                             End If
                                         End If
-                                    End If
-                                Catch ex As Exception
+                                    Catch ex As Exception
 
-                                End Try
+                                    End Try
+                                End If
+
                             End If
-
                         End If
                     End If
-                End If
 
 
+                Next
             Next
+
             sptLow = sk3D.SketchPoints3D.Add(ptMin1)
             sptRBack = sk3D.SketchPoints3D.Add(ptRBack)
             point2 = ptMin2
 
-            sptLow = DrawEntryPoint(b1, wpl, sptLow, skpt)
+            sptLow = DrawEntryPoint(Rod2TangentFace(b1), wpl, sptLow, skpt)
 
             sptHigh = sk3D.SketchPoints3D.Add(ptMax1)
-            sptHigh = DrawEntryPoint(f1, wpl, sptHigh, skpt)
+            point2 = ptMax2
+            sptHigh = DrawEntryPoint(Rod2TangentFace(f1), wpl, sptHigh, skpt)
             sptRFront = sk3D.SketchPoints3D.Add(ptRFront)
+
+            DrawStampPoint(Rod2TangentFace(fb), wpl, sptRBack, skpt)
             point2 = ptMax2
-            DrawStampPoint(fb, wpl, sptRBack)
-            point2 = ptMax2
-            sb = compDef.SurfaceBodies.Item(1)
-            For Each f As Face In sb.Faces
-                If f.TransientKey = tkf Then
-                    lamp.HighLighFace(f)
-                    DrawStampPoint(f, wpl, sptRFront)
-                    Exit For
-                End If
-            Next
+
+
+            DrawStampPoint(Rod2TangentFace(ff), wpl, sptRFront, skpt)
+
 
 
 
@@ -721,6 +1219,41 @@ Public Class VortexRod
             MsgBox(ex.ToString())
             Return Nothing
         End Try
+
+    End Function
+    Function Rod2TangentFace(fi As Face) As Face
+
+        Try
+
+
+            For i = 0 To tanKeys.Length - 1
+                If rodKeys(i) > 0 Then
+                    If rodKeys(i) = fi.TransientKey Then
+                        For Each sb As SurfaceBody In tangents.SurfaceBodies
+                            For Each f As Face In sb.Faces
+                                If f.TransientKey = tanKeys(i) Then
+                                    Return f
+                                End If
+                            Next
+                        Next
+
+                    End If
+                End If
+
+            Next
+
+
+
+
+
+            Return fi
+        Catch ex As Exception
+            Return fi
+        End Try
+
+
+
+
 
     End Function
     Function GetLargerPoints(f As Face, ic As IntersectionCurve) As Point
@@ -856,66 +1389,73 @@ Public Class VortexRod
         Dim radius As Double = Math.Pow(Math.Pow(pt.X, 2) + Math.Pow(pt.Y, 2), 1 / 2)
         Return radius
     End Function
-    Function DrawEntryPoint(f As Face, wpl As WorkPlane, sptFace As SketchPoint3D, sptCenter As SketchPoint3D) As SketchPoint3D
+    Function DrawEntryPoint(fi As Face, wpl As WorkPlane, sptFace As SketchPoint3D, sptCenter As SketchPoint3D) As SketchPoint3D
         Dim ic As IntersectionCurve
         Dim spt, spt2 As SketchPoint3D
         Dim pt, ptMax1, ptMax2, pttf As Point
+
         Dim f1, f2 As Face
         Dim e As Double = 0
+
+
         Dim dMax1, dMax2, dis1, dis2 As Double
-        dMax1 = 0
-        dMax2 = 0
-        ptMax1 = sptFace.Geometry
-        ptMax2 = point2
 
-        dis2 = Math.Abs(sptFace.Geometry.Z) / ((GetRadiusPoint(sptFace.Geometry)))
-        f1 = f
         Try
-            For Each tf As Face In f.TangentiallyConnectedFaces
 
-                pttf = tf.GetClosestPointTo(sptCenter.Geometry)
+            dMax1 = 0
+            dMax2 = 0
+            ptMax1 = sptFace.Geometry
+            ptMax2 = point2
 
-                If (Math.Abs(sptFace.Geometry.Z - pttf.Z)) < 25 / 10 Then
-                    dis1 = Math.Abs(pttf.Z) / (GetRadiusPoint(pttf))
-                    sk3D.SketchPoints3D.Add(pttf)
-                    If dis1 > dis2 Then
+            dis2 = Math.Abs(sptFace.Geometry.Z) / ((GetRadiusPoint(sptFace.Geometry)))
+            f1 = fi
 
-                        lamp.HighLighFace(tf)
-                        Try
-                            ic = sk3D.IntersectionCurves.Add(wpl, tf)
-                            For Each se As SketchEntity3D In ic.SketchEntities
-                                se.Construction = True
-                                If se.Type = ObjectTypeEnum.kSketchPoint3DObject Then
-                                    spt = se
-                                    pt = spt.Geometry
-                                    e = Math.Abs(pt.Z) / (GetRadiusPoint(pt))
-                                    If (e > dMax2) Then
-                                        If (e > dMax1) Then
-                                            dMax2 = dMax1
-                                            dMax1 = e
-                                            ptMax2 = ptMax1
-                                            ptMax1 = pt
-                                            f2 = f1
-                                            f1 = tf
-                                            lamp.LookAtFace(tf)
-                                            dis2 = e
-                                        Else
-                                            dMax2 = e
-                                            f2 = tf
-                                            ptMax2 = pt
+            For Each tf As Face In f1.TangentiallyConnectedFaces
+                If tf.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                    pttf = tf.GetClosestPointTo(sptCenter.Geometry)
+                    If (Math.Abs(sptFace.Geometry.Z - pttf.Z)) < 25 / 10 Then
+                        dis1 = Math.Abs(pttf.Z) / (GetRadiusPoint(pttf))
+                        sk3D.SketchPoints3D.Add(pttf)
+                        If dis1 > dis2 Then
+
+                            'lamp.HighLighFace(tf)
+                            Try
+                                ic = sk3D.IntersectionCurves.Add(wpl, tf)
+                                For Each se As SketchEntity3D In ic.SketchEntities
+                                    se.Construction = True
+                                    If se.Type = ObjectTypeEnum.kSketchPoint3DObject Then
+                                        spt = se
+                                        pt = spt.Geometry
+                                        e = Math.Abs(pt.Z) / (GetRadiusPoint(pt))
+                                        If (e > dMax2) Then
+                                            If (e > dMax1) Then
+                                                dMax2 = dMax1
+                                                dMax1 = e
+                                                ptMax2 = ptMax1
+                                                ptMax1 = pt
+                                                f2 = f1
+                                                f1 = tf
+                                                lamp.LookAtFace(tf)
+                                                dis2 = e
+                                            Else
+                                                dMax2 = e
+                                                f2 = tf
+                                                ptMax2 = pt
+                                            End If
                                         End If
                                     End If
-                                End If
 
-                            Next
-                        Catch ex As Exception
+                                Next
+                            Catch ex As Exception
 
-                        End Try
+                            End Try
+                        End If
                     End If
                 End If
 
-
             Next
+
+
             spt = sk3D.SketchPoints3D.Add(ptMax1)
             spt2 = sk3D.SketchPoints3D.Add(ptMax2)
 
@@ -927,23 +1467,27 @@ Public Class VortexRod
         End Try
 
     End Function
-    Function DrawStampPoint(f As Face, wpl As WorkPlane, sptFace As SketchPoint3D) As SketchPoint3D
+    Function DrawStampPoint(fi As Face, wpl As WorkPlane, sptFace As SketchPoint3D, sptCenter As SketchPoint3D) As SketchPoint3D
         Dim ic As IntersectionCurve
         Dim sk As Sketch3D = compDef.Sketches3D.Add
         Dim spt, spt2 As SketchPoint3D
         Dim pt, ptMax1, ptMax2, pttf, ptRMaxLocal As Point
+        Dim cpt As Point = compDef.WorkPoints.Item(1).Point
         Dim f1, f2 As Face
         Dim e As Double = 0
-        Dim dMax1, dMax2, dis1, dis2, dMin, d As Double
-        dMax1 = 0
-        dMax2 = 0
-        dMin = 99999
-        ptMax1 = sptFace.Geometry
-        ptMax2 = point2
+        Dim dMax1, dMax2, dis1, dis2, dMin, d, dis0 As Double
+
+
+
         Dim tc As Circle
 
         Try
-            ' tr = tg.CreateTorus(compDef.WorkPoints.Item(1).Point, tg.CreateUnitVector(0, 0, 1), 100 / 10, 25 / 10)
+
+            dMax1 = 0
+            dMax2 = 0
+            dMin = 99999
+            ptMax1 = sptFace.Geometry
+            ptMax2 = point2
             tc = tg.CreateCircle(compDef.WorkPoints.Item(1).Point, tg.CreateUnitVector(0, 0, 1), 100 / 10)
 
             For Each ptz As Point In wpl.Plane.IntersectWithCurve(tc)
@@ -955,9 +1499,9 @@ Public Class VortexRod
                 End If
             Next
             dis2 = CalculateOutPostionFactor(sptFace.Geometry)
-            f1 = f
+            f1 = fi
             Try
-                For Each tf As Face In f.TangentiallyConnectedFaces
+                For Each tf As Face In f1.TangentiallyConnectedFaces
                     If tf.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
                         pttf = tf.GetClosestPointTo(ptRMaxLocal)
                         dis1 = CalculateOutPostionFactor(pttf)
@@ -998,11 +1542,15 @@ Public Class VortexRod
 
                         End If
                     End If
+
+
                 Next
+
+
                 spt = sk.SketchPoints3D.Add(ptMax1)
                 ' spt2 = sk.SketchPoints3D.Add(ptMax2)
-                lamp.HighLighFace(f1)
-                lamp.HighLighObject(spt)
+                '   lamp.HighLighFace(f1)
+                '   lamp.HighLighObject(spt)
                 estampa.EmbossLetter(qvalue, spt, f1)
                 sk.Visible = False
                 Return spt

@@ -116,7 +116,7 @@ Public Class Nombres
         Dim c As Char
         Dim m As Integer
         Dim s As String
-        Math.DivRem(q, 97, m)
+        Math.DivRem(q, 94, m)
         c = ChrW(m + 33)
         s = c.ToString
         Return s

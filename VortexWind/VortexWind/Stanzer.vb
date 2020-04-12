@@ -663,7 +663,7 @@ Public Class Stanzer
             Else
                 natural = True
             End If
-            oSketch = doku.ComponentDefinition.Sketches.AddWithOrientation(f, edMax, natural, True, edMax.StartVertex,)
+            oSketch = doku.ComponentDefinition.Sketches.AddWithOrientation(f, edMax, True, True, edMax.StartVertex,)
 
             spt = oSketch.AddByProjectingEntity(spti)
 
@@ -685,6 +685,9 @@ Public Class Stanzer
             oTextBox = oSketch.TextBoxes.AddFitted(ptBox, sText, oStyle)
             w = oTextBox.Width
             h = oTextBox.Height
+
+            oTextBox.Origin = tg.CreatePoint2d(spt.Geometry.X - w / 2, -0.5 / 10)
+            doku.Update2(True)
             Dim reflex As TextBox
             ptBox = tg.CreatePoint2d(spt.Geometry.X - w / 2, 0.5 / 10 + h)
             reflex = oSketch.TextBoxes.AddFitted(ptBox, sText, oStyle)
@@ -762,7 +765,7 @@ Public Class Stanzer
         e1 = f.EdgeLoops.Item(1).Edges.Item(1)
         e2 = e1
         e3 = e2
-        For Each ed As Edge In f.EdgeLoops.Item(1).Edges
+        For Each ed As Edge In f.Edges
             If ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point) > maxe2 Then
 
                 If ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point) > maxe1 Then
@@ -801,7 +804,7 @@ Public Class Stanzer
         e1 = f.EdgeLoops.Item(1).Edges.Item(1)
         e2 = e1
         e3 = e2
-        For Each ed As Edge In f.EdgeLoops.Item(1).Edges
+        For Each ed As Edge In f.Edges
             If ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point) < min2 Then
 
                 If ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point) < min1 Then
@@ -880,22 +883,23 @@ Public Class Stanzer
     End Function
     Function GetOuterEdge(f As Face, pti As Point) As Edge
         Dim e1, e2, e3 As Edge
-        Dim mine1, mine2, mine3, d, e, dis As Double
+        Dim mine1, mine2, mine3, d, e, dis, dMin As Double
         Dim ve, vc As Vector
         Dim pt1, pt2, pt3 As Point
         Dim ls As LineSegment
         mine1 = 99999
         mine2 = 9999999
         mine3 = 999999
-        e1 = f.EdgeLoops.Item(1).Edges.Item(1)
+        e1 = GetMajorEdge(f)
         e2 = e1
         e3 = e2
         pt1 = f.GetClosestPointTo(pti)
         e = pt1.DistanceTo(pti)
+        dMin = e1.StartVertex.Point.DistanceTo(e1.StopVertex.Point)
         ' sk3D.SketchPoints3D.Add(pt1)
-        For Each ed As Edge In f.EdgeLoops.Item(1).Edges
+        For Each ed As Edge In f.Edges
             dis = ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point)
-            If dis > 20 / 10 Then
+            If dis > dMin / 2 Then
 
                 d = ed.GetClosestPointTo(pti).DistanceTo(pti)
                 If Math.Abs(d - e) < 1 / 10 Then
@@ -946,7 +950,7 @@ Public Class Stanzer
         Dim oExtrudeDef As ExtrudeDefinition
         Try
             oExtrudeDef = doku.ComponentDefinition.Features.ExtrudeFeatures.CreateExtrudeDefinition(pro, PartFeatureOperationEnum.kCutOperation)
-            oExtrudeDef.SetDistanceExtent(8 / 10, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
+            oExtrudeDef.SetDistanceExtent(6 / 10, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
             'oExtrudeDef.SetDistanceExtent(0.12, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
             Dim oExtrude As ExtrudeFeature
             oExtrude = doku.ComponentDefinition.Features.ExtrudeFeatures.Add(oExtrudeDef)
