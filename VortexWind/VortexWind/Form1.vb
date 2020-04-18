@@ -56,7 +56,7 @@ Public Class Form1
     Private Sub Form1_Activated(sender As Object, e As EventArgs) Handles Me.Activated
         Try
 
-            done = MakeTort()
+            done = ContinueWiring()
             If done Then
                 Me.Close()
             End If
@@ -81,6 +81,34 @@ Public Class Form1
                 vortice = New VortexRod(oDoc)
                 monitor = New DesignMonitoring(vortice.doku)
                 If monitor.IsFeatureHealthy(vortice.MakeAllWiresGuides(vortice.doku)) Then
+                    b = vortice.done
+                End If
+
+            End If
+            Return b
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return False
+        End Try
+
+    End Function
+    Public Function ContinueWiring() As Boolean
+        Dim ref As PartDocument
+        Dim b As Boolean
+        Try
+            If (started) Then
+                oDesignProjectMgr = oApp.DesignProjectManager
+                Dim p As String = oDesignProjectMgr.ActiveDesignProject.WorkspacePath
+                Dim ffn As String
+                '  ffn = String.Concat(p, "\Iteration6\Sabina.ipt")
+                invDoc = New InventorFile(oApp)
+                ' ref = invDoc.OpenFullFileName(ffn)
+                ffn = String.Concat(p, "\Iteration6\Sabina2.ipt")
+
+                oDoc = invDoc.OpenFullFileName(ffn)
+                vortice = New VortexRod(oDoc)
+                monitor = New DesignMonitoring(vortice.doku)
+                If monitor.IsFeatureHealthy(vortice.ResumeWiresGuides(vortice.doku)) Then
                     b = vortice.done
                 End If
 

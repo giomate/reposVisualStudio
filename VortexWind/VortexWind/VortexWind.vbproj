@@ -78,6 +78,7 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Surfacer.vb" />
     <Compile Include="Commands.vb" />
     <Compile Include="Conversions.vb" />
     <Compile Include="Curves3D.vb" />

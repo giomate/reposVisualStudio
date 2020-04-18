@@ -7,10 +7,11 @@ Imports System.Text
 Imports System.IO.Directory
 
 Public Class VortexRod
-    Public doku As PartDocument
+    Public doku, reference As PartDocument
     Public projectManager As DesignProjectManager
     Dim app As Application
     Dim sk3D, refSk As Sketch3D
+    Dim sabana As Surfacer
 
 
     Dim curve, refCurve As SketchEquationCurve3D
@@ -81,6 +82,7 @@ Public Class VortexRod
         comando = New Commands(app)
         monitor = New DesignMonitoring(doku)
         invFile = New InventorFile(app)
+        sabana = New Surfacer(doku)
         projectManager = app.DesignProjectManager
 
         compDef = doku.ComponentDefinition
@@ -284,11 +286,12 @@ Public Class VortexRod
     Public Function MakeAllWiresGuides(docu As PartDocument) As ExtrudeFeature
         Dim ef As ExtrudeFeature
         Dim w As Parameter
-        Dim rw As Integer
+
 
 
         doku = DocUpdate(docu)
         comando.WireFrameView(doku)
+
 
         Try
             Try
@@ -301,6 +304,7 @@ Public Class VortexRod
                         Try
                             'bands = compDef.WorkSurfaces.Item("bands")
                             Try
+                                ' ReadKeys()
                                 CreateKeys(rods, rodKeys)
                                 'CreateKeys(bands, bandKeys)
                             Catch ex As Exception
@@ -366,6 +370,88 @@ Public Class VortexRod
         End Try
 
     End Function
+    Public Function ResumeWiresGuidesReference(docu As PartDocument, ref As PartDocument) As ExtrudeFeature
+        reference = ref
+        tangents = sabana.ReferencedTangentials(reference)
+        rods = sabana.ReferencedCylinders(reference)
+        Return ResumeWiresGuides(docu)
+    End Function
+    Public Function ResumeWiresGuides(docu As PartDocument) As ExtrudeFeature
+        Dim ef As ExtrudeFeature
+
+
+
+
+        doku = DocUpdate(docu)
+        doku.Activate()
+        comando.WireFrameView(doku)
+
+
+        Try
+            Try
+                'skpt1 = compDef.Sketches3D.Item("HighestPoint").SketchPoints3D.Item(1)
+                Try
+                    tangents = compDef.WorkSurfaces.Item("tangents")
+                    ' CreateTangenFaceCollection()
+                    Try
+                        rods = compDef.WorkSurfaces.Item("cylinders")
+                        Try
+                            'bands = compDef.WorkSurfaces.Item("bands")
+                            Try
+                                'ReadKeys()
+                                CreateKeys(rods, rodKeys)
+                                'CreateKeys(bands, bandKeys)
+                            Catch ex As Exception
+
+                            End Try
+                        Catch ex As Exception
+                            'bands = MakePlanarFaces()
+                            ' CreateKeys(rods, rodKeys)
+                            ' CreateKeys(bands, bandKeys)
+                        End Try
+                    Catch ex As Exception
+                        'rods = sabana.ReferencedCylinders(reference)
+                        ' CreateKeys(rods, rodKeys)
+                    End Try
+
+                Catch ex As Exception
+                    ' tangents = sabana.ReferencedTangentials(reference)
+                    'rods = sabana.ReferencedCylinders(reference)
+                    'bands = MakePlanarFaces()
+                    CreateKeys(rods, rodKeys)
+                    'CreateKeys(bands, bandKeys)
+
+                End Try
+            Catch ex2 As Exception
+
+            End Try
+
+            Try
+                Try
+                    qvalue = FindLastWpl()
+                    ef = ResumeWireHole(qvalue)
+
+                Catch ex As Exception
+
+                End Try
+
+            Catch ex As Exception
+
+            End Try
+
+
+
+
+
+
+            Return ef
+
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+    End Function
     Function CreateTangenFaceCollection() As Integer
         Dim n As Integer = compDef.Features.NonParametricBaseFeatures.Item("tangentials").Faces.Count
         Dim i As Integer = 0
@@ -392,6 +478,10 @@ Public Class VortexRod
 
         Dim j As Integer = 0
         Dim k As Integer
+
+        If True Then
+
+        End If
         nTanFaces = n
 
         Dim fc As FaceCollection = app.TransientObjects.CreateFaceCollection
@@ -453,6 +543,25 @@ Public Class VortexRod
         Try
             lista = New ExcelInterface(path)
             lista.SaveArray(tans, rods)
+            Return 0
+        Catch ex As Exception
+
+        End Try
+
+    End Function
+    Function ReadKeys() As Integer
+        Dim t(), r() As Long
+        Dim path As String = projectManager.ActiveDesignProject.WorkspacePath
+        Dim n As Integer = compDef.Features.NonParametricBaseFeatures.Item("tangentials").Faces.Count
+        Try
+            ReDim t(n - 1)
+            ReDim r(n - 1)
+            lista = New ExcelInterface(path)
+            lista.ReadArray(t, r, n)
+            ReDim tanKeys(n - 1)
+            tanKeys = t
+            ReDim rodKeys(n - 1)
+            rodKeys = r
             Return 0
         Catch ex As Exception
 
@@ -860,6 +969,42 @@ Public Class VortexRod
 
         Return 1
     End Function
+    Function FindLastWpl() As Integer
+        Dim q, wpls As Integer
+        Dim pattern As String = "wpl"
+        Dim s As String
+
+        Try
+            wpls = 0
+
+            For Each wpl As WorkPlane In compDef.WorkPlanes
+                If Regex.IsMatch(wpl.Name, pattern) Then
+                    s = String.Concat(pattern, CInt(wpls + 1).ToString)
+                    Try
+                        If Not compDef.WorkPlanes.Item(s).IsOwnedByFeature Then
+                            wpls = wpls + 1
+                        Else
+                            Return (windings + 1)
+                        End If
+                    Catch ex As Exception
+                        Return (wpls)
+                    End Try
+
+
+
+                End If
+            Next
+
+
+            Return wpls
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+        Return 1
+    End Function
     Function MakeNextWireHole(q As Integer) As ExtrudeFeature
         Dim ef As ExtrudeFeature
         Dim w As Parameter
@@ -889,6 +1034,58 @@ Public Class VortexRod
                     Else
                         done = True
                     End If
+                End While
+
+            End If
+            Return ef
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+    End Function
+    Function ResumeWireHole(q As Integer) As ExtrudeFeature
+        Dim ef As ExtrudeFeature
+
+        Dim i As Integer
+        Try
+            i = compDef.Features.ExtrudeFeatures.Count
+            If i > 0 Then
+                ef = compDef.Features.ExtrudeFeatures.Item(compDef.Features.ExtrudeFeatures.Count)
+            Else
+                i = reference.ComponentDefinition.Features.ExtrudeFeatures.Count
+                ef = reference.ComponentDefinition.Features.ExtrudeFeatures.Item(i)
+
+            End If
+
+
+            If monitor.IsFeatureHealthy(ef) Then
+
+                While (q < windings + 0 And Not done)
+                    ef = RemoveNextWire()
+                    If monitor.IsFeatureHealthy(ef) Then
+                        If ef.SideFaces.Count > 1 Then
+                            qvalue = qvalue + 1
+
+                            ef.Name = String.Concat("rw", qvalue.ToString)
+                            doku.Update2(True)
+                            doku.Save2(True)
+                            qvalue = FindLastWpl()
+                            If q > windings Then
+                                done = True
+                            End If
+                        Else
+                            done = True
+                        End If
+
+
+
+
+                    Else
+                        done = True
+                    End If
+
                 End While
 
             End If
@@ -1078,7 +1275,7 @@ Public Class VortexRod
                             If dis < 18 / 10 Then
                                 vpt = skpt.Geometry.VectorTo(pt)
                                 vr = vnp.CrossProduct(vpt)
-                                If (pt.Z * vr.Z) > 0 And Math.Abs(pt.Z) > 9 / 10 Then
+                                If (pt.Z * vr.Z) > 0 And Math.Abs(pt.Z) > 7.5 / 10 Then
                                     Try
 
                                         ic = sk3D.IntersectionCurves.Add(wpl, f)
@@ -1086,7 +1283,7 @@ Public Class VortexRod
                                         pt = GetLargerPoints(f, ic)
                                         vpt = skpt.Geometry.VectorTo(pt)
                                         vr = vnp.CrossProduct(vpt)
-                                        If pt.Z > 10 / 10 Then
+                                        If pt.Z > 7.5 / 10 Then
 
                                             If vr.Z > 0 Then
                                                 Try
@@ -1119,7 +1316,7 @@ Public Class VortexRod
                                                 End Try
                                             End If
 
-                                        ElseIf pt.Z < -9 / 10 Then
+                                        ElseIf pt.Z < -7 / 10 Then
 
                                             'lamp.HighLighFace(f)
                                             If vr.Z < 0 Then
@@ -1166,7 +1363,7 @@ Public Class VortexRod
                                                     rMinFront = e
                                                     ptRFront = ptRMax
                                                     ff = f
-                                                    tkf = f.TransientKey
+
                                                     lamp.HighLighFace(f)
                                                 End If
                                             End If
@@ -1177,7 +1374,7 @@ Public Class VortexRod
                                                     rMinBack = e
                                                     ptRBack = ptRMax
                                                     fb = f
-                                                    tkb = f.TransientKey
+
                                                     lamp.HighLighFace(f)
                                                     '  DrawStampPoint(fb, wpl, sk3D.SketchPoints3D.Add(ptRBack))
                                                 End If
@@ -1722,6 +1919,7 @@ Public Class VortexRod
             wpl.Visible = False
             lamp.LookAtPlane(wpl)
             ps = doku.ComponentDefinition.Sketches.Add(wpl)
+            ps.Name = String.Concat("wire", (qvalue + 1).ToString)
             spt = ps.AddByProjectingEntity(skl.EndPoint)
             ps.SketchCircles.AddByCenterRadius(spt, 0.5 / 10)
             pro = ps.Profiles.AddForSolid

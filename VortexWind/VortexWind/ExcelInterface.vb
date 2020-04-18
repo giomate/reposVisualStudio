@@ -41,6 +41,33 @@ Public Class ExcelInterface
                     oBook.SaveAs(path)
                 End If
 
+                oBook.Close()
+                oExcel.Quit()
+            Catch ex As Exception
+
+            End Try
+
+        Catch ex As Exception
+
+        End Try
+
+        Return 0
+    End Function
+    Public Function ReadArray(ByRef tans() As Long, ByRef rods() As Long, n As Integer) As Integer
+        Try
+            Dim r As Range
+
+
+
+            Try
+                oSheet = oBook.Worksheets.Item("Sheet1")
+
+                ReadCells(tans, 1, n)
+
+                ReadCells(rods, 2, n)
+
+                oBook.Close()
+                oExcel.Quit()
 
             Catch ex As Exception
 
@@ -56,12 +83,29 @@ Public Class ExcelInterface
         Dim arr() As Long
         Dim r As Range
         Try
-        ReDim arr(a.Length - 1)
+            ReDim arr(a.Length - 1)
             arr = a
             For i = 1 To arr.Length
                 r = oSheet.Cells(i + 1, c)
                 r.Value = arr(i - 1)
             Next
+        Catch ex As Exception
+
+        End Try
+        Return 0
+    End Function
+    Function ReadCells(ByRef a() As Long, c As Long, n As Integer) As Integer
+        Dim arr() As Long
+        Dim r As Range
+        Try
+            ReDim arr(n - 1)
+
+            For i = 1 To arr.Length
+                r = oSheet.Cells(i + 1, c)
+                arr(i - 1) = CLng(r.Value)
+            Next
+
+            a = arr
         Catch ex As Exception
 
         End Try
