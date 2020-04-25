@@ -132,6 +132,7 @@ Public Class MicroFold6
                                                     folded = bender.FoldBand(bandLines.Count)
                                                     folded = CheckFoldSide(folded)
                                                     folded.Name = s
+                                                    'lamp.LookAtFace(workFace)
                                                     doku.Update2(True)
                                                     If monitor.IsFeatureHealthy(folded) Then
                                                         doku.Save2(True)
@@ -718,7 +719,7 @@ Public Class MicroFold6
                 parallel = sk3D.GeometricConstraints3D.AddParallel(l, secondLine)
             Catch ex3 As Exception
             End Try
-
+            dcl2.Delete()
             Return gc
         End Try
     End Function

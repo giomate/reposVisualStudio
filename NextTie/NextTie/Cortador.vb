@@ -263,6 +263,78 @@ Public Class Cortador
             Return Nothing
         End Try
     End Function
+    Function GetClosestVertex(ed As Edge, pt As Point) As Vertex
+        Dim cver As Vertex = ed.StartVertex
+        Dim dMin As Double = 999999
+
+        For Each ver As Vertex In cutFace.Vertices
+            If ed.StartVertex.Equals(ver) Or ed.StopVertex.Equals(ver) Then
+                If ver.Point.DistanceTo(pt) < dMin Then
+                    dMin = ver.Point.DistanceTo(pt)
+                    cver = ver
+                End If
+            End If
+        Next
+        Return cver
+    End Function
+    Function LastCutProfil(secondLine As SketchLine3D) As Profile
+        Try
+            Dim pro As Profile
+            sk3D = compDef.Sketches3D.Add()
+            sk3D.Name = "lastCutLine"
+
+            'lamp.HighLighFace(maxface1)
+            Dim ps As PlanarSketch
+            ps = compDef.Sketches.Add(cutFace)
+            Dim sl, mnLine, mjLine, underLine, l, cl As SketchLine
+            Dim gc As GeometricConstraint
+            sl = ps.AddByProjectingEntity(secondLine)
+            sl.Construction = True
+
+            underLine = ps.AddByProjectingEntity(GetCutEdges(cutFace))
+            mjLine = ps.AddByProjectingEntity(cutEdge1)
+            ' mjLine.Construction = True
+            mnLine = ps.AddByProjectingEntity(cutEdge2)
+            Dim spt As SketchPoint
+            If mnLine.StartSketchPoint.Geometry.DistanceTo(sl.StartSketchPoint.Geometry) < mnLine.EndSketchPoint.Geometry.DistanceTo(sl.StartSketchPoint.Geometry) Then
+                l = ps.SketchLines.AddByTwoPoints(mnLine.StartSketchPoint, sl.StartSketchPoint.Geometry)
+            Else
+                l = ps.SketchLines.AddByTwoPoints(mnLine.EndSketchPoint, sl.StartSketchPoint.Geometry)
+            End If
+
+
+
+            gc = ps.GeometricConstraints.AddCoincident(l.EndSketchPoint, mjLine)
+            gc = ps.GeometricConstraints.AddCoincident(sl.StartSketchPoint, l)
+            lastCutLine = l
+            pro = ps.Profiles.AddForSolid
+
+            cutLine3D = sk3D.Include(l)
+
+            Return pro
+            If mnLine.StartSketchPoint.Geometry.DistanceTo(spt.Geometry) < mnLine.EndSketchPoint.Geometry.DistanceTo(spt.Geometry) Then
+                gc = ps.GeometricConstraints.AddCoincident(l, mnLine.StartSketchPoint)
+            Else
+                gc = ps.GeometricConstraints.AddCoincident(l, mnLine.EndSketchPoint)
+            End If
+            If underLine.StartSketchPoint.Geometry.DistanceTo(sl.StartSketchPoint.Geometry) < underLine.EndSketchPoint.Geometry.DistanceTo(sl.StartSketchPoint.Geometry) Then
+                cl = ps.SketchLines.AddByTwoPoints(l.EndSketchPoint, underLine.StartSketchPoint)
+            Else
+                cl = ps.SketchLines.AddByTwoPoints(l.EndSketchPoint, underLine.EndSketchPoint)
+            End If
+
+
+            lastCutLine = l
+            pro = ps.Profiles.AddForSolid
+
+            cutLine3D = sk3D.Include(cl)
+
+            Return pro
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+    End Function
     Function GetLastCutFace(ff As FoldFeature) As Face
         Try
             foldFeature = ff
@@ -400,6 +472,31 @@ Public Class Cortador
         Try
             Dim pr As Profile
             pr = LastCutProfil(fl, sl)
+            Dim oSheetMetalCompDef As SheetMetalComponentDefinition
+            oSheetMetalCompDef = doku.ComponentDefinition
+            Dim oSheetMetalFeatures As SheetMetalFeatures
+            oSheetMetalFeatures = doku.ComponentDefinition.Features
+
+            compDef = oSheetMetalCompDef
+            Dim oFaceFeatureDefinition As CutDefinition
+            oFaceFeatureDefinition = oSheetMetalFeatures.CutFeatures.CreateCutDefinition(pr)
+            ' oFaceFeatureDefinition.Direction = PartFeatureExtentDirectionEnum.kNegativeExtentDirection
+            Dim oFaceFeature As CutFeature
+            oFaceFeature = oSheetMetalFeatures.CutFeatures.Add(oFaceFeatureDefinition)
+            cutFeature = oFaceFeature
+            Return oFaceFeature
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+
+        End Try
+
+
+    End Function
+    Public Function MakeLastCut(sl As SketchLine3D) As CutFeature
+        Try
+            Dim pr As Profile
+            pr = LastCutProfil(sl)
             Dim oSheetMetalCompDef As SheetMetalComponentDefinition
             oSheetMetalCompDef = doku.ComponentDefinition
             Dim oSheetMetalFeatures As SheetMetalFeatures

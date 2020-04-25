@@ -39,6 +39,7 @@ Public Class InitFold
     Dim backwards As Boolean
     Dim initialPlane As Plane
     Dim foldDefinition As FoldDefinition
+    Dim foldingAngle As Double
     Public Sub New(docu As Inventor.Document)
         doku = docu
         app = doku.Parent
@@ -126,11 +127,7 @@ Public Class InitFold
     Public Function MakeFirstFold(refDoc As FindReferenceLine, q As Integer) As Boolean
         Dim b As Boolean
         Try
-            If refDoc.foldFeatures.Count > 8 Then
-                backwards = True
-            Else
-                backwards = False
-            End If
+
             Try
                 foldFeature = foldFeatures.Item(1)
                 cutFeature = MakeInitCut()
@@ -152,6 +149,7 @@ Public Class InitFold
                                         folded = FoldBand(bandLines.Count)
                                         folded = CheckFoldSide(folded)
                                         folded.Name = "f1"
+                                        'lamp.LookAtFace(workface)
                                         doku.Update2(True)
                                         If monitor.IsFeatureHealthy(folded) Then
                                             cutFeature = MakeInitCut()
@@ -488,15 +486,20 @@ Public Class InitFold
         Dim r As SketchEntitiesEnumerator
         Dim sl, el As SketchLine
         Dim wp As WorkPlane
+        Dim v1, v2 As Vector2d
         Try
 
             wp = compDef.WorkPlanes.AddByNormalToCurve(bendLine, bendLine.StartSketchPoint)
 
             ps = doku.ComponentDefinition.Sketches.Add(wp)
-            Dim fl As SketchLine3D
+            Dim fl, bl1 As SketchLine3D
             fl = mainSketch.bandLines.Item(4)
+            bl1 = mainSketch.bandLines.Item(1)
             sl = ps.AddByProjectingEntity(fl)
-            el = ps.AddByProjectingEntity(GetMinorEdge())
+            el = ps.AddByProjectingEntity(bl1)
+            v1 = el.Geometry.Direction.AsVector
+            v2 = sl.Geometry.Direction.AsVector
+            foldingAngle = v1.AngleTo(v2)
             Dim dc As DimensionConstraint
             dc = ps.DimensionConstraints.AddTwoLineAngle(el, sl, sl.EndSketchPoint.Geometry)
             dc.Driven = True
@@ -579,24 +582,11 @@ Public Class InitFold
         Try
 
             Dim oFoldDefinition As FoldDefinition
-            If i > 4 Then
 
-                If bendAngle.Parameter._Value > Math.PI / 2 Then
-                    oFoldDefinition = foldFeatures.CreateFoldDefinition(bendLine, bendAngle.Parameter._Value)
-                Else
-                    oFoldDefinition = foldFeatures.CreateFoldDefinition(bendLine, Math.PI - bendAngle.Parameter._Value)
-                End If
+            Dim d As Double = foldingAngle
 
+            oFoldDefinition = foldFeatures.CreateFoldDefinition(bendLine, Math.PI - d)
 
-            Else
-                If bendAngle.Parameter._Value > Math.PI / 2 Then
-                    oFoldDefinition = foldFeatures.CreateFoldDefinition(bendLine, Math.PI - bendAngle.Parameter._Value)
-                Else
-
-                    oFoldDefinition = foldFeatures.CreateFoldDefinition(bendLine, bendAngle.Parameter._Value)
-                End If
-
-            End If
             foldDefinition = oFoldDefinition
             Return oFoldDefinition
         Catch ex As Exception
@@ -606,6 +596,17 @@ Public Class InitFold
 
 
 
+    End Function
+    Function RecalcuteBendAngle() As Double
+        Dim pl As Plane = workface.Geometry
+        Dim vn As Vector = pl.Normal.AsVector
+        Dim vtl As Vector = mainSketch.thirdLine.Geometry.Direction.AsVector
+        vtl.ScaleBy(-1)
+        Dim fl As SketchLine3D = mainSketch.bandLines.Item(4)
+        Dim vfl As Vector = fl.Geometry.Direction.AsVector
+        Dim v As Vector = vtl.CrossProduct(vfl)
+        Dim d As Double = v.AngleTo(vn)
+        Return d
     End Function
     Function CheckFoldSide(ff As FoldFeature) As FoldFeature
         Try

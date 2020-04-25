@@ -645,7 +645,7 @@ Public Class SketchAdjust
 
     End Function
     Function IsLastAngleOk(ac As DimensionConstraint3D) As Boolean
-        Dim limit As Double = 0.1
+        Dim limit As Double = 0.16
         If (ac.Parameter._Value < limit Or ac.Parameter._Value > (Math.PI - limit)) Then
             Return True
         End If

@@ -3,7 +3,7 @@ Imports System
 Public Class FindReferenceLine
     Public oDoc As PartDocument
     Dim sk3D As Sketch3D
-    Dim line3D As SketchLines3D
+    Dim lines3D As SketchLines3D
     Public line As SketchLine3D
     Public foldFeatures As FoldFeatures
     Dim sheetMetalFeatures As SheetMetalFeatures
@@ -21,20 +21,20 @@ Public Class FindReferenceLine
     End Function
     Public Function GetKeyLine() As SketchLine3D
 
-        line3D = OpenLastSketch(oDoc).SketchLines3D
-        Debug.Print("Number of lines:  " & line3D.Count.ToString)
-        line = line3D.Item(line3D.Count)
+        lines3D = OpenIntroLine(oDoc).SketchLines3D
+        Debug.Print("Number of lines:  " & lines3D.Count.ToString)
+        line = lines3D.Item(lines3D.Count)
         Return line
     End Function
     Public Function GetKanteLine() As SketchLine3D
 
-        line3D = OpenKanteSketch(oDoc).SketchLines3D
-        Debug.Print("Number of lines:  " & line3D.Count.ToString)
-        line = line3D.Item(line3D.Count)
+        lines3D = OpenKanteSketch(oDoc).SketchLines3D
+        Debug.Print("Number of lines:  " & lines3D.Count.ToString)
+        line = lines3D.Item(lines3D.Count)
         Return line
     End Function
-    Function OpenLastSketch(oDoc As PartDocument) As Sketch3D
-        sk3D = oDoc.ComponentDefinition.Sketches3D.Item("last")
+    Function OpenIntroLine(oDoc As PartDocument) As Sketch3D
+        sk3D = oDoc.ComponentDefinition.Sketches3D.Item("nextIntroLine")
         Return sk3D
     End Function
     Function OpenKanteSketch(oDoc As PartDocument) As Sketch3D

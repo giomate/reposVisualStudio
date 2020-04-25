@@ -136,7 +136,7 @@ Public Class TieMaker1
                 End If
 
             End If
-            If compDef.Sketches3D.Item("last").SketchLines3D.Count > 0 Then
+            If compDef.Sketches3D.Item("nextIntroLine").SketchLines3D.Count > 0 Then
                 done = True
                 fullFileName = doku.FullFileName
             End If
@@ -198,10 +198,9 @@ Public Class TieMaker1
                         End If
                     End If
                 Case 7
-                    doblez8 = New MicroFold6(doblez7.doku)
-                    If doblez8.MakeEighthFold() Then
-                        manager.Update(doblez8.doku)
-                        MakeRestTie(10)
+                    giro = New TwistFold7(doblez7.doku)
+                    If giro.MakeFinalTwist() Then
+                        Return doku
                     End If
                 Case 8
                     giro = New TwistFold7(doblez8.doku)
@@ -384,7 +383,7 @@ Public Class TieMaker1
 
         If d.ComponentDefinition.Features.Count > 5 Then
             Try
-                If d.ComponentDefinition.Sketches3D.Item("last").SketchLines3D.Count > 0 Then
+                If d.ComponentDefinition.Sketches3D.Item("nextIntroLine").SketchLines3D.Count > 0 Then
                     b = True
                 End If
             Catch ex As Exception

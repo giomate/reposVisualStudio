@@ -117,6 +117,7 @@
     </Compile>
     <Compile Include="Nombres.vb" />
     <Compile Include="OriginSketch.vb" />
+    <Compile Include="RodMaker.vb" />
     <Compile Include="SketchAdjust.vb" />
     <Compile Include="Sketcher3D.vb" />
     <Compile Include="TieMaker1.vb" />

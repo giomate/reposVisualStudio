@@ -144,11 +144,7 @@ Public Class InitSketcher
     Public Function DrawMainSketch(refDoc As FindReferenceLine, q As Integer) As Sketch3D
 
         Dim s As String
-        If refDoc.foldFeatures.Count > 8 Then
-            backwards = True
-        Else
-            backwards = False
-        End If
+
 
         refLine = refDoc.GetKeyLine()
         kanteLine = refDoc.GetKanteLine()
@@ -329,25 +325,34 @@ Public Class InitSketcher
         Return curve
     End Function
     Function DrawFirstLine() As SketchLine3D
+        Dim r1, r2 As Double
         Try
 
             Dim l As SketchLine3D
             Dim gc, gpc As GeometricConstraint3D
+            Dim pt1, pt2 As Point
+            r1 = TorusRadius(refLine.StartSketchPoint.Geometry)
+            r2 = TorusRadius(refLine.EndSketchPoint.Geometry)
+            If r1 > r2 Then
+                pt1 = refLine.StartSketchPoint.Geometry
+                pt2 = refLine.EndSketchPoint.Geometry
+            Else
+                pt1 = refLine.EndSketchPoint.Geometry
+                pt2 = refLine.StartSketchPoint.Geometry
+            End If
             'rl = sk3D.Include(refLine)
-            l = sk3D.SketchLines3D.AddByTwoPoints(refLine.StartSketchPoint.Geometry, refLine.EndSketchPoint.Geometry)
+            l = sk3D.SketchLines3D.AddByTwoPoints(pt1, pt2)
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, curve)
             gc = sk3D.GeometricConstraints3D.AddGround(l.StartPoint)
-            If qvalue > 23 Then
-                Try
-                    gpc = sk3D.GeometricConstraints3D.AddParallel(l, refLine)
-                Catch ex As Exception
-                    gpc.Delete()
-                End Try
-                If gc.Deletable Then
-                    startPoint = gc
 
-                End If
-            End If
+            Try
+                '  gpc = sk3D.GeometricConstraints3D.AddParallel(l, refLine)
+            Catch ex As Exception
+
+            End Try
+
+
+
 
 
 
@@ -363,6 +368,18 @@ Public Class InitSketcher
             Return Nothing
         End Try
         Return Nothing
+    End Function
+    Function CalculateOutPostionFactor(pt As Point) As Double
+
+        Return (GetRadiusPoint(pt) * TorusRadius(pt)) / (Math.Pow(Math.Abs(pt.Z) + 0.000001, 1 / 2))
+    End Function
+    Function TorusRadius(pt As Point) As Double
+
+        Return Math.Pow(Math.Pow(Math.Pow(Math.Pow(pt.X, 2) + Math.Pow(pt.Y, 2), 1 / 2) - 50 / 10, 2) + Math.Pow(pt.Z, 2), 1 / 2)
+    End Function
+    Function GetRadiusPoint(pt As Point) As Double
+        Dim radius As Double = Math.Pow(Math.Pow(pt.X, 2) + Math.Pow(pt.Y, 2), 1 / 2)
+        Return radius
     End Function
     Function DrawFirstFloatingLine() As SketchLine3D
         Try
@@ -397,10 +414,10 @@ Public Class InitSketcher
             Dim p As Plane
             Dim l As SketchLine3D = Nothing
             Dim optpoint As Point = curve.EndSketchPoint.Geometry
-            Dim dc As DimensionConstraint3D
+            Dim dc, ac, dcfl As DimensionConstraint3D
             Dim d As Double
             v1 = lastLine.StartSketchPoint.Geometry.VectorTo(lastLine.EndSketchPoint.Geometry)
-            v3 = doku.ComponentDefinition.WorkPoints.Item(1).Point.VectorTo(lastLine.EndSketchPoint.Geometry)
+            v3 = doku.ComponentDefinition.WorkPoints.Item(1).Point.VectorTo(firstLine.StartSketchPoint.Geometry)
             p = tg.CreatePlane(lastLine.EndSketchPoint.Geometry, v1)
             Dim minDis As Double = 9999999999
             For Each o As Point In p.IntersectWithCurve(curve.Geometry)
@@ -433,10 +450,14 @@ Public Class InitSketcher
             End Try
 
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
-            If l.Length > GetParameter("b")._Value Then
+            If l.Length > GetParameter("b")._Value * 3 / 2 Then
                 dc = sk3D.DimensionConstraints3D.AddLineLength(l)
-                adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value)
+                ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, firstLine)
+                dcfl = sk3D.DimensionConstraints3D.AddLineLength(firstLine)
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value * 4 / 3)
                 dc.Delete()
+                ac.Delete()
+                dcfl.Delete()
 
             End If
             metro = sk3D.DimensionConstraints3D.AddLineLength(l)
@@ -576,8 +597,8 @@ Public Class InitSketcher
                     adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
                     adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
                 End Try
-
-                l.Construction = True
+            gapFold.Driven = True
+            l.Construction = True
 
                 constructionLines.Add(l)
 
@@ -622,9 +643,6 @@ Public Class InitSketcher
 
             vk = kl.Geometry.Direction.AsVector
             vk.ScaleBy(-1)
-            If backwards Then
-                v3.ScaleBy(-1)
-            End If
             endPoint = secondLine.StartSketchPoint.Geometry
             endPoint.TranslateBy(vk)
 
@@ -633,10 +651,10 @@ Public Class InitSketcher
 
             gapFold = sk3D.DimensionConstraints3D.AddLineLength(l)
             Try
-                gapFold.Parameter._Value = gapFoldCM
+                gapFold.Parameter._Value = gapFoldCM * 5
             Catch ex As Exception
                 adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
-                gapFold.Parameter._Value = gapFoldCM
+                gapFold.Parameter._Value = gapFoldCM * 5
             End Try
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, secondLine)
             'sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, firstLine)
@@ -838,8 +856,8 @@ Public Class InitSketcher
 
             Dim ac, dc, acl4l6 As DimensionConstraint3D
             Dim gc As GeometricConstraint3D
-            Dim limit As Double = 0.1
-            Dim angleLimit As Double = 2.4
+            Dim limit As Double = Math.PI / 15
+            Dim angleLimit As Double = 1.8
             Dim d As Double
             Dim counterLimit As Integer = 0
             Dim lastAngle As Double
@@ -868,6 +886,7 @@ Public Class InitSketcher
                 acl4l6 = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
 
             End Try
+            ac.Driven = True
             acl4l6.Driven = True
             Try
                 While ((acl4l6.Parameter._Value > angleLimit And acl4l6.Parameter._Value < Math.PI - limit) And counterLimit < 8)
@@ -888,10 +907,10 @@ Public Class InitSketcher
                 dc.Driven = True
                 Try
                     Try
-                        adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 2)
+                        '  adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 2)
                     Catch ex As Exception
                     End Try
-                    adjuster.AdjustGapSmothly(gapFold, gapFoldCM, dc)
+                    '  adjuster.AdjustGapSmothly(gapFold, gapFoldCM, dc)
                     Try
                         While (dc.Parameter._Value < angleLimit And dc.Parameter._Value > angleLimit / 2) And counterLimit < 4
                             lastAngle = ac.Parameter._Value
@@ -937,7 +956,7 @@ Public Class InitSketcher
                         End Try
                     End If
                     dc.Driven = True
-                    While ((d < 0 Or dc.Parameter._Value > Math.PI - limit / 2) And counterLimit < 32)
+                    While ((d < 0 Or dc.Parameter._Value > Math.PI - limit / 1) And counterLimit < 32)
                         Try
                             gapFold.Driven = False
                             adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 9 / 8)
@@ -991,8 +1010,7 @@ Public Class InitSketcher
 
 
             vfl = firstLine.Geometry.Direction.AsVector
-            vnwf = kanteLine.Geometry.Direction.AsVector
-            vnwf.ScaleBy(-1)
+            vnwf = cl2.Geometry.Direction.AsVector
             vcp = compDef.WorkPoints.Item(1).Point.VectorTo(firstLine.EndSketchPoint.Geometry)
             vflnwf = vfl.CrossProduct(vnwf)
             e = vcp.DotProduct(vflnwf)
