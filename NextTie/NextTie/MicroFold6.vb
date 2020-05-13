@@ -548,10 +548,13 @@ Public Class MicroFold6
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, secondLine)
             Dim dc, ac As DimensionConstraint3D
             Try
+                ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(secondLine, l)
+                adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2)
+                ac.Delete()
                 sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
             Catch ex As Exception
                 ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(secondLine, l)
-                adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2)
+                adjuster.AdjustDimensionConstraint3DSmothly(ac, 3 * Math.PI / 8)
                 ac.Delete()
                 sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
             End Try
@@ -661,7 +664,7 @@ Public Class MicroFold6
                 While (ac1.Parameter._Value > 0 And errorCounter < paralelLimit)
                     Try
                         ac1.Driven = False
-                        adjuster.GetMinimalDimension(ac1)
+                        adjuster.AdjustDimensionConstraint3DSmothly(ac1, ac1.Parameter._Value / 4)
                         ac1.Driven = True
                     Catch ex2 As Exception
                         ac1.Driven = True

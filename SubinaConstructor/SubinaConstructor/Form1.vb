@@ -1,13 +1,12 @@
-﻿
+﻿Imports Inventor
+Imports System
+Imports System.IO
+
+Imports System.Text
+Imports System.IO.Directory
 Imports System.Type
 Imports System.Activator
 Imports System.Runtime.InteropServices
-Imports System
-Imports System.IO
-Imports System.Text
-Imports System.IO.Directory
-Imports Inventor
-Imports GetInitialConditions
 Public Class Form1
     Dim oApp As Inventor.Application
     Dim oDoc As Inventor.Document
@@ -15,7 +14,7 @@ Public Class Form1
     Dim oDesignProjectMgr As DesignProjectManager
     Dim invDoc As InventorFile
     Dim iteration As Integer
-    Dim torta As Konditor
+    Dim nido As SubinaStruct
     Public Sub New()
         ' This call is required by the designer.
         InitializeComponent()
@@ -58,6 +57,7 @@ Public Class Form1
         Try
 
             done = MakeTort()
+
             If done Then
                 Me.Close()
             End If
@@ -76,12 +76,12 @@ Public Class Form1
                 oDesignProjectMgr = oApp.DesignProjectManager
                 Dim p As String = oDesignProjectMgr.ActiveDesignProject.WorkspacePath
                 Dim ffn As String
-                ffn = String.Concat(p, "\Iteration6\Wedge1.ipt")
+                ffn = String.Concat(p, "\Iteration8\Skeleton1.ipt")
                 invDoc = New InventorFile(oApp)
                 oDoc = invDoc.OpenFullFileName(ffn)
-                torta = New Konditor(oDoc)
-                torta.MakeSkeletonsCake(8)
-                b = torta.done
+                nido = New SubinaStruct(oDoc)
+                nido.MakeNestStruct(8)
+                b = nido.done
             End If
             Return b
         Catch ex As Exception
@@ -90,7 +90,25 @@ Public Class Form1
         End Try
 
     End Function
+    Public Function CutSmallBodies() As Boolean
+        Dim b As Boolean
+        Try
+            If (started) Then
+                oDesignProjectMgr = oApp.DesignProjectManager
+                Dim p As String = oDesignProjectMgr.ActiveDesignProject.WorkspacePath
+                Dim ffn As String
+                ffn = String.Concat(p, "\Iteration8\Skeleton1.ipt")
+                invDoc = New InventorFile(oApp)
+                oDoc = invDoc.OpenFullFileName(ffn)
+                nido = New SubinaStruct(oDoc)
+                nido.RemoveFaceShells(8)
+                b = nido.done
+            End If
+            Return b
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return False
+        End Try
 
-
-
+    End Function
 End Class

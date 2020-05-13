@@ -7,10 +7,7 @@ Public Class Nombres
     Dim app As Application
     Dim compDef As ComponentDefinition
 
-    Public Sub New()
-        newName = "noname"
-        datei = ".ipt"
-    End Sub
+
     Public Sub New(docu As Inventor.Document)
         doku = docu
         app = doku.Parent
@@ -75,6 +72,12 @@ Public Class Nombres
         b = Regex.IsMatch(s, pattern)
         Return b
     End Function
+    Public Function ContainSkeleton(s As String) As Boolean
+        Dim b As Boolean
+        Dim pattern = String.Concat("Skeleton")
+        b = Regex.IsMatch(s, pattern)
+        Return b
+    End Function
     Public Function Contain_F_First(s As String) As Boolean
         Dim b As Boolean
         Dim pattern = String.Concat("\b", "f", "\d+", "\w*")
@@ -87,6 +90,13 @@ Public Class Nombres
         s = Strings.Split(s(1), ".ipt")
 
         Return CInt(s(0)) + 1
+    End Function
+    Public Function GetQWire(ef As ExtrudeFeature) As Integer
+        Dim s() As String
+        s = Strings.Split(ef.Name, "rw")
+
+
+        Return CInt(s(1))
     End Function
     Public Function GetQNumberString(ffn As String) As Integer
         Dim s() As String
@@ -107,6 +117,15 @@ Public Class Nombres
         End If
 
         Return 0
+    End Function
+    Public Function ConvertQNumberLetter(q As Integer) As String
+        Dim c As Char
+        Dim m As Integer
+        Dim s As String
+        Math.DivRem(q, 94, m)
+        c = ChrW(m + 33)
+        s = c.ToString
+        Return s
     End Function
     Public Function GetNextSketchName(docu As Inventor.Document) As String
         Dim s(), sn As String
@@ -162,6 +181,15 @@ Public Class Nombres
         Dim bn As String = "Band"
         s = Strings.Split(ffn, bn)
         sn = String.Concat(s(0), "Wedge", s(1))
+
+        Return sn
+    End Function
+
+    Public Function MakeSkeletonFileName(ffn As String) As String
+        Dim s(), sn As String
+        Dim bn As String = "Band"
+        s = Strings.Split(ffn, bn)
+        sn = String.Concat(s(0), "Skeleton", s(1))
 
         Return sn
     End Function

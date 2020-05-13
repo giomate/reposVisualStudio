@@ -38,7 +38,7 @@ Public Class Commands
 
         Dim oCamera As Camera
         oCamera = mainApp.ActiveView.Camera
-        oCamera.ViewOrientationType = ViewOrientationTypeEnum.kTopViewOrientation
+        oCamera.ViewOrientationType = ViewOrientationTypeEnum.kIsoTopRightViewOrientation
         oCamera.Fit()
         oCamera.Apply()
 

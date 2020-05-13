@@ -56,6 +56,11 @@ Public Class Highlithing
                 oControlDef.Execute()
                 Beep()
                 oSSet.Clear()
+                Try
+                    ' FitView(doku)
+                Catch ex As Exception
+
+                End Try
             End If
 
         Catch ex As Exception
@@ -79,6 +84,12 @@ Public Class Highlithing
         oControlDef.Execute()
         Beep()
         oSSet.Clear()
+        Try
+            ' FitView(doku)
+        Catch ex As Exception
+
+        End Try
+
 
 
 

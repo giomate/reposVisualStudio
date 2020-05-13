@@ -1,5 +1,4 @@
-﻿
-Imports System.Type
+﻿Imports System.Type
 Imports System.Activator
 Imports System.Runtime.InteropServices
 Imports System
@@ -7,7 +6,6 @@ Imports System.IO
 Imports System.Text
 Imports System.IO.Directory
 Imports Inventor
-Imports GetInitialConditions
 Public Class Form1
     Dim oApp As Inventor.Application
     Dim oDoc As Inventor.Document
@@ -15,11 +13,13 @@ Public Class Form1
     Dim oDesignProjectMgr As DesignProjectManager
     Dim invDoc As InventorFile
     Dim iteration As Integer
-    Dim torta As Konditor
+    Dim piedra As Wedges
+    Dim esqueleto As Skeletons
+
     Public Sub New()
         ' This call is required by the designer.
         InitializeComponent()
-        iteration = 1
+        iteration = 8
         ' Add any initialization after the InitializeComponent() call.
         Try
             oApp = Marshal.GetActiveObject("Inventor.Application")
@@ -31,7 +31,6 @@ Public Class Form1
 
                 oApp = CreateInstance(oInvAppType)
                 oApp.Visible = True
-
 
                 'Note: if you shut down the Inventor session that was started
                 'this(way) there is still an Inventor.exe running. We will use
@@ -56,8 +55,11 @@ Public Class Form1
 
     Private Sub Form1_Activated(sender As Object, e As EventArgs) Handles Me.Activated
         Try
+            oDesignProjectMgr = oApp.DesignProjectManager
+            invDoc = New InventorFile(oApp)
+            ' done = MakeSkeletonTest()
+            done = MakeAllSkeletons()
 
-            done = MakeTort()
             If done Then
                 Me.Close()
             End If
@@ -68,20 +70,18 @@ Public Class Form1
             MsgBox("Unable to find Document")
         End Try
     End Sub
-
-    Public Function MakeTort() As Boolean
+    Public Function MakeAllSkeletons() As Boolean
         Dim b As Boolean
         Try
             If (started) Then
-                oDesignProjectMgr = oApp.DesignProjectManager
                 Dim p As String = oDesignProjectMgr.ActiveDesignProject.WorkspacePath
                 Dim ffn As String
-                ffn = String.Concat(p, "\Iteration6\Wedge1.ipt")
-                invDoc = New InventorFile(oApp)
+                ffn = String.Concat(p, "\Iteration8\Band9.ipt")
                 oDoc = invDoc.OpenFullFileName(ffn)
-                torta = New Konditor(oDoc)
-                torta.MakeSkeletonsCake(8)
-                b = torta.done
+                esqueleto = New Skeletons(oDoc)
+                esqueleto.MakeSkeletonIteration(iteration)
+
+                b = esqueleto.done
             End If
             Return b
         Catch ex As Exception
@@ -90,7 +90,24 @@ Public Class Form1
         End Try
 
     End Function
+    Public Function MakeSkeletonTest() As Boolean
+        Dim b As Boolean
+        Try
+            If (started) Then
+                Dim p As String = oDesignProjectMgr.ActiveDesignProject.WorkspacePath
+                Dim ffn As String
+                ffn = String.Concat(p, "\Iteration8\Band9.ipt")
+                oDoc = invDoc.OpenFullFileName(ffn)
+                esqueleto = New Skeletons(oDoc)
+                esqueleto.RecoverSkeletonIteration(iteration)
 
+                b = esqueleto.done
+            End If
+            Return b
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return False
+        End Try
 
-
+    End Function
 End Class

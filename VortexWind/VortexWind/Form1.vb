@@ -56,7 +56,9 @@ Public Class Form1
     Private Sub Form1_Activated(sender As Object, e As EventArgs) Handles Me.Activated
         Try
 
-            done = ContinueWiring()
+            'done = ContinueWiring()
+            done = MakeTort()
+
             If done Then
                 Me.Close()
             End If
@@ -75,7 +77,7 @@ Public Class Form1
                 oDesignProjectMgr = oApp.DesignProjectManager
                 Dim p As String = oDesignProjectMgr.ActiveDesignProject.WorkspacePath
                 Dim ffn As String
-                ffn = String.Concat(p, "\Iteration6\Sabina.ipt")
+                ffn = String.Concat(p, "\Iteration8\Subina.ipt")
                 invDoc = New InventorFile(oApp)
                 oDoc = invDoc.OpenFullFileName(ffn)
                 vortice = New VortexRod(oDoc)
