@@ -62,9 +62,9 @@ Public Class Surfacer
 
     Function MakeTangentials() As WorkSurface
         Dim ws As WorkSurface
-        Dim sbtan As SurfaceBody
+
         Dim sb As SurfaceBody = compDef.SurfaceBodies.Item(1)
-        Dim np, npAUx As NonParametricBaseFeature
+        Dim np As NonParametricBaseFeature
         Dim npDef As NonParametricBaseFeatureDefinition = compDef.Features.NonParametricBaseFeatures.CreateDefinition
 
 
@@ -114,7 +114,7 @@ Public Class Surfacer
     Public Function GetTangentials(fi As Face) As WorkSurface
         Dim ws As WorkSurface
         Dim sb As SurfaceBody
-        Dim np, npAUx As NonParametricBaseFeature
+        Dim np As NonParametricBaseFeature
         Dim npDef As NonParametricBaseFeatureDefinition = compDef.Features.NonParametricBaseFeatures.CreateDefinition
 
 
@@ -151,7 +151,7 @@ Public Class Surfacer
     Public Function GetTangentialsNumber(fi As Face, n As String) As WorkSurface
         Dim ws As WorkSurface
         Dim sb As SurfaceBody
-        Dim np, npAUx As NonParametricBaseFeature
+        Dim np As NonParametricBaseFeature
         Dim npDef As NonParametricBaseFeatureDefinition = compDef.Features.NonParametricBaseFeatures.CreateDefinition
 
 
@@ -188,7 +188,7 @@ Public Class Surfacer
     Public Function CreateSmallVolume(fi As Face, n As String) As WorkSurface
         Dim ws As WorkSurface
         Dim sb As SurfaceBody
-        Dim np, npAUx As NonParametricBaseFeature
+        Dim np As NonParametricBaseFeature
         Dim npDef As NonParametricBaseFeatureDefinition = compDef.Features.NonParametricBaseFeatures.CreateDefinition
 
 

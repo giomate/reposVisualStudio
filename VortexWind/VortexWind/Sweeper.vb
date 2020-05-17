@@ -288,14 +288,14 @@ Public Class Sweeper
             Dim vMax As Double = 0
             Dim sbMax As SurfaceBody = compDef.SurfaceBodies(1)
             Dim fsMax As FaceShell = sbMax.FaceShells(1)
-            Dim sbTemp As SurfaceBody
+
             Dim ws As WorkSurface
             Dim sf As SculptFeature
             Dim nFaceMax As Integer = 0
             Dim nFaceShells, k As Integer
             Dim fs As FaceShell
             k = 1
-            Dim v As Double
+
             doku.Update2(True)
             comando.WireFrameView(doku)
 
@@ -396,14 +396,14 @@ Public Class Sweeper
     Function CorrectSculpt(ss As SculptSurface) As SculptFeature
         Dim rf As RevolveFeature = compDef.Features.RevolveFeatures(1)
         Dim pf As PartFeature = compDef.Features(1)
-        Dim sf As SculptFeature
+        Dim sf As SculptFeature = Nothing
         Dim n As Integer = compDef.Features.RevolveFeatures.Count
         Dim s As String
         Dim ef As ExtrudeFeature
-        Dim pfe As PartFeatureExtent
+
         Dim lf As LoftFeature
         Dim d As Double
-        Dim pt1, pt2 As Point
+
         Try
             For i = 1 To n
                 rf = compDef.Features.RevolveFeatures.Item(n - i + 1)
@@ -460,9 +460,9 @@ Public Class Sweeper
     End Function
     Function GetExtendEggDistance(ef As ExtrudeFeature) As Double
         Dim d, dmin, dMax, Amin As Double
-        Dim f1, f2 As Face
-        Dim pt1, pt2 As Point
-        Dim pl As Plane
+
+
+
         dmin = 9999
         dMax = 0
         Amin = 9999
@@ -548,7 +548,7 @@ Public Class Sweeper
 
     End Function
     Function CombineBodies() As CombineFeature
-        Dim cf As CombineFeature
+        Dim cf As CombineFeature = Nothing
         If compDef.SurfaceBodies.Count > 1 Then
             surfaceBodies.Clear()
 
@@ -571,7 +571,7 @@ Public Class Sweeper
     Function RemoveCombine(dp As DerivedPartComponent, s As String) As CombineFeature
 
         Dim t As Integer = compDef.SurfaceBodies.Count
-        Dim cf As CombineFeature
+        Dim cf As CombineFeature = Nothing
 
         Dim dpc As DerivedPartComponent = dp
         Dim n As Integer = compDef.SurfaceBodies(1).Faces.Count

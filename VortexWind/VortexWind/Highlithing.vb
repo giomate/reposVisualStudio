@@ -65,6 +65,15 @@ Public Class Highlithing
 
 
     End Sub
+    Public Sub FocusFace(f As Face)
+        Try
+            LookAtFace(f)
+            HighLighFace(f)
+        Catch ex As Exception
+
+        End Try
+
+    End Sub
     Public Sub LookAtPlane(wpl As WorkPlane)
         Dim oSSet As SelectSet
 
@@ -85,7 +94,7 @@ Public Class Highlithing
     End Sub
     Public Sub FitView(d As PartDocument)
         Dim dMax As Double = 0
-        Dim fMax As Face
+        'Dim fMax As Face
         Dim oCamera As Camera
         Try
 

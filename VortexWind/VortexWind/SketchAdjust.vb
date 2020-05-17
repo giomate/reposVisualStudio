@@ -341,7 +341,7 @@ Public Class SketchAdjust
     Function AdjustDimensionSmothly(name As String, setpoint As Double) As Boolean
         Dim pit As Parameter
         Dim b As Boolean = False
-        Dim c, r As Double
+        Dim r As Double
         Dim dc As DimensionConstraint3D
         pit = getParameter(name)
 
@@ -388,7 +388,7 @@ Public Class SketchAdjust
     Function AdjustDimension2DSmothly(dc As DimensionConstraint, setpoint As Double) As Boolean
         Dim pit As Parameter
         Dim b As Boolean = False
-        Dim c, r As Double
+        Dim r As Double
         Dim name As String = dc.Parameter.Name
         pit = dc.Parameter
         Dim ps As PlanarSketch = dc.Parent
@@ -542,7 +542,7 @@ Public Class SketchAdjust
     End Function
 
     Public Function GetMinimalDimension(dc As DimensionConstraint3D) As Boolean
-        Dim pit As Parameter
+        Dim pit As Parameter = Nothing
 
         Try
 
@@ -610,7 +610,7 @@ Public Class SketchAdjust
 
     End Function
     Public Function GetMaximalDimension(dc As DimensionConstraint3D) As Boolean
-        Dim pit As Parameter
+        Dim pit As Parameter = Nothing
         Dim climit As Double = 8
         Dim setPoint As Double = dc.Parameter._Value * (1 + 2 / climit)
         Try

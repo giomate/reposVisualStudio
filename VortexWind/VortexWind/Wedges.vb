@@ -140,7 +140,7 @@ Public Class Wedges
     Public Function MakeWedgesIteration(i As Integer) As PartDocument
         Try
             Dim p As String = projectManager.ActiveDesignProject.WorkspacePath
-            Dim q As Integer
+
             Dim nd As String
 
             nd = String.Concat(p, "\Iteration", i.ToString)
@@ -241,7 +241,10 @@ Public Class Wedges
         Dim pt As Point
         Dim pl, plw As Plane
         Dim v As Vector
+        ef = Nothing
         Try
+            wptpf = Nothing
+            wpf = Nothing
             workFaces = GetStartingface(ws).TangentiallyConnectedFaces
             For Each f As Face In workFaces
                 If f.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
@@ -308,10 +311,12 @@ Public Class Wedges
     End Function
     Function GetRealNormal(f As Face, ws As WorkSurface) As Vector
         Dim v As Vector
-        Dim wpf, wpt, wptpf As WorkPoint
-        Dim pt As Point
+        Dim wpf, wptpf As WorkPoint
+        wptpf = Nothing
+        wpf = Nothing
         Dim pl, plw As Plane
         Try
+
             Try
                 wpf = doku.ComponentDefinition.WorkPoints.AddAtCentroid(f.EdgeLoops.Item(1))
                 pl = f.Geometry
@@ -365,13 +370,13 @@ Public Class Wedges
 
 
         Dim d, e, dmin, dp, npls As Double
-        Dim ve, vc, vd As Vector
-        Dim mpt As Point
-        Dim ls As LineSegment
+
+
+
         Dim plfr, plfd As Plane
 
-        Dim spl As PlanarSketch
-        Dim skl As SketchLine
+        Dim spl As PlanarSketch = Nothing
+
         Dim fr, fd As Face
         dmin = 9999999
         Try
@@ -442,18 +447,20 @@ Public Class Wedges
     End Function
     Function MakeBandEntrance(ef As ExtrudeFeature, ed As Edge) As ExtrudeFeature
         Dim spl As PlanarSketch
-        Dim skl As SketchLine
+
         Dim edt As Edge = ed
         Dim fr, fd As Face
-        Dim mpt As Point
-        Dim ls As LineSegment
+
+
         Dim plfr, plfd As Plane
-        Dim ve, vc, vd As Vector
+        Dim vc As Vector
         Dim pt1, pt2, pt3, pt4 As Point
         Dim spt1, spt2, spt3 As SketchPoint3D
         Dim dmin As Double = 9999999
         Dim d, e As Double
         Try
+            pt1 = Nothing
+            pt4 = Nothing
             sk3D = doku.ComponentDefinition.Sketches3D.Add()
             d = CalculateClosestFace(GetMajorFace(ef))
             e = CalculateClosestFace(sideMinorFace)
@@ -583,7 +590,7 @@ Public Class Wedges
             Dim sb As SurfaceBody
             Dim maxface1, maxface2, maxface3 As Face
 
-            Dim b, b2 As Boolean
+            Dim b As Boolean
             Dim aMax, eMax As Double
 
             features = doku.ComponentDefinition.Features
@@ -717,7 +724,7 @@ Public Class Wedges
             Dim maxArea1, maxArea2, maxArea3 As Double
             Dim sb As SurfaceBody
             Dim maxface1, maxface2, maxface3 As Face
-            Dim fc As FaceCollection
+
             Dim b, b2 As Boolean
             Dim d1, d2, aMax, eMax As Double
             Dim v1, v2 As Vector
@@ -855,7 +862,7 @@ Public Class Wedges
     Function SketchNumber(q As Integer) As Profile
         Dim oProfile As Profile
 
-        Dim a, b As Double
+
         Try
             Dim wpt As WorkPoint
             wpt = doku.ComponentDefinition.WorkPoints.AddAtCentroid(GetWorkFace().EdgeLoops.Item(1))
@@ -1037,7 +1044,7 @@ Public Class Wedges
     End Function
     Function GetClosestFace(wpti As WorkPoint) As Face
         Dim f1, f2, f3 As Face
-        Dim pl As Plane
+
         Dim mine1, mine2, mine3, d As Double
 
         mine1 = 99999
@@ -1260,7 +1267,7 @@ Public Class Wedges
         Return pt
     End Function
     Function CombineBodies() As CombineFeature
-        Dim cf As CombineFeature
+        Dim cf As CombineFeature = Nothing
         If doku.ComponentDefinition.SurfaceBodies.Count > 1 Then
             surfaceBodies.Clear()
 
@@ -1281,7 +1288,7 @@ Public Class Wedges
         Return cf
     End Function
     Function CombineBodiesDuo() As CombineFeature
-        Dim cf As CombineFeature
+        Dim cf As CombineFeature = Nothing
         Dim imax, limit, k, j, l As Integer
         l = doku.ComponentDefinition.SurfaceBodies.Count
         limit = 0
@@ -1381,11 +1388,11 @@ Public Class Wedges
     End Function
 
     Function LoftFaces(ws As WorkSurface) As Integer
-        Dim vc, vfc As Vector
-        Dim ptc, ptf As Point
-        Dim pl As Plane
+
+        Dim ptc As Point
+
         Dim min2, min1 As Double
-        Dim wp As WorkPoint
+
         Dim fmin1, fmin2 As Face
         Try
             ptc = doku.ComponentDefinition.WorkPoints.Item(1).Point
@@ -1485,8 +1492,7 @@ Public Class Wedges
     Function MakeSpike(fc As Face) As LoftFeature
         sections.Clear()
         Dim pr As Profile = GetSpikeProfile(fc)
-        Dim ps As PlanarSketch
-        Dim spt2d As SketchPoint
+
         sk3D = doku.ComponentDefinition.Sketches3D.Add()
         Dim ed As Edge = GetClosestEdge(fc)
         'GetRails(fc)
@@ -1528,7 +1534,7 @@ Public Class Wedges
         Dim ver1, ver2 As Vertex
         Dim ws As WorkSurface = compDef.WorkSurfaces.Item(1)
         Dim sb As SurfaceBody = ws.SurfaceBodies.Item(1)
-        Dim vnpl, vnfi, v As Vector
+        Dim vnpl, vnfi As Vector
         Dim d, e, eMin, dMin1, dMin2, dis As Double
         Dim pt1, pt2, pt3 As Point
         Dim ls As LineSegment
@@ -1603,81 +1609,7 @@ Public Class Wedges
         lf = MakeCone(wptc, wpt2)
         Return lf
     End Function
-    Function MakeSupports(p As RodMaker, skt As Sketch3D) As LoftFeature
-        Try
-            wp1 = p.wp1
-            wp2 = p.wp2
-            curvesSketch = skt
-            palito = p
-            ovalLine = palito.ovalLine
 
-            Dim skl As SketchLine3D
-            Dim lf As LoftFeature
-            If compDef.Features.LoftFeatures.Count > 0 Then
-                lf = compDef.Features.LoftFeatures.Item(compDef.Features.LoftFeatures.Count)
-            End If
-
-            Dim skpt As SketchPoint3D = OptimalAlignedPoint(wp1)
-
-
-            If Not IsFeatureSimilar(wp1, skpt) Then
-                lf = MakeCone(skpt, wp1)
-                If IsConeFree(lf, skpt) Then
-                    If monitor.IsFeatureHealthy(lf) Then
-                        skpt = OptimalAlignedPoint(wp2)
-
-                        If Not IsFeatureSimilar(wp2, skpt) Then
-                            lf = MakeCone(skpt, wp2)
-                            If IsConeFree(lf, skpt) Then
-                                Return lf
-                            Else
-                                Return CorrectCone(lf, wp2)
-                            End If
-
-                        Else
-                            Return lf
-                        End If
-                    End If
-                Else
-                    lf = CorrectCone(lf, wp1)
-
-                    If monitor.IsFeatureHealthy(lf) Then
-                        skpt = OptimalAlignedPoint(wp2)
-
-                        If Not IsFeatureSimilar(wp2, skpt) Then
-                            lf = MakeCone(skpt, wp2)
-                            If IsConeFree(lf, skpt) Then
-                                Return lf
-                            Else
-                                Return CorrectCone(lf, wp2)
-                            End If
-
-                        Else
-                            Return lf
-                        End If
-                    End If
-                End If
-
-            Else
-                skpt = OptimalAlignedPoint(wp2)
-                endPoints.Add(skpt)
-                If Not IsFeatureSimilar(wp2, skpt) Then
-                    lf = MakeCone(skpt, wp2)
-                    If IsConeFree(lf, skpt) Then
-                        Return lf
-                    Else
-                        Return CorrectCone(lf, wp2)
-                    End If
-                Else
-                    Return lf
-                End If
-            End If
-        Catch ex As Exception
-            MsgBox(ex.ToString())
-            Return Nothing
-        End Try
-
-    End Function
     Function MakeSingleSupport(p As RodMaker, skt As Sketch3D) As LoftFeature
         Try
             wp1 = p.wp1
@@ -1713,8 +1645,8 @@ Public Class Wedges
     End Function
     Function CorrectCone(lf As LoftFeature, wpt As WorkPoint) As LoftFeature
         Dim skl As SketchLine3D
-        Dim skpt As SketchPoint3D
-
+        Dim skpt As SketchPoint3D = Nothing
+        CorrectCone = Nothing
         For i = 1 To 4
             For Each skpti As SketchPoint3D In interPoints
                 lf.Delete(False, True, True)
@@ -1741,7 +1673,7 @@ Public Class Wedges
     Function CorrectLoftCone(lf As LoftFeature, fi As Face) As LoftFeature
         Dim skl As SketchLine3D
         Dim skpt As SketchPoint3D = coneLine.EndSketchPoint
-
+        CorrectLoftCone = Nothing
         For i = 1 To 4
             For Each skpti As SketchPoint3D In interPoints
                 lf.Delete(False, True, True)
@@ -1772,7 +1704,7 @@ Public Class Wedges
         Dim skpt As SketchPoint3D
         Dim ssl As SketchSpline
         Dim ssl3D As SketchSpline3D
-        Dim d, dMin, dMax As Double
+        Dim dMin, dMax As Double
         dMin = 9999
         sk3D = compDef.Sketches3D.Add
         dMax = 0
@@ -1832,7 +1764,6 @@ Public Class Wedges
     End Function
     Function IsFeatureSimilar(wpt As WorkPoint, skpt As SketchPoint3D) As Boolean
         Dim v1, v2 As Vector
-        Dim skpt2 As SketchPoint3D
         Dim sklNew, sklOld As SketchLine3D
         Dim d As Double
         Try
@@ -1865,7 +1796,7 @@ Public Class Wedges
     Function OptimalPoint(wpti As WorkPoint) As SketchPoint3D
         Dim e, d, dMin As Double
         Dim skeq As SketchEquationCurve3D
-        Dim wptt As WorkPoint
+
         Dim ptOpt As Point
         Try
             sk3D = compDef.Sketches3D.Add
@@ -2258,7 +2189,7 @@ Public Class Wedges
     End Function
     Function MakeConeFree(skli As SketchLine3D, skpti As SketchPoint3D) As SketchLine3D
 
-        Dim d, dMin As Double
+        Dim dMin As Double
         Dim fi As Face = corteFace
         Dim pl As Plane = fi.Geometry
         Dim seq As SketchEquationCurve3D = lastSeq
@@ -2508,7 +2439,7 @@ Public Class Wedges
             Dim pt As Point = doku.ComponentDefinition.WorkPoints.Item(1).Point
             Dim d As Double = 999999999
 
-            Dim pr3d As Profile3D
+            Dim pr3d As Profile3D = Nothing
             rails.Clear()
 
             For Each v As Vertex In fc.Vertices

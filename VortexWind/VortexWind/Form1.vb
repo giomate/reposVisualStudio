@@ -57,7 +57,7 @@ Public Class Form1
         Try
 
             'done = ContinueWiring()
-            done = MakeTort()
+            done = StampGuides()
 
             If done Then
                 Me.Close()
@@ -94,8 +94,32 @@ Public Class Form1
         End Try
 
     End Function
+    Public Function StampGuides() As Boolean
+        Dim b As Boolean
+        Try
+            If (started) Then
+                oDesignProjectMgr = oApp.DesignProjectManager
+                Dim p As String = oDesignProjectMgr.ActiveDesignProject.WorkspacePath
+                Dim ffn As String
+                ffn = String.Concat(p, "\Iteration8\Subina.ipt")
+                invDoc = New InventorFile(oApp)
+                oDoc = invDoc.OpenFullFileName(ffn)
+                vortice = New VortexRod(oDoc)
+                monitor = New DesignMonitoring(vortice.doku)
+                If monitor.IsFeatureHealthy(vortice.StampAllWireGuides(vortice.doku)) Then
+                    b = vortice.done
+                End If
+
+            End If
+            Return b
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return False
+        End Try
+
+    End Function
     Public Function ContinueWiring() As Boolean
-        Dim ref As PartDocument
+
         Dim b As Boolean
         Try
             If (started) Then

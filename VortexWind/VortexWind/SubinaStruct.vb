@@ -104,12 +104,12 @@ Public Class SubinaStruct
     End Sub
     Public Function MakeNestStruct(i As Integer) As PartDocument
         Dim p As String = projectManager.ActiveDesignProject.WorkspacePath
-        Dim q As Integer
-        Dim dn, rn, bn, sn As String
+
+        Dim dn, rn, sn As String
         dn = String.Concat(p, "\Iteration", i.ToString)
         Dim dpc As DerivedPartComponent
         Dim t As PartDocument
-        Dim ws As WorkSurface
+
         Dim partCounter As Integer = 0
 
         Try
@@ -177,12 +177,11 @@ Public Class SubinaStruct
     End Function
     Public Function RemoveFaceShells(i As Integer) As PartDocument
         Dim p As String = projectManager.ActiveDesignProject.WorkspacePath
-        Dim q As Integer
-        Dim dn, rn, bn, sn As String
+
+        Dim dn, sn As String
         dn = String.Concat(p, "\Iteration", i.ToString)
-        Dim dpc As DerivedPartComponent
         Dim t As PartDocument
-        Dim ws As WorkSurface
+
         Dim partCounter As Integer = 0
         Dim sb As SurfaceBody
 
@@ -236,17 +235,17 @@ Public Class SubinaStruct
     Public Function MakeRib(sn As String) As Integer
         Dim pf As String = projectManager.ActiveDesignProject.WorkspacePath
         Dim p As PartDocument
-        Dim q As Integer
-        Dim dpc As DerivedPartComponent
-        Dim newComponent As DerivedPartComponent
 
-        Dim lf As LoftFeature
-        Dim cf As CombineFeature
-        Dim bodyCounter As Integer
-        Dim d, e As Double
-        Dim skt As Sketch3D
+        Dim dpc As DerivedPartComponent
+
+
+
+
+
+
+
         Dim cc As Integer = 1
-        Dim sn1, sn2, rn As String
+        Dim sn1 As String
         Dim solitario As Boolean = True
 
 
@@ -300,9 +299,9 @@ Public Class SubinaStruct
 
     End Function
     Function IntersectCollisions(sn As String) As Integer
-        Dim dpc As DerivedPartComponent
-        Dim cf As CombineFeature
-        Dim bodyCounter As Integer
+
+
+
         Try
 
 
@@ -350,7 +349,7 @@ Public Class SubinaStruct
 
         Dim cf As CombineFeature
         Dim bodyCounter As Integer
-        Dim d, e As Double
+
         Try
             doku.Update2(True)
 
@@ -392,7 +391,7 @@ Public Class SubinaStruct
 
         Dim cf As CombineFeature
         Dim bodyCounter As Integer
-        Dim d, e As Double
+
         Try
 
             If System.IO.File.Exists(vecinos(i)) Then
@@ -428,7 +427,7 @@ Public Class SubinaStruct
 
     End Function
     Function DeriveNormalSkeleton(sn) As Integer
-        Dim dpc As DerivedPartComponent
+
         Try
 
             DocUpdate(doku)
@@ -501,7 +500,7 @@ Public Class SubinaStruct
     Function CutTwoBodies(sbb As SurfaceBody, sbt As SurfaceBody, keep As Boolean) As CombineFeature
 
         Dim cf As CombineFeature
-        Dim factor As Double
+
         Try
             surfaceBodies.Clear()
 
@@ -568,14 +567,14 @@ Public Class SubinaStruct
             Dim vMax As Double = 0
             Dim sbMax As SurfaceBody = compDef.SurfaceBodies(1)
             Dim fsMax As FaceShell = sbMax.FaceShells(1)
-            Dim sbTemp As SurfaceBody
+
             Dim ws As WorkSurface
             Dim sf As SculptFeature
             Dim nFaceMax As Integer = 0
             Dim nFaceShells, k As Integer
             Dim fs As FaceShell
             k = 1
-            Dim v As Double
+
             doku.Update2(True)
             If sbMax.FaceShells.Count > 1 Then
 
@@ -649,11 +648,11 @@ Public Class SubinaStruct
             Dim vMax As Double = 0
             Dim sbMax As SurfaceBody = compDef.SurfaceBodies(1)
             Dim fsMax As FaceShell = sbMax.FaceShells(1)
-            Dim sbTemp As SurfaceBody
-            Dim ws As WorkSurface
-            Dim sf As SculptFeature
 
-            Dim v As Double
+            Dim ws As WorkSurface
+
+
+
             If sbMax.FaceShells.Count > 1 Then
                 For Each fs As FaceShell In sbMax.FaceShells
                     ' If Not fs.Equals(fsMax) Then
@@ -738,7 +737,7 @@ Public Class SubinaStruct
 
     End Function
     Function CorrectSculpt(sf As SculptFeature, wsi As WorkSurface) As SculptFeature
-        Dim ss As SculptSurface
+
         Try
             sf.Delete(True, True, True)
             CorrectSculpt = compDef.Features.SculptFeatures.Add(surfacesSculpt, PartFeatureOperationEnum.kNewBodyOperation)

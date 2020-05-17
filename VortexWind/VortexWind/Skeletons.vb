@@ -126,10 +126,9 @@ Public Class Skeletons
     Public Function MakeSkeletonIteration(i As Integer) As PartDocument
         Try
             Dim p As String = projectManager.ActiveDesignProject.WorkspacePath
-            Dim q, n As Integer
+            Dim n As Integer
             Dim nd As String
-            Dim ef As ExtrudeFeature
-            Dim rf As RevolveFeature
+
 
             nd = String.Concat(p, "\Iteration", i.ToString)
 
@@ -188,11 +187,10 @@ Public Class Skeletons
     Public Function RecoverSkeletonIteration(i As Integer) As PartDocument
         Try
             Dim p As String = projectManager.ActiveDesignProject.WorkspacePath
-            Dim q As Integer
+
             Dim nd As String
             Dim ef As ExtrudeFeature
-            Dim rf As RevolveFeature
-            Dim cf As CombineFeature
+
             Dim s As String
             nd = String.Concat(p, "\Iteration", i.ToString)
 
@@ -313,7 +311,7 @@ Public Class Skeletons
     Function GetStampLine(wpt As WorkPoint) As SketchLine3D
 
 
-        Dim d, e, factor, dMax, ave As Double
+        Dim factor, dMax, ave As Double
         ave = 0
         dMax = 0
         For Each skl As SketchLine3D In palitos.rodLines
@@ -358,13 +356,13 @@ Public Class Skeletons
     End Function
     Function MakeSingleSkeleton(s As String) As PartDocument
         Dim p As PartDocument
-        Dim q As Integer
+
         Dim derivedDefinition As DerivedPartDefinition
         Dim newComponent As DerivedPartComponent
-        Dim rf As RevolveFeature
+
         Dim lf As LoftFeature
-        Dim pt As Point
-        Dim d, e As Double
+
+
         Dim skt As Sketch3D
         Dim cc As Integer = 1
 
@@ -481,11 +479,11 @@ Public Class Skeletons
         Return sc.StartSketchPoint.Geometry
     End Function
     Function GetInitialFace(ws As WorkSurface) As Face
-        Dim vc, vfc As Vector
-        Dim ptc, ptf As Point
-        Dim pl As Plane
+
+        Dim ptc As Point
+
         Dim min2, min1 As Double
-        Dim wp As WorkPoint
+
         Dim fmin1, fmin2 As Face
         Try
             ptc = doku.ComponentDefinition.WorkPoints.Item(1).Point
@@ -536,7 +534,7 @@ Public Class Skeletons
         Try
             Dim pr As Profile
             Dim ps As PlanarSketch
-            Dim sl As SketchLine
+
             sk3D = compDef.Sketches3D.Add
             ringLine = sk3D.SketchLines3D.AddByTwoPoints(compDef.WorkPoints.Item(1), wpt, False)
             Dim skpt As SketchPoint3D = sk3D.SketchPoints3D.Add(tg.CreatePoint(0, 0, 1))

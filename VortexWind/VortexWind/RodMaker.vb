@@ -212,7 +212,7 @@ Public Class RodMaker
         Dim rf As RevolveFeature = MakeSingleRod(fi)
         Dim d, e, dMin, eMin As Double
         Dim pro As Profile
-        Dim f1 As Face
+        Dim f1 As Face = fi
         Dim ef As ExtrudeFeature
         Try
             dMin = 9999
@@ -255,7 +255,7 @@ Public Class RodMaker
     End Function
     Function MakeBridge(f As Face) As ExtrudeFeature
         Dim wa As WorkAxis
-        Dim le As SketchLine3D
+
         Dim pro As Profile
         Try
             ' lamp.HighLighFace(f)
@@ -275,7 +275,7 @@ Public Class RodMaker
         Dim pt1, pt2, pt3, pt4, ptc As Point
         Dim ver1, ver2 As Vertex
         Dim l As Line
-        Dim c As Cylinder
+        Dim c As Cylinder = Nothing
         Dim fc As FaceCollection = app.TransientObjects.CreateFaceCollection
         Dim b As Boolean = False
         min1 = 99999999
@@ -477,7 +477,7 @@ Public Class RodMaker
         End Try
     End Function
     Function GetFarPoint() As SketchPoint3D
-        Dim ptMax2 As SketchPoint3D
+        Dim ptMax2 As SketchPoint3D = Nothing
         Dim d, dMax As Double
         dMax = 0
         Dim fpt As SketchPoint3D = arcPoints.Item(1)
@@ -503,20 +503,18 @@ Public Class RodMaker
             Dim ps As PlanarSketch
             Dim v As Vector
             Dim skpt3DStart As SketchPoint3D
-            Dim sp1, sp2, sp3, spc As SketchPoint
-            Dim le2d, l2d, l32d, mne As SketchLine
+            Dim sp1, sp2, spc As SketchPoint
+
             Dim skAxis As SketchLine3D
-            Dim gc, gccc As GeometricConstraint
-            Dim r As SketchEntitiesEnumerator
+
             Dim sa As SketchArc
-            Dim dc As DimensionConstraint
+
             Dim pro As Profile
             Dim pt3D As Point
             Dim d As Double = 0
-            Dim i As Integer
             Dim c As Cylinder
-            Dim pl As Plane
-            Dim dis As Double
+
+
             Dim b As Boolean
             c = f.Geometry
             sk3D.Visible = False
@@ -560,26 +558,26 @@ Public Class RodMaker
     Function DrawOvalSketch(fi As Face, fa As Face) As Profile
 
         Dim ps As PlanarSketch
-        Dim v1, v2, v3, v4 As Vector2d
+        Dim v1, v2, v3 As Vector2d
         Dim skpt3D, skpt2, skpt3, skpt1 As SketchPoint3D
-        Dim sp1, sp2, sp3, spc As SketchPoint
-        Dim l12d, l22d, l32d, mne, slme As SketchLine
+        Dim sp1, sp2, sp3 As SketchPoint
+        Dim l12d, l22d, slme As SketchLine
         Dim skpoints As ObjectCollection = app.TransientObjects.CreateObjectCollection
 
-        Dim gc, gccc As GeometricConstraint
-        Dim sen As SketchEntitiesEnumerator
-        Dim sa, saf As SketchArc
+        Dim gc As GeometricConstraint
+
+        Dim sa As SketchArc
 
         Dim dc As DimensionConstraint
         Dim pro As Profile
-        Dim pt3D As Point
+
         Dim pt2D As Point2d
         Dim d As Double = 0
-        Dim i As Integer
+
         Dim v As Vector
-        Dim pl As Plane
-        Dim dis As Double
-        Dim b As Boolean
+
+
+
         Dim skl As SketchLine3D
         Dim angle As Double
         Dim sa0 As SketchArc
@@ -732,12 +730,11 @@ Public Class RodMaker
         Try
             Dim wpl As WorkPlane
             Dim ps As PlanarSketch
-            Dim p1, p2, p3 As SketchPoint
+
             Dim le2d, cl2d, l32d, mne As SketchLine
             Dim gc, gccc As GeometricConstraint
-            Dim r As SketchEntitiesEnumerator
-            Dim dc As DimensionConstraint
-            Dim spt As SketchPoint
+
+
             Dim d As Double = 0
             Dim i As Integer
             Dim sken As SketchEntitiesEnumerator

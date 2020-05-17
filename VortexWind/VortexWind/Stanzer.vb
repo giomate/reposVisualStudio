@@ -24,8 +24,8 @@ Public Class Stanzer
     Public wp1, wp2, wp3, wpConverge As WorkPoint
     Public farPoint, point1, point2, point3, curvePoint, convergePoint As Point
     Dim tg As TransientGeometry
-    Dim gap1CM, thicknessCM As Double
-    Public partNumber, qNext, qLastTie As Integer
+    Dim gap1CM, thicknessCM, overLapping As Double
+    Public partNumber, qNext, qLastTie, nLetters As Integer
     Dim bandLines, constructionLines As ObjectCollection
     Dim comando As Commands
     Public nombrador As Nombres
@@ -58,7 +58,7 @@ Public Class Stanzer
     Dim bandFaces As WorkSurface
 
     Dim foldFeature As FoldFeature
-    Dim sections, esquinas, rails, caras, surfaceBodies As ObjectCollection
+    Dim sections, paths, rails, caras, surfaceBodies, affectedBodies As ObjectCollection
 
     Dim edgeColl As EdgeCollection
     Dim twistPlane As WorkPlane
@@ -89,17 +89,17 @@ Public Class Stanzer
         compDef = doku.ComponentDefinition
 
         features = doku.ComponentDefinition.Features
-
+        nLetters = 6
 
         tg = app.TransientGeometry
         bandLines = app.TransientObjects.CreateObjectCollection
         constructionLines = app.TransientObjects.CreateObjectCollection
         sections = app.TransientObjects.CreateObjectCollection
-        esquinas = app.TransientObjects.CreateObjectCollection
+        paths = app.TransientObjects.CreateObjectCollection
         rails = app.TransientObjects.CreateObjectCollection
         caras = app.TransientObjects.CreateObjectCollection
         surfaceBodies = app.TransientObjects.CreateObjectCollection
-
+        affectedBodies = app.TransientObjects.CreateObjectCollection
         lamp = New Highlithing(doku)
 
         gap1CM = 3 / 10
@@ -168,8 +168,9 @@ Public Class Stanzer
 
     Function GetRealNormal(f As Face, ws As WorkSurface) As Vector
         Dim v As Vector
-        Dim wpf, wpt, wptpf As WorkPoint
-        Dim pt As Point
+        Dim wpf, wptpf As WorkPoint
+        wptpf = Nothing
+        wpf = Nothing
         Dim pl, plw As Plane
         Try
             Try
@@ -288,10 +289,10 @@ Public Class Stanzer
             Dim maxArea1, maxArea2, maxArea3 As Double
             Dim sb As SurfaceBody
             Dim maxface1, maxface2, maxface3 As Face
-            Dim fc As FaceCollection
-            Dim b, b2 As Boolean
-            Dim d1, d2, aMax, eMax As Double
-            Dim v1, v2 As Vector
+
+            Dim b As Boolean
+            Dim aMax, eMax As Double
+
             features = doku.ComponentDefinition.Features
             sb = doku.ComponentDefinition.SurfaceBodies.Item(1)
             maxface1 = sb.Faces.Item(1)
@@ -423,7 +424,7 @@ Public Class Stanzer
             Dim maxArea1, maxArea2, maxArea3 As Double
             Dim sb As SurfaceBody
             Dim maxface1, maxface2, maxface3 As Face
-            Dim fc As FaceCollection
+
             Dim b, b2 As Boolean
             Dim d1, d2, aMax, eMax As Double
             Dim v1, v2 As Vector
@@ -569,7 +570,43 @@ Public Class Stanzer
 
             End If
             lamp.HighLighFace(f)
-            ef = ExtrudeLetter(SketchLetter(s, f, spt))
+            ef = ExtrudeLetterColumn(SketchLetter(s, f, spt), 1)
+
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+        Return ef
+    End Function
+    Public Function EmbossColumnLetter(q As Integer, f As Face, spti As SketchPoint3D, spto As SketchPoint3D, sb As Integer) As ExtrudeFeature
+        Dim ef As ExtrudeFeature
+        Dim s As String
+        Try
+            If spti.Geometry.Z > 0 Then
+                s = nombrador.ConvertQNumberLetter(q + 1)
+            Else
+                s = nombrador.ConvertQNumberLetter(q)
+
+            End If
+            lamp.HighLighFace(f)
+            ef = ExtrudeLetterColumn(SketchLetterColumn(s, f, spti, spto), sb)
+
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+        Return ef
+    End Function
+    Public Function ExtrudeFrameLetter(name As String, wpt As WorkPoint, skl As SketchLine3D) As ExtrudeFeature
+        Dim ef As ExtrudeFeature
+        Dim s As String
+        Dim q As Integer
+        Try
+            q = nombrador.GetQNumberString(name)
+            s = nombrador.ConvertQNumberLetter(q + 64 - 33)
+
+            ' lamp.HighLighObject(ed)
+            ef = ExtrudeLetter(SketchFrameLetter(s, skl, wpt))
 
         Catch ex As Exception
             MsgBox(ex.ToString())
@@ -580,7 +617,6 @@ Public Class Stanzer
     Function SketchNumber(q As Integer) As Profile
         Dim oProfile As Profile
 
-        Dim a, b As Double
         Try
             Dim wpt As WorkPoint
             wpt = doku.ComponentDefinition.WorkPoints.AddAtCentroid(GetWorkFace().EdgeLoops.Item(1))
@@ -614,10 +650,7 @@ Public Class Stanzer
             reflex = oSketch.TextBoxes.AddFitted(ptBox, sText, oStyle)
             reflex.Rotation = Math.PI
 
-
             ' oTextBox.Rotation = Math.PI
-
-
 
             Dim oPaths As ObjectCollection
             oPaths = app.TransientObjects.CreateObjectCollection
@@ -635,14 +668,89 @@ Public Class Stanzer
 
         Return oProfile
     End Function
+    Function SketchFrameLetter(s As String, skli As SketchLine3D, wpt As WorkPoint) As Profile
+        Dim oProfile As Profile
+        Dim w, h As Double
+
+        Try
+
+            Dim spt, sptw As SketchPoint
+            Dim skl As SketchLine
+            Dim ps As PlanarSketch
+
+            sk3D = compDef.Sketches3D.Add
+            Dim skpt As SketchPoint3D = sk3D.SketchPoints3D.Add(wpt.Point)
+            Dim sklp As SketchLine3D = sk3D.SketchLines3D.AddByTwoPoints(skli.Geometry.MidPoint, wpt)
+            sklp.Construction = True
+            Dim gc As GeometricConstraint3D = sk3D.GeometricConstraints3D.AddCoincident(sklp.StartPoint, skli)
+            gc = sk3D.GeometricConstraints3D.AddPerpendicular(skli, sklp)
+            Dim wpl As WorkPlane = compDef.WorkPlanes.AddByThreePoints(skli.StartPoint, skli.EndPoint, wpt)
+            ps = doku.ComponentDefinition.Sketches.Add(wpl)
+            lamp.LookAtPlane(wpl)
+            spt = ps.AddByProjectingEntity(sklp.StartPoint)
+            sptw = ps.AddByProjectingEntity(skpt)
+
+            skl = ps.AddByProjectingEntity(skli)
+            skl.Construction = True
+            Dim oTextBox As TextBox
+            Dim oStyle As TextStyle
+            Dim sText As String
+            sText = s
+
+            oTextBox = ps.TextBoxes.AddFitted(spt.Geometry, sText)
+            oStyle = ps.TextBoxes.Item(1).Style
+            oTextBox.Delete()
+            oStyle.FontSize = sklp.Length
+            oStyle.Bold = True
+            doku.Update2(True)
+            Dim ptBox As Point2d
+            ptBox = tg.CreatePoint2d(spt.Geometry.X - oStyle.FontSize / 4, -0.5 / 10)
+            oTextBox = ps.TextBoxes.AddFitted(ptBox, sText, oStyle)
+            w = oTextBox.Width
+            h = oTextBox.Height
+
+            oTextBox.Origin = tg.CreatePoint2d(spt.Geometry.X - w / 2, 0)
+            doku.Update2(True)
+            Dim reflex As TextBox
+            ptBox = tg.CreatePoint2d(spt.Geometry.X - w / 2, h)
+            reflex = ps.TextBoxes.AddFitted(ptBox, sText, oStyle)
+
+
+
+            ' oTextBox.Rotation = Math.PI
+
+
+
+            Dim oPaths As ObjectCollection
+            oPaths = app.TransientObjects.CreateObjectCollection
+
+            If oTextBox.Origin.DistanceTo(sptw.Geometry) < reflex.Origin.DistanceTo(sptw.Geometry) Then
+                oPaths.Add(oTextBox)
+            Else
+                oPaths.Add(reflex)
+            End If
+
+
+
+
+            oProfile = ps.Profiles.AddForSolid(False, oPaths)
+            wpl.Visible = False
+            ps.Visible = False
+            sk3D.Visible = False
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+        Return oProfile
+    End Function
     Function SketchLetter(s As String, f As Face, spti As SketchPoint3D) As Profile
         Dim oProfile As Profile
 
 
-        Dim a, b, d, w, h As Double
+        Dim d, w, h As Double
         Dim natural As Boolean
-        Dim pt2d As Point2d
-        Dim v2d As Vector2d
+
         Try
 
             Dim spt As SketchPoint
@@ -651,7 +759,6 @@ Public Class Stanzer
             Dim v, vy, ve As Vector
             Dim pl As Plane = f.Geometry
 
-            Dim l As Line
             Dim edMax As Edge
             edMax = GetOuterEdge(f, spti.Geometry)
             ve = edMax.StartVertex.Point.VectorTo(edMax.StopVertex.Point)
@@ -704,7 +811,7 @@ Public Class Stanzer
             oPaths.Add(reflex)
 
 
-            oProfile = oSketch.Profiles.AddForSolid(False, oPaths)
+            oProfile = oSketch.Profiles.AddForSolid(True, oPaths)
 
 
         Catch ex As Exception
@@ -714,8 +821,113 @@ Public Class Stanzer
 
         Return oProfile
     End Function
+    Function SketchLetterColumn(s As String, f As Face, skpti As SketchPoint3D, spto As SketchPoint3D) As Profile
+        Dim oProfile As Profile
+
+
+        Dim w, h As Double
+
+        Dim oTextBox As TextBox
+        Dim oStyle As TextStyle
+        Dim sText As String
+        Dim z, zMax As Double
+        zMax = 3 / 10
+        Try
+            overLapping = 0.3
+            Dim spt, spt2 As SketchPoint
+            Dim skl As SketchLine
+            Dim ps As PlanarSketch
+            Dim v As Vector
+            Dim pl As Plane = f.Geometry
+
+
+            Dim edMax As Edge
+            edMax = GetOuterEdge(f, skpti.Geometry)
+
+            ps = doku.ComponentDefinition.Sketches.AddWithOrientation(f, edMax, True, True, edMax.StartVertex,)
+            spt = ps.AddByProjectingEntity(skpti)
+            spt2 = ps.AddByProjectingEntity(spto)
+            v = skpti.Geometry.VectorTo(spto.Geometry)
+            skl = ps.AddByProjectingEntity(edMax)
+            skl.Construction = True
+            sText = s
+
+            oTextBox = ps.TextBoxes.AddFitted(spt.Geometry, sText)
+            oStyle = ps.TextBoxes.Item(1).Style
+            oTextBox.Delete()
+            z = (v.Length / nLetters) * (1 + overLapping)
+            If z > zMax Then
+                oStyle.FontSize = z
+            Else
+                z = zMax * (1 - Math.Exp(-12 * (z) / (1 * zMax))) / 1
+                If z > zMax Then
+                    z = zMax
+                End If
+                oStyle.FontSize = z
+            End If
+
+            oStyle.Bold = True
+            doku.Update2(True)
+            Dim ptBox As Point2d
+            ptBox = tg.CreatePoint2d(spt.Geometry.X - oStyle.FontSize / 4, -6 / 10)
+            oTextBox = ps.TextBoxes.AddFitted(ptBox, sText, oStyle)
+            w = oTextBox.Width
+            h = oTextBox.Height
+
+            oTextBox.Origin = tg.CreatePoint2d(spt.Geometry.X - w / 2, -6 / 10)
+            doku.Update2(True)
+            Dim reflex As TextBox
+            ptBox = tg.CreatePoint2d(spt.Geometry.X - w / 2, 0.5 / 10 + h)
+            reflex = ps.TextBoxes.AddFitted(ptBox, sText, oStyle)
+
+
+
+            ' oTextBox.Rotation = Math.PI
+
+
+
+
+            paths.Clear()
+
+            If oTextBox.Origin.DistanceTo(spt2.Geometry) < reflex.Origin.DistanceTo(spt2.Geometry) Then
+                reflex.Delete()
+                'paths.Add(oTextBox)
+                DrawColumnLetters(ps, oTextBox, spt, spt2, s)
+                oTextBox.Delete()
+            Else
+                oTextBox.Delete()
+                'paths.Add(reflex)
+                DrawColumnLetters(ps, reflex, spt, spt2, s)
+                reflex.Delete()
+            End If
+            oProfile = ps.Profiles.AddForSolid(False, paths)
+            Return oProfile
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+    End Function
+    Function DrawColumnLetters(ps As PlanarSketch, tbi As TextBox, spti As SketchPoint, spto As SketchPoint, s As String) As TextBox
+        Dim v As Vector2d = spti.Geometry.VectorTo(spto.Geometry)
+        v.Normalize()
+        Dim tb As TextBox = tbi
+        Dim pt As Point2d = tbi.Origin
+        Dim w, h As Double
+        w = tbi.Width
+        h = tbi.Height
+        v.ScaleBy(h / (1 + overLapping))
+        For i = 1 To nLetters - 1
+            pt.TranslateBy(v)
+            tb = ps.TextBoxes.AddFitted(pt, s, tbi.Style)
+            paths.Add(tb)
+        Next
+        Return tb
+    End Function
+
     Function GetClosestVertexFace(f As Face, spt As SketchPoint3D) As Vertex
-        Dim cv As Vertex
+        Dim cv As Vertex = Nothing
         Dim d, dMin As Double
         dMin = 999999
         Try
@@ -835,7 +1047,7 @@ Public Class Stanzer
         Dim e1, e2, e3 As Edge
         Dim mine1, mine2, mine3, d, e As Double
         Dim ve, vc As Vector
-        Dim pt1, pt2, pt3 As Point
+        Dim pt1 As Point
         Dim ls As LineSegment
         mine1 = 99999
         mine2 = 9999999
@@ -884,9 +1096,9 @@ Public Class Stanzer
     Function GetOuterEdge(f As Face, pti As Point) As Edge
         Dim e1, e2, e3 As Edge
         Dim mine1, mine2, mine3, d, e, dis, dMin As Double
-        Dim ve, vc As Vector
-        Dim pt1, pt2, pt3 As Point
-        Dim ls As LineSegment
+
+        Dim pt1 As Point
+
         mine1 = 99999
         mine2 = 9999999
         mine3 = 999999
@@ -900,8 +1112,8 @@ Public Class Stanzer
         For Each ed As Edge In f.Edges
             dis = ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point)
             If dis > dMin / 2 Then
-
                 d = ed.GetClosestPointTo(pti).DistanceTo(pti)
+
                 If Math.Abs(d - e) < 1 / 10 Then
 
                     If d < mine2 Then
@@ -934,6 +1146,10 @@ Public Class Stanzer
         outerEdge = e1
         Return e1
     End Function
+    Function TorusRadius(pt As Point) As Double
+
+        Return Math.Pow(Math.Pow(Math.Pow(Math.Pow(pt.X, 2) + Math.Pow(pt.Y, 2), 1 / 2) - 50 / 10, 2) + Math.Pow(pt.Z, 2), 1 / 2)
+    End Function
     Function ExtrudeNumber(pro As Profile) As ExtrudeFeature
         Dim oExtrudeDef As ExtrudeDefinition
         oExtrudeDef = doku.ComponentDefinition.Features.ExtrudeFeatures.CreateExtrudeDefinition(pro, PartFeatureOperationEnum.kCutOperation)
@@ -949,8 +1165,8 @@ Public Class Stanzer
     Function ExtrudeLetter(pro As Profile) As ExtrudeFeature
         Dim oExtrudeDef As ExtrudeDefinition
         Try
-            oExtrudeDef = doku.ComponentDefinition.Features.ExtrudeFeatures.CreateExtrudeDefinition(pro, PartFeatureOperationEnum.kCutOperation)
-            oExtrudeDef.SetDistanceExtent(6 / 10, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
+            oExtrudeDef = doku.ComponentDefinition.Features.ExtrudeFeatures.CreateExtrudeDefinition(pro, PartFeatureOperationEnum.kJoinOperation)
+            oExtrudeDef.SetDistanceExtent(3 / 10, PartFeatureExtentDirectionEnum.kSymmetricExtentDirection)
             'oExtrudeDef.SetDistanceExtent(0.12, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
             Dim oExtrude As ExtrudeFeature
             oExtrude = doku.ComponentDefinition.Features.ExtrudeFeatures.Add(oExtrudeDef)
@@ -959,10 +1175,69 @@ Public Class Stanzer
             MsgBox(ex.ToString())
             Return Nothing
         End Try
+    End Function
+    Function ExtrudeLetterColumn(pro As Profile, sb As Integer) As ExtrudeFeature
+        Dim ed As ExtrudeDefinition
+        Dim ef As ExtrudeFeature
+        Try
+            affectedBodies.Clear()
+            ed = doku.ComponentDefinition.Features.ExtrudeFeatures.CreateExtrudeDefinition(pro, PartFeatureOperationEnum.kJoinOperation)
+            ed.SetDistanceExtent(2 / 10, PartFeatureExtentDirectionEnum.kPositiveExtentDirection)
+            affectedBodies.Add(compDef.SurfaceBodies(sb))
+            ed.AffectedBodies = affectedBodies
+            'oExtrudeDef.SetDistanceExtent(0.12, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
+
+            ef = doku.ComponentDefinition.Features.ExtrudeFeatures.Add(ed)
+            Return ef
+        Catch ex As Exception
+
+            Try
+                ef = ExtrudeLetterIndependant(pro, sb)
 
 
+            Catch ex2 As Exception
+                MsgBox(ex.ToString())
+                Return Nothing
+            End Try
+
+        End Try
+    End Function
+    Function ExtrudeLetterIndependant(pro As Profile, sb As Integer) As ExtrudeFeature
+        Dim ed As ExtrudeDefinition
+        Dim ef As ExtrudeFeature = Nothing
+        Dim proBox As Profile
+        Try
+            Dim sk As Sketch = pro.Parent
+            Dim ps As PlanarSketch = sk
+            Dim tb As TextBox = ps.TextBoxes(1)
+            affectedBodies.Clear()
+            affectedBodies.Add(compDef.SurfaceBodies(sb))
+            pro.MergeFaces = False
+            For i = 1 To ps.TextBoxes.Count
+                paths.Clear()
+                paths.Add(ps.TextBoxes(i))
+                proBox = ps.Profiles.AddForSolid(False, paths)
+                ed = compDef.Features.ExtrudeFeatures.CreateExtrudeDefinition(proBox, PartFeatureOperationEnum.kJoinOperation)
+                ed.SetDistanceExtent(2 / 10, PartFeatureExtentDirectionEnum.kPositiveExtentDirection)
+                ed.AffectedBodies = affectedBodies
+                'oExtrudeDef.SetDistanceExtent(0.12, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
+
+                Try
+                    ef = doku.ComponentDefinition.Features.ExtrudeFeatures.Add(ed)
+                    If Not monitor.IsFeatureHealthy(ef) Then
+                        ef.Delete()
+                    End If
+                Catch ex As Exception
 
 
+                End Try
+
+            Next
+            Return ef
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
 
     End Function
     Function RemoveFakeMaterial(f As Face, wpt As WorkPoint) As ExtrudeFeature
@@ -1133,7 +1408,7 @@ Public Class Stanzer
         Return pt
     End Function
     Function CombineBodies() As CombineFeature
-        Dim cf As CombineFeature
+        Dim cf As CombineFeature = Nothing
         If doku.ComponentDefinition.SurfaceBodies.Count > 1 Then
             surfaceBodies.Clear()
 
@@ -1154,7 +1429,7 @@ Public Class Stanzer
         Return cf
     End Function
     Function CombineBodiesDuo() As CombineFeature
-        Dim cf As CombineFeature
+        Dim cf As CombineFeature = Nothing
         Dim imax, limit, k, j, l As Integer
         l = doku.ComponentDefinition.SurfaceBodies.Count
         limit = 0
@@ -1365,11 +1640,11 @@ Public Class Stanzer
     End Function
 
     Function LoftFaces(ws As WorkSurface) As Integer
-        Dim vc, vfc As Vector
-        Dim ptc, ptf As Point
-        Dim pl As Plane
+
+        Dim ptc As Point
+
         Dim min2, min1 As Double
-        Dim wp As WorkPoint
+
         Dim fmin1, fmin2 As Face
         Try
             ptc = doku.ComponentDefinition.WorkPoints.Item(1).Point
@@ -1469,8 +1744,7 @@ Public Class Stanzer
     Function MakeSpike(fc As Face) As LoftFeature
         sections.Clear()
         Dim pr As Profile = GetSpikeProfile(fc)
-        Dim ps As PlanarSketch
-        Dim spt2d As SketchPoint
+
         sk3D = doku.ComponentDefinition.Sketches3D.Add()
         Dim ed As Edge = GetClosestEdge(fc)
         'GetRails(fc)
@@ -1495,7 +1769,7 @@ Public Class Stanzer
         Dim ver1, ver2 As Vertex
         Dim ws As WorkSurface = compDef.WorkSurfaces.Item(1)
         Dim sb As SurfaceBody = ws.SurfaceBodies.Item(1)
-        Dim vnpl, vnfi, v As Vector
+        Dim vnpl, vnfi As Vector
         Dim d, e, eMin, dMin1, dMin2, dis As Double
         Dim pt1, pt2, pt3 As Point
         Dim ls As LineSegment
@@ -1597,7 +1871,7 @@ Public Class Stanzer
             Dim pt As Point = doku.ComponentDefinition.WorkPoints.Item(1).Point
             Dim d As Double = 999999999
 
-            Dim pr3d As Profile3D
+            Dim pr3d As Profile3D = Nothing
             rails.Clear()
 
             For Each v As Vertex In fc.Vertices

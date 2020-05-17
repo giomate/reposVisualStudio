@@ -105,7 +105,7 @@ Public Class Konditor
     End Function
     Public Function MakeWedgesCake(i As Integer) As PartDocument
         Dim p As String = projectManager.ActiveDesignProject.WorkspacePath
-        Dim q As Integer
+
         Dim nd As String
         nd = String.Concat(p, "\Iteration", i.ToString)
 
@@ -149,7 +149,7 @@ Public Class Konditor
         Return doku
     End Function
     Function CombineBodies() As CombineFeature
-        Dim cf As CombineFeature
+        Dim cf As CombineFeature = Nothing
         If doku.ComponentDefinition.SurfaceBodies.Count > 1 Then
             SurfaceBodies.Clear()
 
@@ -189,7 +189,7 @@ Public Class Konditor
         Dim skpl As PlanarSketch
         Dim l, cl As SketchLine
         Dim spt1, spt2, spt3 As SketchPoint
-        Dim pt1, pt2, pt3 As Point2d
+
         Dim a, b, c, d, e As SketchArc
         Dim dc As DimensionConstraint
         Dim gc As GeometricConstraint

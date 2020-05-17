@@ -55,7 +55,7 @@ Public Class ExcelInterface
     End Function
     Public Function ReadArray(ByRef tans() As Long, ByRef rods() As Long, n As Integer) As Integer
         Try
-            Dim r As Range
+            'Dim r As Range
 
 
 

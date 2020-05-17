@@ -129,8 +129,9 @@ Public Class Nombres
         Dim c As Char
         Dim m As Integer
         Dim s As String
-        Math.DivRem(q, 94, m)
-        c = ChrW(m + 33)
+        Math.DivRem(q, 27, m)
+        m += 1
+        c = ChrW(m + 63)
         s = c.ToString
         Return s
     End Function
@@ -161,7 +162,7 @@ Public Class Nombres
         Return CInt(s(1))
     End Function
     Public Function GetFeatureNumber(f As FoldFeature) As Integer
-        Dim s(), sn As String
+        Dim s() As String
         Dim i As Integer = 0
 
         If Contain_F_First(f.Name) Then
@@ -217,7 +218,7 @@ Public Class Nombres
     Public Function MakeBandFileName(ffn As String) As String
         Dim s(), sn As String
 
-        Dim bn As String
+        Dim bn As String = ffn
         If ffn.Contains("Skeleton") Then
             bn = "Skeleton"
         ElseIf ffn.Contains("Rib") Then
@@ -231,7 +232,7 @@ Public Class Nombres
     Public Function MakeRibFileName(ffn As String) As String
         Dim s(), sn As String
 
-        Dim bn As String
+        Dim bn As String = ffn
         If ffn.Contains("Skeleton") Then
             bn = "Skeleton"
         ElseIf ffn.Contains("Band") Then

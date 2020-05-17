@@ -80,13 +80,13 @@
   <ItemGroup>
     <Compile Include="Commands.vb" />
     <Compile Include="Curves3D.vb" />
+    <Compile Include="DesignMonitoring.vb" />
     <Compile Include="Highlithing.vb" />
     <Compile Include="Nombres.vb" />
     <Compile Include="RodMaker.vb" />
     <Compile Include="Skeletons.vb" />
     <Compile Include="SketchAdjust.vb" />
     <Compile Include="Conversions.vb" />
-    <Compile Include="DesignMonitoring.vb" />
     <Compile Include="ExcelInterface.vb" />
     <Compile Include="Form1.vb">
       <SubType>Form</SubType>
@@ -112,11 +112,11 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="Stanzer.vb" />
     <Compile Include="SubinaStruct.vb" />
     <Compile Include="Surfacer.vb" />
     <Compile Include="Sweeper.vb" />
     <Compile Include="VortexRod.vb" />
-    <Compile Include="Stanzer.vb" />
     <Compile Include="Wedges.vb" />
   </ItemGroup>
   <ItemGroup>
