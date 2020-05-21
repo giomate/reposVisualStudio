@@ -97,7 +97,7 @@ Public Class InitSketcher
         If sk3D.SketchLines3D.Count > 0 Then
 
             DrawLines()
-            If AdjustlastAngle() Then
+            If AdjustlastAngle().Parameter._Value > gapFoldCM * 4 Then
                 point1 = firstLine.StartSketchPoint.Geometry
                 point2 = firstLine.EndSketchPoint.Geometry
                 point3 = secondLine.EndSketchPoint.Geometry
@@ -144,7 +144,7 @@ Public Class InitSketcher
     Public Function DrawMainSketch(refDoc As FindReferenceLine, q As Integer) As Sketch3D
 
         Dim s As String
-
+        Dim ac As DimensionConstraint3D
 
         refLine = refDoc.GetKeyLine()
         kanteLine = refDoc.GetKanteLine()
@@ -159,13 +159,19 @@ Public Class InitSketcher
                 point1 = firstLine.StartSketchPoint.Geometry
                 point2 = firstLine.EndSketchPoint.Geometry
                 point3 = secondLine.EndSketchPoint.Geometry
-                If AdjustlastAngle() Then
-                    done = 1
+                ac = AdjustlastAngle()
+                If gapFold.Parameter._Value > gapFoldCM * 2 Then
+                    CorrectLastAngle(ac)
+                End If
+                If gapFold.Parameter._Value > gapFoldCM * 4 Then
+                    Return sk3D
+                Else
+                    Return Nothing
                 End If
             End If
         End If
+        Return Nothing
 
-        Return sk3D
     End Function
     Function DrawReferenceCurve(sk As Sketch3D) As SketchEquationCurve3D
 
@@ -850,7 +856,7 @@ Public Class InitSketcher
         End Try
     End Function
 
-    Function AdjustlastAngle() As Boolean
+    Function AdjustlastAngle() As DimensionConstraint3D
         Try
             Dim fourLine, sixthLine, cl2, cl3, bl5 As SketchLine3D
 
@@ -981,15 +987,42 @@ Public Class InitSketcher
                     b = True
                 End Try
             End If
+            ac.Driven = True
 
 
 
-
-            Return b
+            Return dc
         Catch ex As Exception
             MsgBox(ex.ToString())
             Return Nothing
         End Try
+    End Function
+    Function CorrectLastAngle(aci As DimensionConstraint3D) As DimensionConstraint3D
+        Dim bl6, bl4 As SketchLine3D
+        Dim dc As DimensionConstraint3D
+        Try
+            bl4 = bandLines(4)
+            bl6 = bandLines(6)
+            dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(bl4.EndPoint, bl6.EndPoint)
+            dc.Driven = True
+            If gapFold.Parameter._Value > gapFoldCM * 2 Then
+                For i = 1 To 16
+                    gapFold.Driven = True
+                    aci.Driven = False
+                    adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 15 / 16)
+                    If (gapFold.Parameter._Value < gapFoldCM) Or (dc.Parameter._Value < gapFoldCM / 2) Then
+                        Exit For
+                    End If
+
+                Next
+            End If
+            Return gapFold
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
     End Function
     Function CalculateRoof() As Double
         Dim fourLine, sixthLine, cl3, cl2 As SketchLine3D

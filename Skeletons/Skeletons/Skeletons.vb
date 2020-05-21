@@ -149,9 +149,9 @@ Public Class Skeletons
                                 comando.RealisticView(doku)
                                 If monitor.IsFeatureHealthy(RemoveExcessMaterial(s)) Then
                                     comando.RealisticView(doku)
-                                    If monitor.IsFeatureHealthy(MakeTwoHoles()) Then
-                                        comando.RealisticView(doku)
-                                        If compDef.SurfaceBodies(1).FaceShells.Count > 1 Then
+                                    ' If monitor.IsFeatureHealthy(MakeTwoHoles()) Then
+                                    '  comando.RealisticView(doku)
+                                    If compDef.SurfaceBodies(1).FaceShells.Count > 1 Then
                                             n = barrido.CutSmallBodies()
                                         Else
                                             n = 1
@@ -165,7 +165,7 @@ Public Class Skeletons
                                             Return Nothing
                                         End If
 
-                                    End If
+                                    '  End If
                                 End If
                             End If
                         Else
@@ -394,7 +394,7 @@ Public Class Skeletons
             For Each sb As SurfaceBody In tangentSurfaces.SurfaceBodies
                 For Each f As Face In sb.Faces
                     If f.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
-                        ' lamp.HighLighFace(fc.Item(i))
+                        'lamp.HighLighFace(fc.Item(i))
                         If monitor.IsFeatureHealthy(palitos.ExtrudeEgg(f)) Then
                             lamp.FitView(doku)
                             If palitos.smallOval Then

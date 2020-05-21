@@ -272,7 +272,7 @@ Public Class Sweeper
         Next
         Return fsMax
     End Function
-    Function DocUpdate(docu As PartDocument) As PartDocument
+    Public Function DocUpdate(docu As PartDocument) As PartDocument
         doku = docu
 
         compDef = doku.ComponentDefinition
@@ -323,8 +323,26 @@ Public Class Sweeper
                                     DocUpdate(doku)
                                 End If
                             Else
-                                MsgBox(sf.ToString)
-                                Return Nothing
+                                fs = doku.ComponentDefinition.SurfaceBodies(1).FaceShells(k)
+                                If fs.IsVoid Then
+                                    sf.Delete(True, True, True)
+                                    sf = SculptAdd(ws)
+                                    If monitor.IsFeatureHealthy(sf) Then
+                                        doku.Update2(True)
+                                        nFaceShells = doku.ComponentDefinition.SurfaceBodies(1).FaceShells.Count
+                                        If nFaceShells < 2 Then
+                                            Exit For
+                                        Else
+                                            k = 1
+                                            DocUpdate(doku)
+                                        End If
+                                    Else
+                                        MsgBox(sf.ToString)
+                                        Return Nothing
+
+                                    End If
+                                End If
+
                             End If
 
                         End If
@@ -376,6 +394,30 @@ Public Class Sweeper
             surfacesScuplt.Add(ss)
             Try
                 sf = compDef.Features.SculptFeatures.Add(surfacesScuplt, PartFeatureOperationEnum.kCutOperation)
+            Catch ex As Exception
+                sf = CorrectSculpt(ss)
+            End Try
+            If monitor.IsFeatureHealthy(sf) Then
+                CombineBodies()
+            End If
+
+            Return sf
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+    End Function
+    Function SculptAdd(wsi As WorkSurface) As SculptFeature
+        Dim sf As SculptFeature
+        Dim ss As SculptSurface
+
+        Try
+            surfacesScuplt.Clear()
+            ss = compDef.Features.SculptFeatures.CreateSculptSurface(wsi, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
+            surfacesScuplt.Add(ss)
+            Try
+                sf = compDef.Features.SculptFeatures.Add(surfacesScuplt, PartFeatureOperationEnum.kJoinOperation)
             Catch ex As Exception
                 sf = CorrectSculpt(ss)
             End Try

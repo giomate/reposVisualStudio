@@ -19,7 +19,7 @@ Public Class Curves3D
     Public Cr As Double
     Public Sub New(docu As Inventor.Document)
         oDoc = docu
-        DP.Dmax = 200
+        DP.Dmax = 171 * 200 / 194
         DP.Dmin = 1
         Tr = (DP.Dmax + DP.Dmin) / 4
         Cr = (DP.Dmax - DP.Dmin) / 4

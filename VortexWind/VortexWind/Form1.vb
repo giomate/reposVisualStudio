@@ -56,7 +56,7 @@ Public Class Form1
     Private Sub Form1_Activated(sender As Object, e As EventArgs) Handles Me.Activated
         Try
 
-            'done = ContinueWiring()
+            ' done = ContinueStamping()
             done = StampGuides()
 
             If done Then
@@ -118,7 +118,7 @@ Public Class Form1
         End Try
 
     End Function
-    Public Function ContinueWiring() As Boolean
+    Public Function ContinueStamping() As Boolean
 
         Dim b As Boolean
         Try
@@ -129,12 +129,12 @@ Public Class Form1
                 '  ffn = String.Concat(p, "\Iteration6\Sabina.ipt")
                 invDoc = New InventorFile(oApp)
                 ' ref = invDoc.OpenFullFileName(ffn)
-                ffn = String.Concat(p, "\Iteration6\Sabina2.ipt")
+                ffn = String.Concat(p, "\Iteration6\Subina2.ipt")
 
                 oDoc = invDoc.OpenFullFileName(ffn)
                 vortice = New VortexRod(oDoc)
                 monitor = New DesignMonitoring(vortice.doku)
-                If monitor.IsFeatureHealthy(vortice.ResumeWiresGuides(vortice.doku)) Then
+                If monitor.IsFeatureHealthy(vortice.ResumeStampLetters(vortice.doku)) Then
                     b = vortice.done
                 End If
 

@@ -5,7 +5,7 @@ Public Class STLfileGenerator
     Public doku As PartDocument
     Public projectManager As DesignProjectManager
     Dim app As Application
-
+    Dim sk3D As Sketch3D
     Public done, healthy As Boolean
 
     Dim monitor As DesignMonitoring
@@ -102,7 +102,7 @@ Public Class STLfileGenerator
     End Sub
 
     Public Function MakeAllSTLFiles(doc As PartDocument) As DataMedium
-        Dim s As String
+        Dim s1, s2 As String
         Dim dm As DataMedium
         Dim dpc As DerivedPartComponent
         Dim n As Integer
@@ -110,34 +110,151 @@ Public Class STLfileGenerator
 
             doku = DocUpdate(doc)
             sabinaName = doku.FullFileName
+            s1 = projectManager.ActiveDesignProject.WorkspacePath
             doku.Close(True)
             If CheckSTLAddIn() Then
                 For i = 1 To DP.q
-                    dpc = ImportSingleSkeleton(i)
-                    If monitor.IsDerivedPartHealthy(dpc) Then
-                        If compDef.SurfaceBodies(1).FaceShells.Count > 1 Then
-                            n = barrido.CutSmallBodies()
-                        Else
-                            n = 1
+                    s2 = String.Concat(s1, "\Iteration8\stl", i.ToString, ".stl")
+                    If System.IO.File.Exists(s2) Then
+                        done = True
+                    Else
+                        dpc = ImportSingleSkeleton(i)
+                        If monitor.IsDerivedPartHealthy(dpc) Then
+                            If compDef.SurfaceBodies(1).FaceShells.Count > 1 Then
+                                doku = barrido.DocUpdate(doku)
+                                n = barrido.CutSmallBodies()
+                            Else
+                                n = 1
+                            End If
+                            If n = 1 Then
+                                If AlignBody() > Math.PI / 2 - 1 / 128 Then
+                                    dm = MakeSingleSTL(dpc)
+                                    If dm.MediumType = MediumTypeEnum.kDataObjectMedium Then
+                                        done = True
+                                        doku.Close(True)
+                                    Else
+                                        done = False
+                                        Exit For
+                                    End If
+                                End If
+                            End If
+
+
                         End If
-                        dm = MakeSingleSTL(dpc)
-                        If dm.MediumType = MediumTypeEnum.kDataObjectMedium Then
-                            done = True
-                            doku.Close(True)
-                        Else
-                            done = False
-                            Exit For
-                        End If
+
                     End If
+
                 Next
             Else
                 Return Nothing
             End If
             Return dm
         Catch ex As Exception
-
+            MsgBox(ex.ToString())
+            Return Nothing
         End Try
 
+
+    End Function
+    Function AlignBody() As Double
+        Dim vBox, vr, v1, v2, v3 As Vector
+        Dim oMoveFeature As MoveFeature
+        Dim oRotateAboutAxis As RotateAboutLineMoveOperation
+        Dim oMoveDef As MoveDefinition
+        Dim wa As WorkAxis
+        Dim angle, d As Double
+        Dim spt1, spt2 As SketchPoint3D
+        Dim skl As SketchLine3D
+        Try
+            Dim sb As SurfaceBody = compDef.SurfaceBodies(1)
+            Dim ptMin, ptMax As Point
+            ptMin = MoveBodyAtCenter(sb)
+            sk3D = compDef.Sketches3D.Add
+            Dim vz As Vector = tg.CreateVector(0, 0, 1)
+
+            lamp.FitView(doku)
+
+            For i = 1 To 32
+                sb = compDef.SurfaceBodies(1)
+                v1 = sb.OrientedMinimumRangeBox.DirectionOne
+                v2 = sb.OrientedMinimumRangeBox.DirectionTwo
+                v3 = sb.OrientedMinimumRangeBox.DirectionThree
+                surfaceBodies.Clear()
+                surfaceBodies.Add(sb)
+                oMoveDef = compDef.Features.MoveFeatures.CreateMoveDefinition(surfaceBodies)
+                If v1.Length > v2.Length Then
+                    If v1.Length > v3.Length Then
+                        vBox = v1
+                    Else
+                        vBox = v3
+
+                    End If
+                Else
+                    If v2.Length > v3.Length Then
+                        vBox = v2
+                    Else
+                        vBox = v3
+                    End If
+
+                End If
+                ' vBox = v1
+                '  vBox.AddVector(v2)
+                ' vBox.AddVector(v3)
+                ptMin = sb.OrientedMinimumRangeBox.CornerPoint
+                spt1 = sk3D.SketchPoints3D.Add(ptMin)
+                ptMax = ptMin
+                ptMax.TranslateBy(vBox)
+                spt2 = sk3D.SketchPoints3D.Add(ptMax)
+                skl = sk3D.SketchLines3D.AddByTwoPoints(spt1, spt2, False)
+
+                vr = vz.CrossProduct(vBox)
+                wa = compDef.WorkAxes.AddFixed(compDef.WorkPoints(1).Point, vr.AsUnitVector)
+                wa.Visible = False
+                angle = vz.AngleTo(vBox)
+                d = Math.Abs(vz.DotProduct(vBox))
+                If d > 1 / 32 Then
+                    oRotateAboutAxis = oMoveDef.AddRotateAboutAxis(wa, True, (Math.PI / 2 - angle) / 2)
+
+                    oMoveFeature = compDef.Features.MoveFeatures.Add(oMoveDef)
+                    doku.Update2(True)
+                    DocUpdate(doku)
+                Else
+                    Exit For
+                End If
+                skl.Construction = True
+            Next
+            sk3D.Visible = False
+            doku.Update2(True)
+            Return angle
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+    End Function
+    Function MoveBodyAtCenter(sb As SurfaceBody) As Point
+        Dim oMoveDef As MoveDefinition
+        Try
+            Dim ptMin, ptMax As Point
+            ptMin = sb.RangeBox.MinPoint
+            ptMax = sb.RangeBox.MaxPoint
+            Dim ls As LineSegment = tg.CreateLineSegment(ptMin, ptMax)
+            surfaceBodies.Clear()
+            surfaceBodies.Add(sb)
+            oMoveDef = compDef.Features.MoveFeatures.CreateMoveDefinition(surfaceBodies)
+            Dim oFreeDrag As FreeDragMoveOperation
+            oFreeDrag = oMoveDef.AddFreeDrag(-ls.MidPoint.X, ls.MidPoint.Y, ls.MidPoint.Z)
+            Dim oMoveFeature As MoveFeature
+            oMoveFeature = compDef.Features.MoveFeatures.Add(oMoveDef)
+            doku.Update2(True)
+            DocUpdate(doku)
+            sb = compDef.SurfaceBodies(1)
+            Return sb.RangeBox.MinPoint
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
 
     End Function
     Function MakeSingleSTL(dpc As DerivedPartComponent) As DataMedium
@@ -154,7 +271,8 @@ Public Class STLfileGenerator
             oOptions = app.TransientObjects.CreateNameValueMap
             'Configure options and write out
             If stlTranslator.HasSaveCopyAsOptions(app.ActiveDocument, oContext, oOptions) Then
-                'oOptions.Value("ExportUnits") = 1   'Inch	'Based off of index in combo box in STL Export Dialog
+                oOptions.Value("Units") = 4   'Inch	'Based off of index in combo box in STL Export Dialog
+                ' oOptions.Value("ExportUnits") = 2   'Inch	'Based off of index in combo box in STL Export Dialog
                 oOptions.Value("Resolution") = 1    'High	'Based off of index of radio buttons in STL Export Dialog
                 oContext.Type = IOMechanismEnum.kFileBrowseIOMechanism
                 oData = app.TransientObjects.CreateDataMedium
@@ -168,7 +286,8 @@ Public Class STLfileGenerator
             End If
             Return oData
         Catch ex As Exception
-
+            MsgBox(ex.ToString())
+            Return Nothing
         End Try
 
         Return Nothing

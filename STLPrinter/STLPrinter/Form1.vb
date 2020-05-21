@@ -78,12 +78,12 @@ Public Class Form1
                 oDesignProjectMgr = oApp.DesignProjectManager
                 Dim p As String = oDesignProjectMgr.ActiveDesignProject.WorkspacePath
                 Dim ffn As String
-                ffn = String.Concat(p, "\Iteration8\Sabina.ipt")
+                ffn = String.Concat(p, "\Iteration8\3DPrint\Subina2.ipt")
                 invDoc = New InventorFile(oApp)
                 oDoc = invDoc.OpenFullFileName(ffn)
                 stlFile = New STLfileGenerator(oDoc)
                 monitor = New DesignMonitoring(stlFile.doku)
-                If monitor.IsFeatureHealthy(stlFile.MakeAllSTLFiles(stlFile.doku)) Then
+                If stlFile.MakeAllSTLFiles(stlFile.doku).MediumType = MediumTypeEnum.kDataObjectMedium Then
                     b = stlFile.done
                 End If
 

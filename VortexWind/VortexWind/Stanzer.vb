@@ -597,6 +597,25 @@ Public Class Stanzer
         End Try
         Return ef
     End Function
+    Public Function EmbossColumnNumber(q As Integer, f As Face, spti As SketchPoint3D, spto As SketchPoint3D, sb As Integer) As ExtrudeFeature
+        Dim ef As ExtrudeFeature
+        Dim qs As Integer
+        Try
+            If spti.Geometry.Z > 0 Then
+                qs = 2 * q
+            Else
+                qs = (2 * q) - 1
+
+            End If
+            lamp.HighLighFace(f)
+            ef = ExtrudeLetterColumn(SketchNumberColumn(qs, f, spti, spto), sb)
+
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+        Return ef
+    End Function
     Public Function ExtrudeFrameLetter(name As String, wpt As WorkPoint, skl As SketchLine3D) As ExtrudeFeature
         Dim ef As ExtrudeFeature
         Dim s As String
@@ -821,7 +840,7 @@ Public Class Stanzer
 
         Return oProfile
     End Function
-    Function SketchLetterColumn(s As String, f As Face, skpti As SketchPoint3D, spto As SketchPoint3D) As Profile
+    Function SketchLetterColumn(s As String, f As Face, skpti As SketchPoint3D, skpto As SketchPoint3D) As Profile
         Dim oProfile As Profile
 
 
@@ -831,6 +850,7 @@ Public Class Stanzer
         Dim oStyle As TextStyle
         Dim sText As String
         Dim z, zMax As Double
+        Dim wpl As WorkPlane
         zMax = 3 / 10
         Try
             overLapping = 0.3
@@ -846,8 +866,8 @@ Public Class Stanzer
 
             ps = doku.ComponentDefinition.Sketches.AddWithOrientation(f, edMax, True, True, edMax.StartVertex,)
             spt = ps.AddByProjectingEntity(skpti)
-            spt2 = ps.AddByProjectingEntity(spto)
-            v = skpti.Geometry.VectorTo(spto.Geometry)
+            spt2 = ps.AddByProjectingEntity(skpto)
+            v = skpti.Geometry.VectorTo(skpto.Geometry)
             skl = ps.AddByProjectingEntity(edMax)
             skl.Construction = True
             sText = s
@@ -909,21 +929,151 @@ Public Class Stanzer
 
 
     End Function
-    Function DrawColumnLetters(ps As PlanarSketch, tbi As TextBox, spti As SketchPoint, spto As SketchPoint, s As String) As TextBox
-        Dim v As Vector2d = spti.Geometry.VectorTo(spto.Geometry)
-        v.Normalize()
-        Dim tb As TextBox = tbi
-        Dim pt As Point2d = tbi.Origin
+    Function SketchNumberColumn(q As Integer, f As Face, skpti As SketchPoint3D, skpto As SketchPoint3D) As Profile
+        Dim oProfile As Profile
+
+
         Dim w, h As Double
-        w = tbi.Width
-        h = tbi.Height
-        v.ScaleBy(h / (1 + overLapping))
-        For i = 1 To nLetters - 1
-            pt.TranslateBy(v)
-            tb = ps.TextBoxes.AddFitted(pt, s, tbi.Style)
-            paths.Add(tb)
-        Next
-        Return tb
+        Dim spt, spt2 As SketchPoint
+        Dim skl As SketchLine
+        Dim ps As PlanarSketch
+        Dim v As Vector
+        Dim oTextBox As TextBox
+        Dim oStyle As TextStyle
+        Dim sText As String
+        Dim z, zMin As Double
+        Dim wpl As WorkPlane
+        Try
+            zMin = 4 / 10
+            overLapping = 0.3
+            nLetters = 4
+
+            Dim pl As Plane = f.Geometry
+
+
+            Dim edMax As Edge
+            edMax = GetOuterEdge(f, skpti.Geometry)
+            wpl = compDef.WorkPlanes.AddByThreePoints(skpti, skpto, edMax.StartVertex)
+            ps = doku.ComponentDefinition.Sketches.Add(wpl)
+            spt = ps.AddByProjectingEntity(skpti)
+            spt2 = ps.AddByProjectingEntity(skpto)
+            skl = ps.SketchLines.AddByTwoPoints(spt, spt2)
+            v = skpti.Geometry.VectorTo(skpto.Geometry)
+            skl.Construction = True
+            sText = CStr(0)
+
+            oTextBox = ps.TextBoxes.AddFitted(spt.Geometry, sText)
+            oStyle = ps.TextBoxes.Item(1).Style
+            oTextBox.Delete()
+            z = (v.Length / nLetters) * (1 + overLapping)
+            If z > zMin Then
+                If z > 2 * zMin Then
+                    z = 2 * zMin
+                End If
+
+            Else
+                z = zMin * (1 - Math.Exp(-12 * (z) / (1 * zMin))) / 1
+                If z > zMin Then
+                    z = zMin
+                End If
+
+            End If
+            oStyle.FontSize = z
+            oStyle.Bold = True
+            doku.Update2(True)
+            Dim ptBox As Point2d
+            ptBox = tg.CreatePoint2d(spt.Geometry.X - oStyle.FontSize / 4, -6 / 10)
+            oTextBox = ps.TextBoxes.AddFitted(ptBox, sText, oStyle)
+            w = oTextBox.Width
+            h = oTextBox.Height
+
+            oTextBox.Origin = tg.CreatePoint2d(spt.Geometry.X - w / 2, -6 / 10)
+            doku.Update2(True)
+            Dim reflex As TextBox
+            ptBox = tg.CreatePoint2d(spt.Geometry.X - w / 2, 0.5 / 10 + h)
+            reflex = ps.TextBoxes.AddFitted(ptBox, sText, oStyle)
+
+
+
+            ' oTextBox.Rotation = Math.PI
+
+
+
+
+            paths.Clear()
+
+            If oTextBox.Origin.DistanceTo(spt2.Geometry) < reflex.Origin.DistanceTo(spt2.Geometry) Then
+                reflex.Delete()
+                'paths.Add(oTextBox)
+                DrawColumnNumbers(ps, oTextBox, spt, spt2, q)
+                oTextBox.Delete()
+            Else
+                oTextBox.Delete()
+                'paths.Add(reflex)
+                DrawColumnNumbers(ps, reflex, spt, spt2, q)
+                reflex.Delete()
+            End If
+            oProfile = ps.Profiles.AddForSolid(False, paths)
+            Return oProfile
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+    End Function
+    Function DrawColumnLetters(ps As PlanarSketch, tbi As TextBox, spti As SketchPoint, spto As SketchPoint, s As String) As TextBox
+        Try
+            Dim v As Vector2d = spti.Geometry.VectorTo(spto.Geometry)
+            v.Normalize()
+            Dim tb As TextBox = tbi
+            Dim pt As Point2d = tbi.Origin
+            Dim w, h As Double
+            w = tbi.Width
+            h = tbi.Height
+            v.ScaleBy(h / (1 + overLapping))
+            For i = 1 To nLetters - 1
+                s = CStr(0)
+                pt.TranslateBy(v)
+                tb = ps.TextBoxes.AddFitted(pt, s, tbi.Style)
+                paths.Add(tb)
+            Next
+            Return tb
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+    End Function
+    Function DrawColumnNumbers(ps As PlanarSketch, tbi As TextBox, spti As SketchPoint, spto As SketchPoint, q As Integer) As TextBox
+        Dim s As String
+        Dim d As Double
+        Dim j, qr, r As Integer
+        Try
+            Dim v As Vector2d = spti.Geometry.VectorTo(spto.Geometry)
+            v.Normalize()
+            Dim tb As TextBox = tbi
+            Dim pt As Point2d = tbi.Origin
+            Dim w, h As Double
+            w = tbi.Width
+            h = tbi.Height
+            v.ScaleBy(h / (1 + overLapping))
+            qr = q
+            For i = 1 To nLetters - 1
+
+                j = Math.DivRem(qr, CInt(Math.Pow(10, nLetters - 1 - i)), r)
+                s = CStr(j)
+                pt.TranslateBy(v)
+                tb = ps.TextBoxes.AddFitted(pt, s, tbi.Style)
+                paths.Add(tb)
+                qr = r
+            Next
+            Return tb
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
     End Function
 
     Function GetClosestVertexFace(f As Face, spt As SketchPoint3D) As Vertex
@@ -1193,7 +1343,11 @@ Public Class Stanzer
 
             Try
                 ef = ExtrudeLetterIndependant(pro, sb)
-
+                If Not monitor.IsFeatureHealthy(ef) Then
+                    ef.Delete()
+                Else
+                    Return ef
+                End If
 
             Catch ex2 As Exception
                 MsgBox(ex.ToString())

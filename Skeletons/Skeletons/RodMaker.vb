@@ -635,7 +635,7 @@ Public Class RodMaker
             angleRod = angle
             d = wp1.Point.DistanceTo(wp2.Point)
             If (angle < 1.2 * 0.9) And (d < 45 / 10) Then
-                ro = 1 / 10
+                ro = 1.5 / 10
                 smallOval = True
             Else
                 smallOval = False

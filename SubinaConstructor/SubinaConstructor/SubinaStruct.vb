@@ -111,6 +111,7 @@ Public Class SubinaStruct
         Dim t As PartDocument
         Dim ws As WorkSurface
         Dim partCounter As Integer = 0
+        Dim cf As CombineFeature
 
         Try
             If (Directory.Exists(dn)) Then
@@ -118,18 +119,14 @@ Public Class SubinaStruct
                 For i = 1 To DP.q
                     rn = nombrador.MakeRibFileName(dn, i)
                     If System.IO.File.Exists(rn) Then
-                        partCounter = partCounter + 1
+                        partCounter += 1
                     Else
                         sn = nombrador.ConstructFileName(dn, "Skeleton", i)
                         If System.IO.File.Exists(sn) Then
-                            If MakeRib(sn) = 1 Then
-                                partCounter = partCounter + 1
-                            Else
-                                Exit For
+                            If MakeCollidedRib(sn) = 1 Then
+                                partCounter += 1
+
                             End If
-
-
-
                         End If
 
                     End If
@@ -147,16 +144,72 @@ Public Class SubinaStruct
                             dpc = DeriveRibBand(rn)
                             lamp.FitView(doku)
                             If monitor.IsDerivedPartHealthy(dpc) Then
-                                partCounter = partCounter + 1
+                                partCounter += 1
+                            Else
+                                Exit For
                             End If
-                        Else
-                            Exit For
                         End If
 
                     Next
 
 
                 End If
+                If partCounter = DP.q Then
+                    cf = CombineBodies()
+                    If monitor.IsFeatureHealthy(cf) Then
+                        SaveAsSilent(String.Concat(dn, "\Subina1.ipt"))
+                        done = True
+                    End If
+                Else
+                    done = False
+                End If
+
+            End If
+
+
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+        Return doku
+    End Function
+    Public Function AssemblyNest(i As Integer) As PartDocument
+        Dim p As String = projectManager.ActiveDesignProject.WorkspacePath
+        Dim q As Integer
+        Dim dn, rn, bn, sn As String
+        dn = String.Concat(p, "\Iteration", i.ToString)
+        Dim dpc As DerivedPartComponent
+        Dim t As PartDocument
+        Dim ws As WorkSurface
+        Dim partCounter As Integer = 0
+
+        Try
+            If (Directory.Exists(dn)) Then
+                fullFileNames = Directory.GetFiles(dn, "*.ipt")
+
+                t = app.Documents.Add(DocumentTypeEnum.kPartDocumentObject,, True)
+                Conversions.SetUnitsToMetric(t)
+                partCounter = 0
+                t.Update2(True)
+                doku = DocUpdate(t)
+                fullFileNames = Directory.GetFiles(dn, "*.ipt")
+                For i = 1 To DP.q
+                    rn = nombrador.MakeRibFileName(dn, i)
+                    If System.IO.File.Exists(rn) Then
+                        dpc = DeriveRibBand(rn)
+                        lamp.FitView(doku)
+                        If monitor.IsDerivedPartHealthy(dpc) Then
+                            partCounter += 1
+                        End If
+                    Else
+                        Exit For
+                    End If
+
+                Next
+
+
                 If partCounter = DP.q Then
                     SaveAsSilent(String.Concat(dn, "\Subina.ipt"))
                     done = True
@@ -292,6 +345,52 @@ Public Class SubinaStruct
 
 
 
+
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+    End Function
+    Public Function MakeCollidedRib(sn As String) As Integer
+        Dim pf As String = projectManager.ActiveDesignProject.WorkspacePath
+        Dim p As PartDocument
+        Dim q As Integer
+        Dim dpc As DerivedPartComponent
+        Dim newComponent As DerivedPartComponent
+
+        Dim lf As LoftFeature
+        Dim cf As CombineFeature
+        Dim bodyCounter As Integer
+        Dim d, e As Double
+        Dim skt As Sketch3D
+        Dim nFS As Integer
+        Dim sn1, sn2, rn As String
+        Dim solitario As Boolean = True
+        Try
+            p = app.Documents.Add(DocumentTypeEnum.kPartDocumentObject,, True)
+            Conversions.SetUnitsToMetric(p)
+            p.Update2(True)
+            doku = DocUpdate(p)
+            qValue = nombrador.GetQNumberString(sn, "Skeleton")
+            sn1 = GetNeigboorValues(sn)
+
+            dpc = DeriveSinglePart(sn)
+            If monitor.IsDerivedPartHealthy(dpc) Then
+                lamp.FitView(doku)
+
+                nFS = IntersectCollisions(sn)
+                    If nFS < 2 Then
+                        Return nFS
+                    End If
+
+            End If
+
+
+
+
+
+            Return 0
 
         Catch ex As Exception
             MsgBox(ex.ToString())
@@ -883,14 +982,14 @@ Public Class SubinaStruct
         Return doku
     End Function
     Public Function DeriveSinglePart(s As String) As DerivedPartComponent
-        Dim derivedDefinition As DerivedPartDefinition
+        Dim dpd As DerivedPartDefinition
         Dim dpc As DerivedPartComponent
         Try
-            derivedDefinition = doku.ComponentDefinition.ReferenceComponents.DerivedPartComponents.CreateDefinition(s)
-            derivedDefinition.IncludeAllSolids = DerivedComponentOptionEnum.kDerivedIncludeAll
+            dpd = doku.ComponentDefinition.ReferenceComponents.DerivedPartComponents.CreateDefinition(s)
+            dpd.IncludeAllSolids = DerivedComponentOptionEnum.kDerivedIncludeAll
             ' derivedDefinition.IncludeAllSurfaces = DerivedComponentOptionEnum.kDerivedIncludeAll
-            derivedDefinition.DeriveStyle = DerivedComponentStyleEnum.kDeriveAsSingleBodyNoSeams
-            dpc = doku.ComponentDefinition.ReferenceComponents.DerivedPartComponents.Add(derivedDefinition)
+            dpd.DeriveStyle = DerivedComponentStyleEnum.kDeriveAsSingleBodyNoSeams
+            dpc = doku.ComponentDefinition.ReferenceComponents.DerivedPartComponents.Add(dpd)
             Return dpc
         Catch ex As Exception
             MsgBox(ex.ToString())

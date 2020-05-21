@@ -57,6 +57,7 @@ Public Class Form1
         Try
 
             done = MakeTort()
+            'done = AssemblyNestStruct()
 
             If done Then
                 Me.Close()
@@ -81,6 +82,27 @@ Public Class Form1
                 oDoc = invDoc.OpenFullFileName(ffn)
                 nido = New SubinaStruct(oDoc)
                 nido.MakeNestStruct(8)
+                b = nido.done
+            End If
+            Return b
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return False
+        End Try
+
+    End Function
+    Public Function AssemblyNestStruct() As Boolean
+        Dim b As Boolean
+        Try
+            If (started) Then
+                oDesignProjectMgr = oApp.DesignProjectManager
+                Dim p As String = oDesignProjectMgr.ActiveDesignProject.WorkspacePath
+                Dim ffn As String
+                ffn = String.Concat(p, "\Iteration8\Skeleton1.ipt")
+                invDoc = New InventorFile(oApp)
+                oDoc = invDoc.OpenFullFileName(ffn)
+                nido = New SubinaStruct(oDoc)
+                nido.AssemblyNest(8)
                 b = nido.done
             End If
             Return b

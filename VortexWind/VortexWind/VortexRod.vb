@@ -414,6 +414,50 @@ Public Class VortexRod
 
                 qValue = FindLastSW()
                 If qValue > 0 Then
+                    ef = StampNextWire(CInt(qValue / 2) + 1)
+                Else
+                    ef = StampNextWire(1)
+                End If
+
+            Catch ex As Exception
+
+            End Try
+
+
+
+
+
+
+            Return ef
+
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+    End Function
+    Public Function ResumeStampLetters(docu As PartDocument) As ExtrudeFeature
+        Dim ef As ExtrudeFeature = Nothing
+
+        Dim wpt1 As WorkPoint
+        doku = DocUpdate(docu)
+        comando.WireFrameView(doku)
+        comando.HideSketches(doku)
+        Try
+            Try
+                wpt1 = compDef.WorkPoints.Item("wpt1")
+
+            Catch ex2 As Exception
+
+                If GetRadiusPoint(GetStartWorkPoint.Point) >= freeRadius - 1 / 1024 Then
+                    wpt1 = startWorkPoint
+                End If
+            End Try
+
+            Try
+
+                qValue = FindLastSW()
+                If qValue > 0 Then
                     ef = StampNextWire(qValue + 1)
                 Else
                     ef = StampNextWire(1)
@@ -1120,7 +1164,7 @@ Public Class VortexRod
                 If monitor.IsFeatureHealthy(ef) Then
                     If ef.SideFaces.Count > 1 Then
 
-                        ef.Name = String.Concat("sw", CInt(q).ToString)
+                        ef.Name = String.Concat("sw", CInt((2 * q) - 1).ToString)
                         doku.Update2(True)
                         doku.Save2(True)
                         q += 1
@@ -2188,7 +2232,7 @@ Public Class VortexRod
                 skpt = GetSectionPoint(currentWorkPoint, currentWorkPlane)
                 skpt = DrawStampPoints(stampCurveFace, currentWorkPlane, skpt, currentWorkPoint)
                 skpto = sk3D.SketchPoints3D.Add(ptRMin)
-                ef = estampa.EmbossColumnLetter(q, stampPlanarFace, skpt, skpto, sbValue)
+                ef = estampa.EmbossColumnNumber(q, stampPlanarFace, skpt, skpto, sbValue)
                 If monitor.IsFeatureHealthy(ef) Then
                     comando.RealisticView(doku)
                     If monitor.IsFeatureHealthy(RemoveExcessStamp(ef, sbValue)) Then
@@ -2196,7 +2240,7 @@ Public Class VortexRod
                         If i = 1 Then
                             Return ef
                         Else
-                            ef.Name = String.Concat("lt", (q + 1).ToString)
+                            ef.Name = String.Concat("sw", ((2 * q)).ToString)
                         End If
 
                     Else
@@ -2223,7 +2267,7 @@ Public Class VortexRod
                 If se.Type = ObjectTypeEnum.kSketchPoint3DObject Then
                     spt = se
                     pt = spt.Geometry
-                    If Not pt.Equals(pti) Then
+                    If pt.DistanceTo(pti) > 1 / 128 Then
                         e = GetRadiusPoint(pt)
                         If (e < dMin) Then
                             dMin = e
