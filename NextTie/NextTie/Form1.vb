@@ -105,6 +105,7 @@ Public Class Form1
         Dim b As Boolean = True
         Dim q As Integer
         Dim s As String
+
         Try
             If (started And (Not running)) Then
                 invDoc = New InventorFile(oApp)
