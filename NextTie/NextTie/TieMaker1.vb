@@ -102,7 +102,7 @@ Public Class TieMaker1
     Public Function MakeNextTie() As PartDocument
         Try
             Dim i As Integer
-
+            'Dim fp As FlatPattern
             i = GetStartingFeature()
             doku.Update2(True)
 
@@ -137,11 +137,19 @@ Public Class TieMaker1
 
             End If
             If compDef.Sketches3D.Item("nextIntroLine").SketchLines3D.Count > 0 Then
-                done = True
-                fullFileName = doku.FullFileName
+                ' fp = compDef.FlatPattern
+                If compDef.HasFlatPattern Then
+                    done = True
+                    fullFileName = doku.FullFileName
+                    Return doku
+                Else
+                    Return Nothing
+
+                End If
+
             End If
 
-            Return doku
+
         Catch ex As Exception
 
             MsgBox(ex.ToString())
