@@ -1025,14 +1025,20 @@ Public Class InitSketcher
                             If monitor.IsSketch3DHealthy(sk3D) Then
                                 gapFold.Driven = True
                                 doku.Update2(True)
-                                gapFold.Driven = False
-                                gapFold.Parameter._Value -= 1 / 10
-                                doku.Update2(True)
                                 If monitor.IsSketch3DHealthy(sk3D) Then
-                                    Exit For
+                                    gapFold.Driven = False
+                                    gapFold.Parameter._Value -= 1 / 10
+                                    doku.Update2(True)
+                                    If monitor.IsSketch3DHealthy(sk3D) Then
+                                        Exit For
+                                    Else
+                                        comando.UndoCommand()
+                                    End If
                                 Else
                                     comando.UndoCommand()
+                                    comando.UndoCommand()
                                 End If
+
 
                             Else
                                 comando.UndoCommand()

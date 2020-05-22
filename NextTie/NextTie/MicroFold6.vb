@@ -759,10 +759,10 @@ Public Class MicroFold6
             farPoint = minorEdge.StartVertex.Point
 
         End If
-        'lamp.HighLighObject(pt)
+
 
         v.AsUnitVector.AsVector()
-        v.ScaleBy(thickness / 10)
+        v.ScaleBy(2 * thickness / 10)
         pt.TranslateBy(v)
         'lamp.HighLighObject(pt)
         point1 = pt
