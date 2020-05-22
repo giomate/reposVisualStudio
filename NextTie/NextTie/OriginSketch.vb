@@ -968,6 +968,7 @@ Public Class OriginSketch
     Function DrawThirdLine() As SketchLine3D
         Try
             Dim l As SketchLine3D = Nothing
+
             Dim pl As SketchLine3D = Nothing
             Dim dc As DimensionConstraint3D
             Dim b As Double = GetParameter("b")._Value
