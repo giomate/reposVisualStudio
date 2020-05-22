@@ -1051,7 +1051,7 @@ Public Class InitSketcher
 
                     End If
 
-                    If (gapFold.Parameter._Value < gapFoldCM) Or (dc.Parameter._Value < 3 * gapFoldCM / 4) Then
+                    If (gapFold.Parameter._Value < 2 * gapFoldCM) Or (dc.Parameter._Value < 3 * gapFoldCM / 4) Then
                         Exit For
                     End If
 
