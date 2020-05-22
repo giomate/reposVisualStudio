@@ -62,57 +62,7 @@ Public Class InitFold
     End Sub
 
 
-    Public Function MakeFirstFold(refDoc As FindReferenceLine) As Boolean
-        Dim b As Boolean
-        Try
-            Try
-                cutFeature = MakeInitCut()
-            Catch ex As Exception
-                sk3D = mainSketch.StartDrawingTranslated(refDoc, 1)
-                If mainSketch.done Then
-                    doku.ComponentDefinition.Sketches3D.Item("s1").Visible = False
-                    If DrawBandStripe().Count > 0 Then
-                        bender = New Doblador(doku)
-                        If MakeStartingFace(faceProfile).GetHashCode > 0 Then
-                            If GetBendLine().Length > 0 Then
-                                mainWorkPlane.Visible = False
-                                If GetFoldingAngle().Parameter._Value > 0 Then
 
-                                    comando.MakeInvisibleSketches(doku)
-                                    comando.MakeInvisibleWorkPlanes(doku)
-                                    foldFeature = FoldBand()
-                                    If monitor.IsFeatureHealthy(foldFeature) Then
-                                        cutFeature = MakeInitCut()
-                                        If monitor.IsFeatureHealthy(cutFeature) Then
-                                            doku.Save2(True)
-                                            done = 1
-                                            Return True
-                                        End If
-
-
-                                    End If
-
-
-                                End If
-
-                            End If
-
-                        End If
-                    End If
-
-                End If
-            End Try
-
-
-
-
-            Return False
-        Catch ex As Exception
-            MsgBox(ex.ToString())
-            Return False
-        End Try
-
-    End Function
     Function MakeInitCut() As CutFeature
         foldFeature = foldFeatures.Item(1)
         If monitor.IsFeatureHealthy(foldFeature) Then
@@ -152,12 +102,17 @@ Public Class InitFold
                                         'lamp.LookAtFace(workface)
                                         doku.Update2(True)
                                         If monitor.IsFeatureHealthy(folded) Then
-                                            cutFeature = MakeInitCut()
-                                            If monitor.IsFeatureHealthy(cutFeature) Then
-                                                doku.Save2(True)
-                                                done = 1
-                                                Return True
+                                            If compDef.HasFlatPattern Then
+                                                cutFeature = MakeInitCut()
+                                                If monitor.IsFeatureHealthy(cutFeature) Then
+                                                    doku.Save2(True)
+                                                    done = 1
+                                                    Return True
+                                                End If
+                                            Else
+                                                Return False
                                             End If
+
                                         End If
                                     End If
                                 End If

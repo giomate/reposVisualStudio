@@ -681,7 +681,7 @@ Public Class SketchAdjust
 
 
     End Function
-    Function RecoveryUnhealthySketch(sk As Sketch3D) As Sketch3D
+    Public Function RecoveryUnhealthySketch(sk As Sketch3D) As Sketch3D
         Try
             compDef = sk.Parent
             oPartDoc = compDef.Document
@@ -708,8 +708,8 @@ Public Class SketchAdjust
             Return sk
         Catch ex As Exception
             MsgBox(ex.ToString())
-            MsgBox("Fail Recovering " & p.Name & " ...last value:" & p.Value.ToString)
-            Return RecoveryUnhealthySketch(p)
+            MsgBox("Fail Recovering " & sk.Name)
+            Return RecoveryUnhealthySketch(sk)
         End Try
 
 

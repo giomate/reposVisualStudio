@@ -120,9 +120,12 @@ Public Class MacroFold5
                                         ' lamp.LookAtFace(workFace)
                                         doku.Update2(True)
                                         If monitor.IsFeatureHealthy(folded) Then
-                                            doku.Save2(True)
-                                            done = 1
-                                            Return True
+                                            If compDef.HasFlatPattern Then
+                                                doku.Save2(True)
+                                                done = 1
+                                                Return True
+                                            End If
+
                                         End If
                                     End If
 

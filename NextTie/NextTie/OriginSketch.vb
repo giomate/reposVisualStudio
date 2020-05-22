@@ -999,7 +999,7 @@ Public Class OriginSketch
             Dim v1, v2, v3 As Vector
             Dim l, pl As SketchLine3D
             Dim endPoint As Point
-            Dim dc As DimensionConstraint3D
+            Dim dc, ac As DimensionConstraint3D
             Dim gc As GeometricConstraint3D
             v2 = tangentLine.Geometry.Direction.AsVector
             v3 = firstLine.Geometry.Direction.AsVector
@@ -1016,17 +1016,17 @@ Public Class OriginSketch
             gc = sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, firstLine)
             gc = sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, secondLine)
             Try
-                dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, secondLine)
-                adjuster.AdjustDimensionConstraint3DSmothly(dc, Math.PI / 2)
-                dc.Delete()
+                ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, secondLine)
+                adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2)
+                ac.Delete()
                 sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
             Catch ex As Exception
-                dc = sk3D.DimensionConstraints3D.AddLineLength(l)
-                adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 9 / 8)
-                dc.Delete()
-                dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, secondLine)
-                adjuster.AdjustDimensionConstraint3DSmothly(dc, Math.PI / 2)
-                dc.Delete()
+
+                adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 9 / 8)
+
+                ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, secondLine)
+                adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2)
+                ac.Delete()
                 sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
 
 

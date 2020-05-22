@@ -1021,34 +1021,36 @@ Public Class InitSketcher
                         aci.Driven = True
                         For j = 1 To 8
                             comando.UndoCommand()
+                            comando.UndoCommand()
+                            comando.UndoCommand()
+
                             doku.Update2(True)
                             If monitor.IsSketch3DHealthy(sk3D) Then
-                                gapFold.Driven = True
-                                doku.Update2(True)
+                                gapFold.Parameter._Value *= 16 / 15
+                                doku.Update()
                                 If monitor.IsSketch3DHealthy(sk3D) Then
-                                    gapFold.Driven = False
-                                    gapFold.Parameter._Value -= 1 / 10
-                                    doku.Update2(True)
-                                    If monitor.IsSketch3DHealthy(sk3D) Then
-                                        Exit For
-                                    Else
-                                        comando.UndoCommand()
-                                    End If
+                                    dc = RecoverGapFold(dc)
                                 Else
                                     comando.UndoCommand()
                                     comando.UndoCommand()
+                                    comando.UndoCommand()
+                                    doku.Update()
+                                    adjuster.RecoveryUnhealthySketch(sk3D)
                                 End If
-
 
                             Else
                                 comando.UndoCommand()
+                                comando.UndoCommand()
+                                comando.UndoCommand()
+                                doku.Update()
+                                adjuster.RecoveryUnhealthySketch(sk3D)
                             End If
                         Next
 
 
                     End If
 
-                    If (gapFold.Parameter._Value < gapFoldCM) Or (dc.Parameter._Value < gapFoldCM / 1) Then
+                    If (gapFold.Parameter._Value < gapFoldCM) Or (dc.Parameter._Value < 3 * gapFoldCM / 4) Then
                         Exit For
                     End If
 
@@ -1064,6 +1066,26 @@ Public Class InitSketcher
             Return Nothing
         End Try
 
+
+    End Function
+    Function RecoverGapFold(dci As DimensionConstraint3D) As DimensionConstraint3D
+        Try
+            gapFold.Driven = True
+            For i = 1 To 16
+                If adjuster.AdjustDimensionConstraint3DSmothly(dci, dci.Parameter._Value * 15 / 16) Then
+                Else
+                    Exit For
+                End If
+                If (gapFold.Parameter._Value < 2 * gapFoldCM) Or (dci.Parameter._Value < 1 * gapFoldCM / 1) Then
+                    Exit For
+                End If
+            Next
+
+            Return dci
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
 
     End Function
     Function CalculateRoof() As Double

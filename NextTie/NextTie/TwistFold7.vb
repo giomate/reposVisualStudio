@@ -283,26 +283,29 @@ Public Class TwistFold7
                                             End Try
                                             doku.Update2(True)
                                             If monitor.IsFeatureHealthy(folded) Then
-                                                cl5 = constructionLines.Item(5)
-                                                foldFeature = bender.folded
-                                                sk3D = compDef.Sketches3D.Add()
-                                                sk3D.Include(firstLine)
-                                                sk3D.Name = "firstLine"
-                                                sk3D = compDef.Sketches3D.Add()
-                                                sk3D.Include(secondLine)
-                                                sk3D.Name = "secondLine"
-                                                sk3D = compDef.Sketches3D.Add()
-                                                nextLine = connectLine
-                                                sk3D.Include(nextLine)
-                                                sk3D.Name = "nextline"
-                                                sk3D = compDef.Sketches3D.Add()
-                                                connectLine = nextSketch.constructionLines.Item(5)
-                                                sk3D.Include(connectLine)
-                                                sk3D.Name = "kanteLine"
-                                                sk3D = compDef.Sketches3D.Add()
-                                                sk3D.Include(bl3)
-                                                sk3D.Name = "tangentLine"
-                                                Return foldFeature
+                                                If compDef.HasFlatPattern Then
+                                                    cl5 = constructionLines.Item(5)
+                                                    foldFeature = bender.folded
+                                                    sk3D = compDef.Sketches3D.Add()
+                                                    sk3D.Include(firstLine)
+                                                    sk3D.Name = "firstLine"
+                                                    sk3D = compDef.Sketches3D.Add()
+                                                    sk3D.Include(secondLine)
+                                                    sk3D.Name = "secondLine"
+                                                    sk3D = compDef.Sketches3D.Add()
+                                                    nextLine = connectLine
+                                                    sk3D.Include(nextLine)
+                                                    sk3D.Name = "nextline"
+                                                    sk3D = compDef.Sketches3D.Add()
+                                                    connectLine = nextSketch.constructionLines.Item(5)
+                                                    sk3D.Include(connectLine)
+                                                    sk3D.Name = "kanteLine"
+                                                    sk3D = compDef.Sketches3D.Add()
+                                                    sk3D.Include(bl3)
+                                                    sk3D.Name = "tangentLine"
+                                                    Return foldFeature
+                                                End If
+
                                             End If
                                         End If
                                     End If
