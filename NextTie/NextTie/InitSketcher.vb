@@ -163,7 +163,7 @@ Public Class InitSketcher
                 If gapFold.Parameter._Value > gapFoldCM * 2 Then
                     CorrectLastAngle(ac)
                 End If
-                If gapFold.Parameter._Value > gapFoldCM * 4 Then
+                If gapFold.Parameter._Value < gapFoldCM * 4 Then
                     Return sk3D
                 Else
                     Return Nothing
@@ -1014,7 +1014,7 @@ Public Class InitSketcher
                 For i = 1 To 16
                     gapFold.Driven = True
                     aci.Driven = False
-                    If adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 15 / 16) Then
+                    If adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 7 / 8) Then
                         aci.Driven = True
                         doku.Update2(True)
                     Else
@@ -1030,6 +1030,7 @@ Public Class InitSketcher
                                 doku.Update()
                                 If monitor.IsSketch3DHealthy(sk3D) Then
                                     dc = RecoverGapFold(dc)
+                                    Exit For
                                 Else
                                     comando.UndoCommand()
                                     comando.UndoCommand()
@@ -1071,8 +1072,8 @@ Public Class InitSketcher
     Function RecoverGapFold(dci As DimensionConstraint3D) As DimensionConstraint3D
         Try
             gapFold.Driven = True
-            For i = 1 To 16
-                If adjuster.AdjustDimensionConstraint3DSmothly(dci, dci.Parameter._Value * 15 / 16) Then
+            For i = 1 To 32
+                If adjuster.AdjustDimensionConstraint3DSmothly(dci, dci.Parameter._Value * 7 / 8) Then
                 Else
                     Exit For
                 End If

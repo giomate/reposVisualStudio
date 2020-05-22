@@ -2,13 +2,14 @@
 Public Class Commands
     Dim oCommandMgr As CommandManager
     Dim oControlDef As ControlDefinition
-    Dim mainApp As Application
+    Dim app As Application
     Dim doku As Document
+
 
     Public Sub New(App As Inventor.Application)
         oCommandMgr = App.CommandManager
         doku = App.ActiveDocument
-        mainApp = App
+        Me.app = App
     End Sub
 
     Public Sub UndoCommand()
@@ -37,12 +38,34 @@ Public Class Commands
 
 
         Dim oCamera As Camera
-        oCamera = mainApp.ActiveView.Camera
+        oCamera = app.ActiveView.Camera
         oCamera.ViewOrientationType = ViewOrientationTypeEnum.kIsoTopRightViewOrientation
         oCamera.Fit()
         oCamera.Apply()
 
     End Sub
+    Public Sub UnfoldBand(doku As PartDocument)
+
+        Dim oDef As ControlDefinition
+        app = doku.Parent
+        oDef = app.CommandManager.ControlDefinitions.Item("PartConvertToSheetMetalCmd")
+        oDef.Execute()
+        Dim oCompDef As SheetMetalComponentDefinition
+        oCompDef = doku.ComponentDefinition
+        oCompDef.Unfold()
+
+    End Sub
+    Public Sub RefoldBand(doku As PartDocument)
+
+        Dim oDef As ControlDefinition
+        app = doku.Parent
+        oDef = app.CommandManager.ControlDefinitions.Item("PartSwitchRepresentationCmd")
+
+        oDef.Execute()
+
+
+    End Sub
+
     Public Sub MakeInvisibleSketches(docu As Inventor.Document)
         For Each sk As Sketch In docu.ComponentDefinition.Sketches
             sk.Visible = False

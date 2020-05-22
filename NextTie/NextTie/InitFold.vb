@@ -76,6 +76,7 @@ Public Class InitFold
     End Function
     Public Function MakeFirstFold(refDoc As FindReferenceLine, q As Integer) As Boolean
         Dim b As Boolean
+        Dim fp As FlatPattern
         Try
 
             Try
@@ -102,7 +103,10 @@ Public Class InitFold
                                         'lamp.LookAtFace(workface)
                                         doku.Update2(True)
                                         If monitor.IsFeatureHealthy(folded) Then
+                                            fp = compDef.FlatPattern
+                                            comando.UnfoldBand(doku)
                                             If compDef.HasFlatPattern Then
+                                                comando.RefoldBand(doku)
                                                 cutFeature = MakeInitCut()
                                                 If monitor.IsFeatureHealthy(cutFeature) Then
                                                     doku.Save2(True)
