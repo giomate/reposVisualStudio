@@ -887,7 +887,7 @@ Public Class TwistFold7
                 End Try
 
                 acza.Driven = True
-                If Not monitor.IsSketch3dhHealthy(sk3D) Then
+                If Not monitor.IsSketch3DHealthy(sk3D) Then
                     adjuster.RecoveryUnhealthySketch(sk3D)
                 End If
             Catch ex As Exception

@@ -21,7 +21,7 @@ Public Class InitSketcher
     Public bandLines, constructionLines As ObjectCollection
     Dim comando As Commands
     Dim nombrador As Nombres
-    Dim metro, gapFold, dcThirdLine As DimensionConstraint3D
+    Dim dimConstrainBandLine2, gapFold, dcThirdLine As DimensionConstraint3D
     Dim startPoint As GeometricConstraint3D
     Dim sheetMetalFeatures As SheetMetalFeatures
     Dim compDef As SheetMetalComponentDefinition
@@ -51,7 +51,7 @@ Public Class InitSketcher
         app = doku.Parent
         comando = New Commands(app)
         compDef = doku.ComponentDefinition
-        SheetMetalFeatures = compDef.Features
+        sheetMetalFeatures = compDef.Features
         curve3D = New Curves3D(doku)
         monitor = New DesignMonitoring(doku)
         adjuster = New SketchAdjust(doku)
@@ -402,7 +402,7 @@ Public Class InitSketcher
             gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, twistLine)
             doku.Update2(True)
             gc.Delete()
-            metro = dc
+            dimConstrainBandLine2 = dc
             bandLines.Add(l)
             firstLine = l
             lastLine = l
@@ -466,8 +466,8 @@ Public Class InitSketcher
                 dcfl.Delete()
 
             End If
-            metro = sk3D.DimensionConstraints3D.AddLineLength(l)
-            metro.Driven = True
+            dimConstrainBandLine2 = sk3D.DimensionConstraints3D.AddLineLength(l)
+            dimConstrainBandLine2.Driven = True
 
 
             lastLine = l
@@ -548,69 +548,69 @@ Public Class InitSketcher
             adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value / 2)
             AdjustTwoPointsSmothly(dc, 1 / 10)
             dc2 = sk3D.DimensionConstraints3D.AddLineLength(l)
-                If dc2.Parameter._Value > curve3D.DP.b * 3 / 20 Then
-                    If adjuster.AdjustDimensionConstraint3DSmothly(dc2, curve3D.DP.b * 5 / 40) Then
-                        dc2.Driven = True
-                    Else
-                        dc2.Delete()
-                    End If
-                Else
+            If dc2.Parameter._Value > curve3D.DP.b * 3 / 20 Then
+                If adjuster.AdjustDimensionConstraint3DSmothly(dc2, curve3D.DP.b * 5 / 40) Then
                     dc2.Driven = True
+                Else
+                    dc2.Delete()
                 End If
-                ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, bl4)
-                adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2)
-                ac.Driven = True
-                sk3D.GeometricConstraints3D.AddPerpendicular(l, bl4)
+            Else
+                dc2.Driven = True
+            End If
+            ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, bl4)
+            adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2)
+            ac.Driven = True
+            sk3D.GeometricConstraints3D.AddPerpendicular(l, bl4)
+            dc2.Driven = False
+            adjuster.AdjustDimensionConstraint3DSmothly(dc2, GetParameter("b")._Value)
+            dc2.Driven = True
+            Try
+                sk3D.GeometricConstraints3D.AddEqual(l, cl)
+            Catch ex2 As Exception
+                adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM * 4)
+                gapFold.Driven = True
                 dc2.Driven = False
                 adjuster.AdjustDimensionConstraint3DSmothly(dc2, GetParameter("b")._Value)
                 dc2.Driven = True
+                gapFold.Driven = False
                 Try
-                    sk3D.GeometricConstraints3D.AddEqual(l, cl)
-                Catch ex2 As Exception
+                    gcel = sk3D.GeometricConstraints3D.AddEqual(l, cl)
+
+                Catch ex3 As Exception
                     adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM * 4)
                     gapFold.Driven = True
                     dc2.Driven = False
                     adjuster.AdjustDimensionConstraint3DSmothly(dc2, GetParameter("b")._Value)
                     dc2.Driven = True
-                    gapFold.Driven = False
-                    Try
-                        gcel = sk3D.GeometricConstraints3D.AddEqual(l, cl)
+                    gcel = sk3D.GeometricConstraints3D.AddEqual(l, cl)
+                End Try
 
-                    Catch ex3 As Exception
-                        adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM * 4)
-                        gapFold.Driven = True
-                        dc2.Driven = False
-                        adjuster.AdjustDimensionConstraint3DSmothly(dc2, GetParameter("b")._Value)
-                        dc2.Driven = True
-                        gcel = sk3D.GeometricConstraints3D.AddEqual(l, cl)
-                    End Try
-
-                    gapFold.Driven = False
-                    Try
-                        gapFold.Parameter._Value = gapFold.Parameter._Value * 1.1
-                        adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
-                        If gapFold.Parameter._Value < gapFoldCM * 0.9 Then
-                            gcel.Delete()
-                            adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
-                            adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
-                        End If
-                    Catch ex As Exception
+                gapFold.Driven = False
+                Try
+                    gapFold.Parameter._Value = gapFold.Parameter._Value * 1.1
+                    adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
+                    If gapFold.Parameter._Value < gapFoldCM * 0.9 Then
                         gcel.Delete()
                         adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
                         adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
-                    End Try
-
+                    End If
+                Catch ex As Exception
+                    gcel.Delete()
                     adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
                     adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
                 End Try
+
+                adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
+                adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
+            End Try
             gapFold.Driven = True
             l.Construction = True
 
-                constructionLines.Add(l)
+            constructionLines.Add(l)
 
-                lastLine = l
-
-
+            lastLine = l
+            ac.Delete()
+            dc2.Delete()
             Return l
         Catch ex As Exception
             MsgBox(ex.ToString())
@@ -862,7 +862,7 @@ Public Class InitSketcher
 
             Dim ac, dc, acl4l6 As DimensionConstraint3D
             Dim gc As GeometricConstraint3D
-            Dim limit As Double = Math.PI / 15
+            Dim limit As Double = Math.PI / 32
             Dim angleLimit As Double = 1.8
             Dim d As Double
             Dim counterLimit As Integer = 0
@@ -962,10 +962,10 @@ Public Class InitSketcher
                         End Try
                     End If
                     dc.Driven = True
-                    While ((d < 0 Or dc.Parameter._Value > Math.PI - limit / 1) And counterLimit < 32)
+                    While ((d < 0 Or dc.Parameter._Value > Math.PI - limit / 1) And counterLimit < 16)
                         Try
                             gapFold.Driven = False
-                            adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 9 / 8)
+                            adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 17 / 16)
                             gapFold.Driven = True
                             doku.Update2()
 
@@ -987,7 +987,7 @@ Public Class InitSketcher
                     b = True
                 End Try
             End If
-            ac.Driven = True
+            ac.Delete()
 
 
 
@@ -1005,17 +1005,53 @@ Public Class InitSketcher
             bl6 = bandLines(6)
             dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(bl4.EndPoint, bl6.EndPoint)
             dc.Driven = True
+            aci.Driven = False
+            dimConstrainBandLine2.Driven = False
+            adjuster.AdjustDimensionConstraint3DSmothly(dimConstrainBandLine2, dimConstrainBandLine2.Parameter._Value * 4 / 3)
+            dimConstrainBandLine2.Delete()
+
             If gapFold.Parameter._Value > gapFoldCM * 2 Then
                 For i = 1 To 16
                     gapFold.Driven = True
                     aci.Driven = False
-                    adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 15 / 16)
-                    If (gapFold.Parameter._Value < gapFoldCM) Or (dc.Parameter._Value < gapFoldCM / 2) Then
+                    If adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 15 / 16) Then
+                        aci.Driven = True
+                        doku.Update2(True)
+                    Else
+                        aci.Driven = True
+                        For j = 1 To 8
+                            comando.UndoCommand()
+                            doku.Update2(True)
+                            If monitor.IsSketch3DHealthy(sk3D) Then
+                                gapFold.Driven = True
+                                doku.Update2(True)
+                                gapFold.Driven = False
+                                gapFold.Parameter._Value -= 1 / 10
+                                doku.Update2(True)
+                                If monitor.IsSketch3DHealthy(sk3D) Then
+                                    Exit For
+                                Else
+                                    comando.UndoCommand()
+                                End If
+
+                            Else
+                                comando.UndoCommand()
+                            End If
+                        Next
+
+
+                    End If
+
+                    If (gapFold.Parameter._Value < gapFoldCM) Or (dc.Parameter._Value < gapFoldCM / 1) Then
                         Exit For
                     End If
 
                 Next
             End If
+
+            gapFold.Driven = True
+            doku.Update2(True)
+            aci.Driven = False
             Return gapFold
         Catch ex As Exception
             MsgBox(ex.ToString())

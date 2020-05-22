@@ -76,7 +76,7 @@ Public Class DesignMonitoring
         End If
 
     End Function
-    Function IsSketch3dhHealthy(sk3D As Sketch3D) As Boolean
+    Function IsSketch3DHealthy(sk3D As Sketch3D) As Boolean
         Dim b As Boolean
         If sk3D.HealthStatus = HealthStatusEnum.kOutOfDateHealth Or
      sk3D.HealthStatus = HealthStatusEnum.kUpToDateHealth Then

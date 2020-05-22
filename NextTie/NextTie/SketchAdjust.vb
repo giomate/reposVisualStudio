@@ -350,7 +350,7 @@ Public Class SketchAdjust
             SetpointCorrector = AdjustResolution(name, setpoint)
             dc = GetDimension(name)
             dc.Driven = False
-            While (((Math.Abs(delta * resolution * SetpointCorrector)) > (setpoint / resolution)) And (monitor.IsSketch3dhHealthy(oSk3D)))
+            While (((Math.Abs(delta * resolution * SetpointCorrector)) > (setpoint / resolution)) And (monitor.IsSketch3DHealthy(oSk3D)))
                 r = pit.Value * calculateGain(setpoint, name)
                 pit.Value = r
                 oPartDoc.Update2()
@@ -360,7 +360,7 @@ Public Class SketchAdjust
 
             End While
             counter = 0
-            If Not monitor.IsSketch3dhHealthy(oSk3D) Then
+            If Not monitor.IsSketch3DHealthy(oSk3D) Then
                 RecoveryUnhealthySketch(oSk3D)
                 Return False
             Else
@@ -395,7 +395,7 @@ Public Class SketchAdjust
         Try
             calculateGain(setpoint, gap.Parameter.Name)
             SetpointCorrector = AdjustResolution(gap.Parameter.Name, setpoint) * 4
-            While (((Math.Abs(delta * resolution * SetpointCorrector)) > (setpoint / resolution)) And (monitor.IsSketch3dhHealthy(oSk3D)) And (Not IsLastAngleOk(angle)) And (counter < Math.Pow(4 * 4, 4)))
+            While (((Math.Abs(delta * resolution * SetpointCorrector)) > (setpoint / resolution)) And (monitor.IsSketch3DHealthy(oSk3D)) And (Not IsLastAngleOk(angle)) And (counter < Math.Pow(4 * 4, 4)))
                 pit.Value = pit.Value * Math.Pow(calculateGain(setpoint, gap.Parameter.Name), 1 / 4)
                 oPartDoc.Update2()
                 AdjustResolution(gap.Parameter.Name, pit._Value)
@@ -404,7 +404,7 @@ Public Class SketchAdjust
                 counter = counter + 1
             End While
             counter = 0
-            If Not monitor.IsSketch3dhHealthy(oSk3D) Then
+            If Not monitor.IsSketch3DHealthy(oSk3D) Then
                 RecoveryUnhealthySketch(oSk3D)
                 Return False
             Else
@@ -449,7 +449,7 @@ Public Class SketchAdjust
         Try
             calculateGain(setpoint, gap.Parameter.Name)
             SetpointCorrector = AdjustResolution(gap.Parameter.Name, setpoint) * 4
-            While (((Math.Abs(delta * resolution * SetpointCorrector)) > (setpoint / resolution)) And (monitor.IsSketch3dhHealthy(oSk3D)) And (Not IsLastAngleOkLimit(angle, limit)) And (counter < Math.Pow(4 * 4, 4)))
+            While (((Math.Abs(delta * resolution * SetpointCorrector)) > (setpoint / resolution)) And (monitor.IsSketch3DHealthy(oSk3D)) And (Not IsLastAngleOkLimit(angle, limit)) And (counter < Math.Pow(4 * 4, 4)))
                 pit.Value = pit.Value * Math.Pow(calculateGain(setpoint, gap.Parameter.Name), 1 / 4)
                 oPartDoc.Update2()
                 AdjustResolution(gap.Parameter.Name, pit._Value)
@@ -458,7 +458,7 @@ Public Class SketchAdjust
                 counter = counter + 1
             End While
             counter = 0
-            If Not monitor.IsSketch3dhHealthy(oSk3D) Then
+            If Not monitor.IsSketch3DHealthy(oSk3D) Then
                 RecoveryUnhealthySketch(oSk3D)
                 Return False
             Else
@@ -512,7 +512,7 @@ Public Class SketchAdjust
                 SetpointCorrector = 1
 
             End If
-            While (((Math.Abs(delta * resolution) * SetpointCorrector) > (Math.Pow(10, -3) / resolution)) And (monitor.IsSketch3dhHealthy(oSk3D)) And (errorCounter < climit) And (counter < climit * 4))
+            While (((Math.Abs(delta * resolution) * SetpointCorrector) > (Math.Pow(10, -3) / resolution)) And (monitor.IsSketch3DHealthy(oSk3D)) And (errorCounter < climit) And (counter < climit * 4))
                 pit.Value = pit.Value * calculateGainForMinimun(setPoint, dc.Parameter.Name)
                 oPartDoc.Update2()
                 AdjustResolution(dc.Parameter.Name, pit._Value)
@@ -521,10 +521,10 @@ Public Class SketchAdjust
                 Form1.Label1.Text = "Adjusting " & pit.Name & " = " & pit.Value.ToString
             End While
             counter = 0
-            If Not monitor.IsSketch3dhHealthy(oSk3D) Then
+            If Not monitor.IsSketch3DHealthy(oSk3D) Then
                 'dc.Driven = True
                 RecoveryUnhealthySketch(oSk3D)
-                If monitor.IsSketch3dhHealthy(oSk3D) Then
+                If monitor.IsSketch3DHealthy(oSk3D) Then
                     If errorCounter < climit Then
                         errorCounter = errorCounter + 1
                         ' dc.Driven = False
@@ -579,7 +579,7 @@ Public Class SketchAdjust
                 SetpointCorrector = 1
 
             End If
-            While (((Math.Abs(delta * resolution) * SetpointCorrector) > (Math.Pow(10, -3) / resolution)) And (monitor.IsSketch3dhHealthy(oSk3D)) And (errorCounter < climit))
+            While (((Math.Abs(delta * resolution) * SetpointCorrector) > (Math.Pow(10, -3) / resolution)) And (monitor.IsSketch3DHealthy(oSk3D)) And (errorCounter < climit))
                 pit.Value = pit.Value * calculateGainForMaximun(setPoint, dc.Parameter.Name)
                 oPartDoc.Update2()
                 AdjustResolution(dc.Parameter.Name, pit._Value)
@@ -588,10 +588,10 @@ Public Class SketchAdjust
                 Form1.Label1.Text = "Adjusting " & pit.Name & " = " & pit.Value.ToString
             End While
             counter = 0
-            If Not monitor.IsSketch3dhHealthy(oSk3D) Then
+            If Not monitor.IsSketch3DHealthy(oSk3D) Then
                 'dc.Driven = True
                 RecoveryUnhealthySketch(oSk3D)
-                If monitor.IsSketch3dhHealthy(oSk3D) Then
+                If monitor.IsSketch3DHealthy(oSk3D) Then
                     If errorCounter < climit Then
                         errorCounter = errorCounter + 1
                         ' dc.Driven = False
@@ -661,10 +661,10 @@ Public Class SketchAdjust
     Function RecoveryUnhealthySketch(p As Parameter) As Parameter
         Try
             oPartDoc = p.Parent
-            While Not monitor.IsSketch3dhHealthy(oSk3D)
+            While Not monitor.IsSketch3DHealthy(oSk3D)
                 comando.UndoCommand()
                 oPartDoc.Update2()
-                If Not monitor.IsSketch3dhHealthy(oSk3D) Then
+                If Not monitor.IsSketch3DHealthy(oSk3D) Then
                     UpdateDocu(oPartDoc)
                     comando.UndoCommand()
                 End If
@@ -686,13 +686,13 @@ Public Class SketchAdjust
             compDef = sk.Parent
             oPartDoc = compDef.Document
             Dim skerror As Integer = skcounter
-            While Not monitor.IsSketch3dhHealthy(sk)
+            While Not monitor.IsSketch3DHealthy(sk)
                 For index = 1 To skerror + 1
                     comando.UndoCommand()
                 Next
                 oPartDoc.Update2(True)
 
-                If Not monitor.IsSketch3dhHealthy(sk) Then
+                If Not monitor.IsSketch3DHealthy(sk) Then
                     skcounter = skcounter + 1
                     RecoveryUnhealthySketch(sk)
                 Else

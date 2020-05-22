@@ -588,7 +588,7 @@ Public Class MicroFold6
             End If
             Try
                 doku.Update2()
-                If monitor.IsSketch3dhHealthy(sk3D) Then
+                If monitor.IsSketch3DHealthy(sk3D) Then
                 Else
                     Try
                         parallel.Delete()
@@ -613,7 +613,7 @@ Public Class MicroFold6
         Try
             Try
                 doku.Update2()
-                If monitor.IsSketch3dhHealthy(sk3D) Then
+                If monitor.IsSketch3DHealthy(sk3D) Then
                 Else
                     Try
                         parallel.Delete()
