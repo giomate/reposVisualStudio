@@ -805,7 +805,7 @@ Public Class OriginSketch
             End Try
             CorrectFirstLine()
             CorrectGap()
-            adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM * 3)
+            adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM * 5)
             gapFold.Driven = True
 
             Try
@@ -891,7 +891,7 @@ Public Class OriginSketch
             Try
                 dcl = sk3D.DimensionConstraints3D.AddLineLength(bl4)
                 If dcl.Parameter._Value < GetParameter("b")._Value * 2 Then
-                    adjuster.AdjustDimensionConstraint3DSmothly(dcl, GetParameter("b")._Value * 3)
+                    adjuster.AdjustDimensionConstraint3DSmothly(dcl, GetParameter("b")._Value * 5)
                 End If
 
                 dcl.Delete()
@@ -904,7 +904,7 @@ Public Class OriginSketch
             CorrectTangent()
 
             CorrectGap()
-            adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM * 3)
+            adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM * 5)
             gapFold.Driven = True
             l.Construction = True
             constructionLines.Add(l)
@@ -984,6 +984,11 @@ Public Class OriginSketch
             l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.EndPoint, firstLine.StartPoint, False)
             thirdLine = l
             bandLines.Add(l)
+            If thirdLine.Length > 9 * b / 4 Then
+                dc = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, 7 * b / 4)
+                dc.Delete()
+            End If
             If secondLine.Length > b Then
                 dc = sk3D.DimensionConstraints3D.AddLineLength(secondLine)
                 adjuster.AdjustDimensionConstraint3DSmothly(dc, b)
@@ -1006,10 +1011,16 @@ Public Class OriginSketch
     Function DrawSecondConstructionLine() As SketchLine3D
         Try
             Dim v1, v2, v3 As Vector
-            Dim l, pl As SketchLine3D
+            Dim l As SketchLine3D
             Dim endPoint As Point
             Dim dc, ac As DimensionConstraint3D
             Dim gc As GeometricConstraint3D
+            Dim b As Double = GetParameter("b")._Value
+            If thirdLine.Length > 9 * b / 4 Then
+                dc = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, 7 * b / 4)
+                dc.Delete()
+            End If
             v2 = tangentLine.Geometry.Direction.AsVector
             v3 = firstLine.Geometry.Direction.AsVector
             v1 = v2.CrossProduct(v3)

@@ -69,7 +69,7 @@ Public Class Form1
     Private Sub Form1_Activated(sender As Object, e As EventArgs) Handles Me.Activated
         Try
             Me.Label1.Text = "Make the ties!!"
-            ' done = KeepMakingTies()
+            done = KeepMakingTies()
             If done Then
                 Me.Close()
             End If
