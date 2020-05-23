@@ -919,7 +919,7 @@ Public Class OriginSketch
         Dim d As Double
 
         Dim limit As Integer = 0
-        Dim dc As DimensionConstraint3D
+        Dim dc, dcbl2 As DimensionConstraint3D
         Dim hecho As Boolean
         Try
             d = CalculateGapError()
@@ -928,17 +928,23 @@ Public Class OriginSketch
 
                 ' l = sk3D.SketchLines3D.AddByTwoPoints(cl2.StartPoint, tangentLine.StartPoint, False)
                 dc = sk3D.DimensionConstraints3D.AddLineLength(tangentLine)
+                dc.Driven = True
+                dcbl2 = sk3D.DimensionConstraints3D.AddLineLength(secondLine)
+                dcbl2.Driven = True
                 Do
                     adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value / 2)
                     gapFold.Driven = True
-                    hecho = adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 7 / 8)
+                    hecho = adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 9 / 8)
                     dc.Driven = True
+                    hecho = adjuster.AdjustDimensionConstraint3DSmothly(dcbl2, dcbl2.Parameter._Value * 9 / 8)
+                    dcbl2.Driven = True
                     CorrectFirstLine()
                     d = CalculateGapError()
                     limit = limit + 1
                 Loop Until (d > 0 Or limit > 16)
                 dc.Delete()
-
+                dcbl2.Delete()
+                adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM * 2)
             Else
                 Return True
 
@@ -962,7 +968,7 @@ Public Class OriginSketch
         vbl4 = bl4.Geometry.Direction.AsVector
         vbl1 = firstLine.Geometry.Direction.AsVector
         vbl2 = secondLine.Geometry.Direction.AsVector
-        d = vbl1.CrossProduct(vbl4).DotProduct(vbl2)
+        d = vbl4.CrossProduct(vbl1).DotProduct(vbl2)
         Return d
     End Function
     Function DrawThirdLine() As SketchLine3D
@@ -1004,7 +1010,7 @@ Public Class OriginSketch
             Dim gc As GeometricConstraint3D
             v2 = tangentLine.Geometry.Direction.AsVector
             v3 = firstLine.Geometry.Direction.AsVector
-            v1 = v2.CrossProduct(v3)
+            v1 = v3.CrossProduct(v2)
             endPoint = secondLine.StartSketchPoint.Geometry
             endPoint.TranslateBy(v1)
             l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.StartSketchPoint.Geometry, endPoint, False)
