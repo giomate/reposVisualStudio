@@ -1004,7 +1004,7 @@ Public Class OriginSketch
             Dim gc As GeometricConstraint3D
             v2 = tangentLine.Geometry.Direction.AsVector
             v3 = firstLine.Geometry.Direction.AsVector
-            v1 = v3.CrossProduct(v2)
+            v1 = v2.CrossProduct(v3)
             endPoint = secondLine.StartSketchPoint.Geometry
             endPoint.TranslateBy(v1)
             l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.StartSketchPoint.Geometry, endPoint, False)
