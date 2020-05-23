@@ -931,13 +931,13 @@ Public Class OriginSketch
 
 
                 ' l = sk3D.SketchLines3D.AddByTwoPoints(cl2.StartPoint, tangentLine.StartPoint, False)
-                dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(secondLine.StartPoint, curve.EndSketchPoint)
+                dc = sk3D.DimensionConstraints3D.AddLineLength(tangentLine)
                 dc.Driven = True
 
                 Do
                     adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value / 2)
                     gapFold.Driven = True
-                    hecho = adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 9 / 8)
+                    hecho = adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 7 / 8)
                     dc.Driven = True
 
                     CorrectFirstLine()
