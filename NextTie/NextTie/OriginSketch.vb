@@ -8,6 +8,7 @@ Public Class OriginSketch
     Dim app As Application
     Public sk3D, refSk As Sketch3D
     Dim lines3D As SketchLines3D
+    Dim tensorFirstLine As SketchLine3D
     Dim compDef As SheetMetalComponentDefinition
     Public refLine, firstLine, secondLine, thirdLine, lastLine, twistLine, inputLine, doblezline, centroLine, gapFoldLine, tangentLine, zAxisLine As SketchLine3D
     Public curve, refCurve As SketchEquationCurve3D
@@ -18,7 +19,7 @@ Public Class OriginSketch
     Public vp, point1, point2, point3, centroPoint As Point
     Dim intersectionPoint As SketchPoint3D
     Dim tg As TransientGeometry
-    Dim gapFoldCM As Double
+    Dim gapFoldCM, radioCylinder As Double
     Dim adjuster As SketchAdjust
     Public bandLines, constructionLines As ObjectCollection
     Dim comando As Commands
@@ -41,6 +42,7 @@ Public Class OriginSketch
         bandLines = app.TransientObjects.CreateObjectCollection
         constructionLines = app.TransientObjects.CreateObjectCollection
         gapFoldCM = 3 / 10
+        radioCylinder = 20 / 10
         done = False
     End Sub
     Public Sub New(docu As Inventor.Document, tl As SketchLine3D)
@@ -163,8 +165,7 @@ Public Class OriginSketch
     End Function
     Function IsFirstLineInsideCylinder() As Boolean
         Dim l As Line = compDef.WorkAxes.Item(3).Line
-        Dim b As Double = GetParameter("b")._Value
-        If l.DistanceTo(firstLine.StartSketchPoint.Geometry) < b Then
+        If l.DistanceTo(firstLine.StartSketchPoint.Geometry) < radioCylinder Then
             Return True
         Else
             Return False
@@ -174,15 +175,12 @@ Public Class OriginSketch
     End Function
     Function ForceFirstLineOutside() As Integer
         Dim hecho As Boolean
-        Dim l As SketchLine3D = sk3D.SketchLines3D.AddByTwoPoints(zAxisLine.Geometry.MidPoint, firstLine.StartPoint, False)
-        sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, zAxisLine)
-        TryPerpendicular(zAxisLine, l)
-        PullUpLine(l)
-        Dim dc As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddLineLength(l)
-        Dim b As Double = GetParameter("b")._Value
-        hecho = adjuster.AdjustDimensionConstraint3DSmothly(dc, b * 5 / 4)
+
+        PullUpLine(tensorFirstLine)
+        Dim dc As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddLineLength(tensorFirstLine)
+
+        hecho = adjuster.AdjustDimensionConstraint3DSmothly(dc, radioCylinder * 6 / 5)
         dc.Delete()
-        l.Delete()
         Return hecho
     End Function
     Function PullUpLine(li As SketchLine3D) As Integer
@@ -482,6 +480,10 @@ Public Class OriginSketch
                 End If
             End If
 
+            tensorFirstLine = sk3D.SketchLines3D.AddByTwoPoints(zAxisLine.Geometry.MidPoint, firstLine.StartPoint, False)
+            sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, zAxisLine)
+            TryPerpendicular(zAxisLine, l)
+            tensorFirstLine.Construction = True
             Return l
         Catch ex As Exception
             MsgBox(ex.ToString())
@@ -489,6 +491,7 @@ Public Class OriginSketch
         End Try
         Return Nothing
     End Function
+
     Public Function CorrectFirstLine() As Boolean
         If IsFirstLineInsideCylinder() Then
             Return ForceFirstLineOutside()
@@ -933,7 +936,7 @@ Public Class OriginSketch
                 Do
                     adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value / 2)
                     gapFold.Driven = True
-                    hecho = adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 7 / 8)
+                    hecho = adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 9 / 8)
                     dc.Driven = True
 
                     CorrectFirstLine()
@@ -966,7 +969,7 @@ Public Class OriginSketch
         vbl4 = bl4.Geometry.Direction.AsVector
         vbl1 = firstLine.Geometry.Direction.AsVector
         vbl2 = secondLine.Geometry.Direction.AsVector
-        d = vbl4.CrossProduct(vbl1).DotProduct(vbl2)
+        d = vbl1.CrossProduct(vbl4).DotProduct(vbl2)
         Return d
     End Function
     Function DrawThirdLine() As SketchLine3D
@@ -1008,7 +1011,7 @@ Public Class OriginSketch
             Dim gc As GeometricConstraint3D
             v2 = tangentLine.Geometry.Direction.AsVector
             v3 = firstLine.Geometry.Direction.AsVector
-            v1 = v3.CrossProduct(v2)
+            v1 = v2.CrossProduct(v3)
             endPoint = secondLine.StartSketchPoint.Geometry
             endPoint.TranslateBy(v1)
             l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.StartSketchPoint.Geometry, endPoint, False)

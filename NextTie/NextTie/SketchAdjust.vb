@@ -440,60 +440,7 @@ Public Class SketchAdjust
 
         Return b
     End Function
-    Public Function AdjustGapLimitSmothly(gap As DimensionConstraint3D, setpoint As Double, angle As DimensionConstraint3D, limit As Double) As Boolean
-        Dim pit As Parameter
-        Dim b As Boolean = False
 
-
-        pit = getParameter(gap.Parameter.Name)
-
-        Try
-            calculateGain(setpoint, gap.Parameter.Name)
-            SetpointCorrector = AdjustResolution(gap.Parameter.Name, setpoint) * 4
-            While (((Math.Abs(delta * resolution * SetpointCorrector)) > (setpoint / resolution)) And (monitor.IsSketch3DHealthy(oSk3D)) And (Not IsLastAngleOkLimit(angle, limit)) And (counter < Math.Pow(4 * 4, 4)))
-                pit.Value = pit.Value * Math.Pow(calculateGain(setpoint, gap.Parameter.Name), 1 / 4)
-                oPartDoc.Update2()
-                AdjustResolution(gap.Parameter.Name, pit._Value)
-                Debug.Print("iterating  " & pit.Name & " = " & pit.Value.ToString)
-                Form1.Label1.Text = "Adjusting " & pit.Name & " = " & pit.Value.ToString
-                counter = counter + 1
-            End While
-            counter = 0
-            If Not monitor.IsSketch3DHealthy(oSk3D) Then
-                RecoveryUnhealthySketch(oSk3D)
-                Return False
-            Else
-                If ((Math.Abs(delta * resolution * SetpointCorrector)) > (setpoint / resolution)) Then
-                    If IsLastAngleOkLimit(angle, limit) Then
-                        b = True
-                    Else
-                        angle.Driven = True
-                        b = False
-                    End If
-                End If
-            End If
-
-
-            b = True
-            Debug.Print("adjusted " & pit.Name & " = " & pit.Value.ToString)
-            Debug.Print("Resolution:  " & resolution.ToString)
-
-            Return b
-        Catch ex As Exception
-            UndoCommand()
-            If resolution < maxRes Then
-                resolution = resolution * 2
-            End If
-            MsgBox(ex.ToString())
-            MsgBox("Fail adjusting " & pit.Name & " ...last value:" & pit.Value.ToString)
-
-            RecoveryUnhealthySketch(oSk3D)
-            Return False
-
-        End Try
-
-        Return b
-    End Function
 
     Public Function GetMinimalDimension(dc As DimensionConstraint3D) As Boolean
         Dim pit As Parameter
@@ -568,8 +515,9 @@ Public Class SketchAdjust
         Try
 
             Dim b As Boolean = False
-            pit = getParameter(dc.Parameter.Name)
-            calculateGainForMaximun(setPoint, dc.Parameter.Name)
+            pit = dc.Parameter
+            oSk3D = dc.Parent
+            calculateGainForMaximun(setPoint, dc)
             dc.Driven = False
             If dc.Type = ObjectTypeEnum.kTwoLineAngleDimConstraint3DObject Then
                 SetpointCorrector = Math.Pow(resolution, 4)
@@ -579,9 +527,9 @@ Public Class SketchAdjust
 
             End If
             While (((Math.Abs(delta * resolution) * SetpointCorrector) > (Math.Pow(10, -3) / resolution)) And (monitor.IsSketch3DHealthy(oSk3D)) And (errorCounter < climit))
-                pit.Value = pit.Value * calculateGainForMaximun(setPoint, dc.Parameter.Name)
-                oPartDoc.Update2()
-                AdjustResolution(dc.Parameter.Name, pit._Value)
+                pit.Value = pit.Value * calculateGainForMaximun(setPoint, dc)
+                oSk3D.Solve()
+                AdjustResolution(dc, pit._Value)
                 counter = counter + 1
                 Debug.Print("iterating Number:  " & counter.ToString() & "  " & pit.Name & " = " & pit.Value.ToString)
                 Form1.Label1.Text = "Adjusting " & pit.Name & " = " & pit.Value.ToString
@@ -662,7 +610,8 @@ Public Class SketchAdjust
             oPartDoc = p.Parent
             While Not monitor.IsSketch3DHealthy(oSk3D)
                 comando.UndoCommand()
-                oPartDoc.Update2()
+                oPartDoc.Update()
+
                 If Not monitor.IsSketch3DHealthy(oSk3D) Then
                     UpdateDocu(oPartDoc)
                     comando.UndoCommand()
@@ -682,14 +631,13 @@ Public Class SketchAdjust
     End Function
     Public Function RecoveryUnhealthySketch(sk As Sketch3D) As Sketch3D
         Try
-            compDef = sk.Parent
-            oPartDoc = compDef.Document
+
             Dim skerror As Integer = skcounter
             While Not monitor.IsSketch3DHealthy(sk)
                 For index = 1 To skerror + 1
                     comando.UndoCommand()
                 Next
-                oPartDoc.Update2(True)
+                sk.Solve()
 
                 If Not monitor.IsSketch3DHealthy(sk) Then
                     skcounter = skcounter + 1
@@ -763,7 +711,7 @@ Public Class SketchAdjust
         Try
             oSk3D.Solve()
             oSk3D.ExitEdit()
-            oPartDoc.Update()
+
             oSk3D.Edit()
 
         Catch ex As Exception
