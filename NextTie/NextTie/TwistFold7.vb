@@ -651,7 +651,7 @@ Public Class TwistFold7
                 nextSketch.angleTangent.Driven = True
                 reduced = (TryPerpendicularGap(angleTangent, gapFold) Or reduced)
                 limit = limit + 1
-            Loop Until (limit > 16 Or (gapFold.Parameter._Value < gap1CM) Or (nextSketch.gapFold.Parameter._Value < gap1CM) Or (Math.Abs(angleTangent.Parameter._Value - Math.PI / 2) < 1 / 128))
+            Loop Until (limit > 16 Or (gapFold.Parameter._Value < 2 * gap1CM) Or (nextSketch.gapFold.Parameter._Value < gap1CM) Or (Math.Abs(angleTangent.Parameter._Value - Math.PI / 2) < 1 / 128))
             dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(nextSketch.firstLine.StartPoint, cl5.StartPoint)
             adjuster.AdjustDimensionConstraint3DSmothly(dc, 1 / 10)
             dc.Delete()
