@@ -984,11 +984,8 @@ Public Class OriginSketch
             l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.EndPoint, firstLine.StartPoint, False)
             thirdLine = l
             bandLines.Add(l)
-            If thirdLine.Length > b Then
-                dc = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
-                adjuster.AdjustDimensionConstraint3DSmothly(dc, b)
-                dc.Delete()
-            End If
+            AdjustThirdLine()
+
             If secondLine.Length > b Then
                 dc = sk3D.DimensionConstraints3D.AddLineLength(secondLine)
                 adjuster.AdjustDimensionConstraint3DSmothly(dc, b)
@@ -1016,11 +1013,7 @@ Public Class OriginSketch
             Dim dc, ac As DimensionConstraint3D
             Dim gc As GeometricConstraint3D
             Dim b As Double = GetParameter("b")._Value
-            If thirdLine.Length > 2 * b Then
-                dc = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
-                adjuster.AdjustDimensionConstraint3DSmothly(dc, b)
-                dc.Delete()
-            End If
+            AdjustThirdLine()
             v2 = tangentLine.Geometry.Direction.AsVector
             v3 = firstLine.Geometry.Direction.AsVector
             v1 = v2.CrossProduct(v3)
@@ -1079,6 +1072,17 @@ Public Class OriginSketch
             Return Nothing
         End Try
         Return Nothing
+    End Function
+    Function AdjustThirdLine() As DimensionConstraint3D
+        Dim dc As DimensionConstraint3D
+
+        Dim b As Double = GetParameter("b")._Value
+        If thirdLine.Length > 2 * b Then
+            dc = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
+            adjuster.AdjustDimensionConstraint3DSmothly(dc, b)
+            dc.Delete()
+        End If
+        Return dc
     End Function
     Function DrawFourthLine() As SketchLine3D
         Try
@@ -1267,7 +1271,7 @@ Public Class OriginSketch
     Function CorrectThirdLine() As Boolean
         Dim e As Double = Math.Cos(Math.PI * (1 / 2 + 1 / 48))
         Dim d As Double = CalculateEntryRodFactor()
-
+        Dim b As Double = GetParameter("b")._Value
         If d < e Then
             Dim l As SketchLine3D = sk3D.SketchLines3D.AddByTwoPoints(firstLine.StartPoint, intersectionPoint, False)
             Dim dc As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddLineLength(l)
@@ -1275,6 +1279,7 @@ Public Class OriginSketch
             Dim hecho As Boolean
             CorrectFirstLine()
             Do
+                AdjustThirdLine()
                 hecho = adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 7 / 8)
                 dc.Driven = True
 
