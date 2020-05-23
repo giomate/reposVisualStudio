@@ -454,8 +454,8 @@ Public Class OriginSketch
             dc = sk3D.DimensionConstraints3D.AddLineLength(l)
             firstLine = l
             tensorFirstLine = sk3D.SketchLines3D.AddByTwoPoints(zAxisLine.Geometry.MidPoint, firstLine.StartPoint, False)
-            sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, zAxisLine)
-            TryPerpendicular(zAxisLine, l)
+            sk3D.GeometricConstraints3D.AddCoincident(tensorFirstLine.StartPoint, zAxisLine)
+            TryPerpendicular(zAxisLine, tensorFirstLine)
             tensorFirstLine.Construction = True
             If dc.Parameter._Value > b Then
                 Do
