@@ -984,9 +984,9 @@ Public Class OriginSketch
             l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.EndPoint, firstLine.StartPoint, False)
             thirdLine = l
             bandLines.Add(l)
-            If thirdLine.Length > 9 * b / 4 Then
+            If thirdLine.Length > b Then
                 dc = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
-                adjuster.AdjustDimensionConstraint3DSmothly(dc, 7 * b / 4)
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, b)
                 dc.Delete()
             End If
             If secondLine.Length > b Then
@@ -1016,9 +1016,9 @@ Public Class OriginSketch
             Dim dc, ac As DimensionConstraint3D
             Dim gc As GeometricConstraint3D
             Dim b As Double = GetParameter("b")._Value
-            If thirdLine.Length > 9 * b / 4 Then
+            If thirdLine.Length > 2 * b Then
                 dc = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
-                adjuster.AdjustDimensionConstraint3DSmothly(dc, 7 * b / 4)
+                adjuster.AdjustDimensionConstraint3DSmothly(dc, b)
                 dc.Delete()
             End If
             v2 = tangentLine.Geometry.Direction.AsVector
