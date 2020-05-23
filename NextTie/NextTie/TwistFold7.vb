@@ -700,7 +700,7 @@ Public Class TwistFold7
         Dim state As Boolean = gapFold.Driven
         If gapFold.Parameter._Value < gap1CM / 16 Then
             If state Then
-                adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gap1CM)
+                adjuster.AdjustDimensionConstraint3DSmothly(gapFold, 2 * gap1CM)
                 Try
                     gapFold.Driven = True
                     Return True
@@ -708,7 +708,7 @@ Public Class TwistFold7
 
                 End Try
             Else
-                Return adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gap1CM)
+                Return adjuster.AdjustDimensionConstraint3DSmothly(gapFold, 2 * gap1CM)
             End If
 
         Else
