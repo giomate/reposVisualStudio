@@ -1004,17 +1004,18 @@ Public Class InitSketcher
             bl4 = bandLines(4)
             bl6 = bandLines(6)
             dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(bl4.EndPoint, bl6.EndPoint)
-            dc.Driven = True
+            dc = RecoverGapFold(dc)
+            ' dc.Driven = True
             aci.Driven = False
             dimConstrainBandLine2.Driven = False
             adjuster.AdjustDimensionConstraint3DSmothly(dimConstrainBandLine2, dimConstrainBandLine2.Parameter._Value * 4 / 3)
             dimConstrainBandLine2.Delete()
 
             If gapFold.Parameter._Value > gapFoldCM * 2 Then
-                For i = 1 To 16
+                For i = 1 To 32
                     gapFold.Driven = True
                     aci.Driven = False
-                    If adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 7 / 8) Then
+                    If adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 15 / 16) Then
                         aci.Driven = True
                         doku.Update2(True)
                     Else
@@ -1073,7 +1074,7 @@ Public Class InitSketcher
         Try
             gapFold.Driven = True
             For i = 1 To 32
-                If adjuster.AdjustDimensionConstraint3DSmothly(dci, dci.Parameter._Value * 7 / 8) Then
+                If adjuster.AdjustDimensionConstraint3DSmothly(dci, dci.Parameter._Value * 15 / 16) Then
                 Else
                     Exit For
                 End If

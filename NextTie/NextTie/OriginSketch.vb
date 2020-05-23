@@ -1004,14 +1004,14 @@ Public Class OriginSketch
             Dim gc As GeometricConstraint3D
             v2 = tangentLine.Geometry.Direction.AsVector
             v3 = firstLine.Geometry.Direction.AsVector
-            v1 = v2.CrossProduct(v3)
+            v1 = v3.CrossProduct(v2)
             endPoint = secondLine.StartSketchPoint.Geometry
             endPoint.TranslateBy(v1)
             l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.StartSketchPoint.Geometry, endPoint, False)
 
             gapFold = sk3D.DimensionConstraints3D.AddLineLength(l)
 
-            gc = sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, firstLine)
+            ' gc = sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, firstLine)
             gc = sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, secondLine)
             Try
                 ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, secondLine)
@@ -1019,11 +1019,15 @@ Public Class OriginSketch
                 ac.Delete()
                 sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
             Catch ex As Exception
-
                 adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 9 / 8)
-
                 ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, secondLine)
-                adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2)
+                Try
+                    ac.Parameter._Value = Math.PI / 2
+                    doku.Update()
+                Catch ex3 As Exception
+
+                End Try
+
                 ac.Delete()
                 sk3D.GeometricConstraints3D.AddPerpendicular(l, secondLine)
 

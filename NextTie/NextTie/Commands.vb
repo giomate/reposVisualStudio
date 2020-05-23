@@ -45,14 +45,21 @@ Public Class Commands
 
     End Sub
     Public Sub UnfoldBand(doku As PartDocument)
-
         Dim oDef As ControlDefinition
-        app = doku.Parent
-        oDef = app.CommandManager.ControlDefinitions.Item("PartConvertToSheetMetalCmd")
-        oDef.Execute()
         Dim oCompDef As SheetMetalComponentDefinition
-        oCompDef = doku.ComponentDefinition
-        oCompDef.Unfold()
+        Try
+
+            app = doku.Parent
+            oDef = app.CommandManager.ControlDefinitions.Item("PartConvertToSheetMetalCmd")
+            oDef.Execute()
+
+            oCompDef = doku.ComponentDefinition
+            oCompDef.Unfold()
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+
+        End Try
+
 
     End Sub
     Public Sub RefoldBand(doku As PartDocument)
@@ -60,9 +67,10 @@ Public Class Commands
         Dim oDef As ControlDefinition
         app = doku.Parent
         oDef = app.CommandManager.ControlDefinitions.Item("PartSwitchRepresentationCmd")
-
-        oDef.Execute()
-
+        'oDef.Execute()
+        Dim oCompDef As SheetMetalComponentDefinition
+        oCompDef = doku.ComponentDefinition
+        oCompDef.FlatPattern.ExitEdit()
 
     End Sub
 

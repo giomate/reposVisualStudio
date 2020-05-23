@@ -135,7 +135,9 @@ Public Class MicroFold6
                                                     'lamp.LookAtFace(workFace)
                                                     doku.Update2(True)
                                                     If monitor.IsFeatureHealthy(folded) Then
+                                                        comando.UnfoldBand(doku)
                                                         If compDef.HasFlatPattern Then
+                                                            comando.RefoldBand(doku)
                                                             doku.Save2(True)
                                                             done = 1
                                                             Return True

@@ -283,7 +283,9 @@ Public Class TwistFold7
                                             End Try
                                             doku.Update2(True)
                                             If monitor.IsFeatureHealthy(folded) Then
+                                                comando.UnfoldBand(doku)
                                                 If compDef.HasFlatPattern Then
+                                                    comando.RefoldBand(doku)
                                                     cl5 = constructionLines.Item(5)
                                                     foldFeature = bender.folded
                                                     sk3D = compDef.Sketches3D.Add()
