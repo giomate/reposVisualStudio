@@ -398,9 +398,9 @@ Public Class InitSketcher
             l = sk3D.SketchLines3D.AddByTwoPoints(refLine.StartPoint, refLine.EndSketchPoint.Geometry, False)
             dc = sk3D.DimensionConstraints3D.AddLineLength(l)
             dc.Parameter._Value = curve3D.DP.b / 10
-            doku.Update2(True)
+            sk3D.Solve()
             gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, twistLine)
-            doku.Update2(True)
+            sk3D.Solve()
             gc.Delete()
             dimConstrainBandLine2 = dc
             bandLines.Add(l)
@@ -546,7 +546,7 @@ Public Class InitSketcher
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, bl4)
             dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(l.EndPoint, cl.EndPoint)
             adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value / 2)
-            AdjustTwoPointsSmothly(dc, 1 / 10)
+            adjuster.AdjustDimensionConstraint3DSmothly(dc, 1 / 10)
             dc2 = sk3D.DimensionConstraints3D.AddLineLength(l)
             If dc2.Parameter._Value > curve3D.DP.b * 3 / 20 Then
                 If adjuster.AdjustDimensionConstraint3DSmothly(dc2, curve3D.DP.b * 5 / 40) Then
@@ -749,7 +749,7 @@ Public Class InitSketcher
 
             Try
                 gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, pl)
-                doku.Update2(True)
+                sk3D.Solve()
                 gc.Delete()
             Catch ex As Exception
                 If gc.Deletable Then
@@ -887,7 +887,7 @@ Public Class InitSketcher
 
             Catch ex As Exception
                 adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 17 / 16)
-                doku.Update2(True)
+                sk3D.Solve()
 
                 acl4l6 = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
 
@@ -967,7 +967,7 @@ Public Class InitSketcher
                             gapFold.Driven = False
                             adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 17 / 16)
                             gapFold.Driven = True
-                            doku.Update2()
+                            sk3D.Solve()
 
                         Catch ex2 As Exception
                             counterLimit = counterLimit + 1
@@ -1017,7 +1017,7 @@ Public Class InitSketcher
                     aci.Driven = False
                     If adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 15 / 16) Then
                         aci.Driven = True
-                        doku.Update2(True)
+                        sk3D.Solve()
                     Else
                         aci.Driven = True
                         For j = 1 To 8
@@ -1025,10 +1025,10 @@ Public Class InitSketcher
                             comando.UndoCommand()
                             comando.UndoCommand()
 
-                            doku.Update2(True)
+                            sk3D.Solve()
                             If monitor.IsSketch3DHealthy(sk3D) Then
                                 gapFold.Parameter._Value *= 16 / 15
-                                doku.Update()
+                                sk3D.Solve()
                                 If monitor.IsSketch3DHealthy(sk3D) Then
                                     dc = RecoverGapFold(dc)
                                     Exit For
@@ -1036,7 +1036,7 @@ Public Class InitSketcher
                                     comando.UndoCommand()
                                     comando.UndoCommand()
                                     comando.UndoCommand()
-                                    doku.Update()
+                                    sk3D.Solve()
                                     adjuster.RecoveryUnhealthySketch(sk3D)
                                 End If
 
@@ -1044,7 +1044,7 @@ Public Class InitSketcher
                                 comando.UndoCommand()
                                 comando.UndoCommand()
                                 comando.UndoCommand()
-                                doku.Update()
+                                sk3D.Solve()
                                 adjuster.RecoveryUnhealthySketch(sk3D)
                             End If
                         Next
@@ -1060,7 +1060,7 @@ Public Class InitSketcher
             End If
 
             gapFold.Driven = True
-            doku.Update2(True)
+            sk3D.Solve()
             aci.Driven = False
             Return gapFold
         Catch ex As Exception
@@ -1124,25 +1124,7 @@ Public Class InitSketcher
 
 
     End Function
-    Function AdjustTwoPointsSmothly(dc As TwoPointDistanceDimConstraint3D, v As Double) As Boolean
 
-        Dim dName As String
-        Dim b As Boolean = False
-
-        dName = dc.Parameter.Name
-
-        If doku.Update2() Then
-            If adjuster.UpdateDocu(doku) Then
-                If adjuster.AdjustDimensionSmothly(dName, v) Then
-                    b = True
-                End If
-            End If
-        End If
-
-
-
-        Return b
-    End Function
     Function IsThereCoincidentConstrains(line As SketchLine3D) As Boolean
         For Each o As Object In refLine.Constraints3D
             If o.Type = ObjectTypeEnum.kCoincidentConstraint3DObject Then

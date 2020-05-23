@@ -255,7 +255,7 @@ Public Class Sketcher3D
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, curve)
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, ol)
             dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(l.EndPoint, cl.EndPoint)
-            If AdjustTwoPointsSmothly(dc, 1) Then
+            If adjuster.AdjustDimensionConstraint3DSmothly(dc, 1) Then
                 sk3D.GeometricConstraints3D.AddPerpendicular(l, ol)
                 sk3D.GeometricConstraints3D.AddEqual(l, cl)
                 l.Construction = True
@@ -420,11 +420,11 @@ Public Class Sketcher3D
         If doku.Update2() Then
             If adjuster.UpdateDocu(doku) Then
                 If GetParameter(dName)._Value > Math.PI / 2 Then
-                    If adjuster.AdjustDimensionSmothly(dName, Math.PI - 0.1) Then
+                    If adjuster.AdjustDimConstrain3DSmothly(dName, Math.PI - 0.1) Then
                         b = True
                     End If
                 Else
-                    If adjuster.AdjustDimensionSmothly(dName, 0.1) Then
+                    If adjuster.AdjustDimConstrain3DSmothly(dName, 0.1) Then
                         b = True
                     End If
                 End If
@@ -435,25 +435,7 @@ Public Class Sketcher3D
 
         Return b
     End Function
-    Function AdjustTwoPointsSmothly(dc As TwoPointDistanceDimConstraint3D, v As Double) As Boolean
 
-        Dim dName As String
-        Dim b As Boolean = False
-
-        dName = dc.Parameter.Name
-
-        If doku.Update2() Then
-            If adjuster.UpdateDocu(doku) Then
-                If adjuster.AdjustDimensionSmothly(dName, v) Then
-                    b = True
-                End If
-            End If
-        End If
-
-
-
-        Return b
-    End Function
     Function IsThereCoincidentConstrains(line As SketchLine3D) As Boolean
         For Each o As Object In refLine.Constraints3D
             If o.Type = ObjectTypeEnum.kCoincidentConstraint3DObject Then

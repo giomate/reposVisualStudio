@@ -198,9 +198,9 @@ Public Class SketchAdjust
         Return p
     End Function
 
-    Function calculateGain(setValue As Double, name As String) As Double
+    Function calculateGain(setValue As Double, dc As DimensionConstraint3D) As Double
         Try
-            p = getParameter(name)
+            p = dc.Parameter
             delta = (setValue - p._Value) / (setValue * resolution)
             gain = Math.Exp(delta)
         Catch ex As Exception
@@ -210,12 +210,12 @@ Public Class SketchAdjust
 
         Return gain
     End Function
-    Function calculateGainForMinimun(setValue As Double, name As String) As Double
+    Function calculateGainForMinimun(setValue As Double, dc As DimensionConstraint3D) As Double
         Try
-            p = getParameter(name)
+            p = dc.Parameter
             Dim k As Double
             delta = (setValue - p._Value) / (resolution)
-            If GetDimension(name).Type = ObjectTypeEnum.kTwoLineAngleDimConstraint3DObject Then
+            If dc.Type = ObjectTypeEnum.kTwoLineAngleDimConstraint3DObject Then
                 k = 4
             Else
                 k = 2
@@ -228,12 +228,12 @@ Public Class SketchAdjust
 
         Return gain
     End Function
-    Function calculateGainForMaximun(setValue As Double, name As String) As Double
+    Function calculateGainForMaximun(setValue As Double, dc As DimensionConstraint3D) As Double
         Try
-            p = getParameter(name)
+            p = dc.Parameter
             Dim k As Double
             delta = (setValue - p._Value) / (resolution)
-            If GetDimension(name).Type = ObjectTypeEnum.kTwoLineAngleDimConstraint3DObject Then
+            If dc.Type = ObjectTypeEnum.kTwoLineAngleDimConstraint3DObject Then
                 k = 4
             Else
                 k = 1
@@ -338,23 +338,23 @@ Public Class SketchAdjust
 
         Return p
     End Function
-    Public Function AdjustDimensionSmothly(name As String, setpoint As Double) As Boolean
+    Function AdjustDimConstrain3DSmothly(dci As DimensionConstraint3D, setpoint As Double) As Boolean
         Dim pit As Parameter
         Dim b As Boolean = False
         Dim c, r As Double
-        Dim dc As DimensionConstraint3D
-        pit = getParameter(name)
+        oSk3D = dci.Parent
+        pit = dci.Parameter
 
         Try
-            calculateGain(setpoint, name)
-            SetpointCorrector = AdjustResolution(name, setpoint)
-            dc = GetDimension(name)
-            dc.Driven = False
+            calculateGain(setpoint, dci)
+            SetpointCorrector = AdjustResolution(dci, setpoint)
+
+            dci.Driven = False
             While (((Math.Abs(delta * resolution * SetpointCorrector)) > (setpoint / resolution)) And (monitor.IsSketch3DHealthy(oSk3D)))
-                r = pit.Value * calculateGain(setpoint, name)
+                r = pit.Value * calculateGain(setpoint, dci)
                 pit.Value = r
-                oPartDoc.Update2()
-                AdjustResolution(name, pit._Value)
+                oSk3D.Solve()
+                AdjustResolution(dci, pit._Value)
                 Form1.Label1.Text = "Adjusting " & pit.Name & " = " & pit.Value.ToString
                 counter = counter + 1
 
@@ -390,15 +390,16 @@ Public Class SketchAdjust
         Dim b As Boolean = False
 
 
-        pit = getParameter(gap.Parameter.Name)
-
         Try
-            calculateGain(setpoint, gap.Parameter.Name)
-            SetpointCorrector = AdjustResolution(gap.Parameter.Name, setpoint) * 4
+            oSk3D = gap.Parent
+
+            pit = gap.Parameter
+            calculateGain(setpoint, gap)
+            SetpointCorrector = AdjustResolution(gap, setpoint) * 4
             While (((Math.Abs(delta * resolution * SetpointCorrector)) > (setpoint / resolution)) And (monitor.IsSketch3DHealthy(oSk3D)) And (Not IsLastAngleOk(angle)) And (counter < Math.Pow(4 * 4, 4)))
-                pit.Value = pit.Value * Math.Pow(calculateGain(setpoint, gap.Parameter.Name), 1 / 4)
-                oPartDoc.Update2()
-                AdjustResolution(gap.Parameter.Name, pit._Value)
+                pit.Value = pit.Value * Math.Pow(calculateGain(setpoint, gap), 1 / 4)
+                oSk3D.Solve()
+                AdjustResolution(gap, pit._Value)
                 Debug.Print("iterating  " & pit.Name & " = " & pit.Value.ToString)
                 Form1.Label1.Text = "Adjusting " & pit.Name & " = " & pit.Value.ToString
                 counter = counter + 1
@@ -498,12 +499,12 @@ Public Class SketchAdjust
         Dim pit As Parameter
 
         Try
-
+            oSk3D = dc.Parent
             Dim b As Boolean = False
             Dim setPoint As Double = 0
             Dim climit As Integer = 4
-            pit = getParameter(dc.Parameter.Name)
-            calculateGainForMinimun(setPoint, dc.Parameter.Name)
+            pit = dc.Parameter
+            calculateGainForMinimun(setPoint, dc)
             dc.Driven = False
             If dc.Type = ObjectTypeEnum.kTwoLineAngleDimConstraint3DObject Then
                 SetpointCorrector = Math.Pow(resolution, 2)
@@ -513,12 +514,11 @@ Public Class SketchAdjust
 
             End If
             While (((Math.Abs(delta * resolution) * SetpointCorrector) > (Math.Pow(10, -3) / resolution)) And (monitor.IsSketch3DHealthy(oSk3D)) And (errorCounter < climit) And (counter < climit * 4))
-                pit.Value = pit.Value * calculateGainForMinimun(setPoint, dc.Parameter.Name)
-                oPartDoc.Update2()
-                AdjustResolution(dc.Parameter.Name, pit._Value)
+                pit.Value = pit.Value * calculateGainForMinimun(setPoint, dc)
+                oSk3D.Solve()
+                AdjustResolution(dc, pit._Value)
                 counter = counter + 1
-                Debug.Print("iterating Number:  " & counter.ToString() & "  " & pit.Name & " = " & pit.Value.ToString)
-                Form1.Label1.Text = "Adjusting " & pit.Name & " = " & pit.Value.ToString
+
             End While
             counter = 0
             If Not monitor.IsSketch3DHealthy(oSk3D) Then
@@ -528,7 +528,7 @@ Public Class SketchAdjust
                     If errorCounter < climit Then
                         errorCounter = errorCounter + 1
                         ' dc.Driven = False
-                        pit.Value = pit.Value / calculateGainForMinimun(setPoint, dc.Parameter.Name)
+                        pit.Value = pit.Value / calculateGainForMinimun(setPoint, dc)
                         resolution = resolution * (1 + 4 / CDbl(climit))
                         GetMinimalDimension(dc)
                     Else
@@ -545,8 +545,7 @@ Public Class SketchAdjust
                 Return True
             End If
             b = True
-            Debug.Print("adjusted " & pit.Name & " = " & pit.Value.ToString)
-            Debug.Print("Resolution:  " & resolution.ToString)
+
 
             Return b
         Catch ex As Exception
@@ -715,10 +714,9 @@ Public Class SketchAdjust
 
 
     End Function
-    Function AdjustResolution(name As String, s As Double) As Double
+    Function AdjustResolution(dc As DimensionConstraint3D, s As Double) As Double
         Dim c, r As Double
-        Dim dc As DimensionConstraint3D
-        dc = GetDimension(name)
+
         If dc.Type = ObjectTypeEnum.kTwoLineAngleDimConstraint3DObject Then
             c = s * dc.Parameter._Value * 16
             r = (1 / (s + Math.Pow(10, -6)) + resolution - 1) / ((counter / 2) + 1)
@@ -845,85 +843,17 @@ Public Class SketchAdjust
         Return obj
     End Function
 
-    Function AdjustLineLenghtSmothly(dc As LineLengthDimConstraint3D, v As Double) As Boolean
-
-        Dim dName As String
-        Dim b As Boolean = False
-
-        dName = dc.Parameter.Name
-
-        If oPartDoc.Update2() Then
-            If UpdateDocu(oPartDoc) Then
-                If AdjustDimensionSmothly(dName, v) Then
-                    b = True
-                End If
-            End If
-        End If
 
 
 
-        Return b
-    End Function
-    Function AdjustTwoLineAngleSmothly(dc As TwoLineAngleDimConstraint3D, v As Double) As Boolean
-
-        Dim dName As String
-        Dim b As Boolean = False
-
-        dName = dc.Parameter.Name
-        If oPartDoc.Update2() Then
-            If UpdateDocu(oPartDoc) Then
-                If dc.Parameter._Value > Math.PI / 2 Then
-                    If AdjustDimensionSmothly(dName, v) Then
-                        b = True
-                    End If
-                Else
-                    If AdjustDimensionSmothly(dName, v) Then
-                        b = True
-                    End If
-                End If
-            End If
-        End If
-
-
-
-
-        Return b
-    End Function
-    Function AdjustTwoPointsSmothly(dc As TwoPointDistanceDimConstraint3D, v As Double) As Boolean
-
-        Dim dName As String
-        Dim b As Boolean = False
-
-        dName = dc.Parameter.Name
-
-        If oPartDoc.Update2() Then
-            If UpdateDocu(oPartDoc) Then
-                If AdjustDimensionSmothly(dName, v) Then
-                    b = True
-                End If
-            End If
-        End If
-
-
-
-        Return b
-    End Function
 
     Public Function AdjustDimensionConstraint3DSmothly(dc As DimensionConstraint3D, v As Double) As Boolean
         Dim b As Boolean
         dc.Driven = False
-        Select Case dc.Type
-            Case ObjectTypeEnum.kLineLengthDimConstraint3DObject
 
-                b = AdjustLineLenghtSmothly(dc, v)
-            Case ObjectTypeEnum.kTwoPointDistanceDimConstraint3DObject
 
-                b = AdjustTwoPointsSmothly(dc, v)
-            Case ObjectTypeEnum.kTwoLineAngleDimConstraint3DObject
-                b = AdjustTwoLineAngleSmothly(dc, v)
-            Case Else
-                b = AdjustTwoPointsSmothly(dc, v)
-        End Select
+        b = AdjustDimConstrain3DSmothly(dc, v)
+
         Return b
     End Function
 

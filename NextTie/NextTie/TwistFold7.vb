@@ -759,7 +759,7 @@ Public Class TwistFold7
             bl4 = bandLines.Item(4)
             Try
                 gapVertex.Driven = False
-                doku.Update2()
+                sk3D.Solve()
                 adjuster.GetMinimalDimension(gapVertex)
 
 
@@ -782,7 +782,7 @@ Public Class TwistFold7
             ' cnl1.Delete()
             Try
                 gapVertex.Driven = False
-                doku.Update2()
+                sk3D.Solve()
                 adjuster.GetMinimalDimension(gapVertex)
             Catch ex As Exception
                 gapVertex.Driven = True
@@ -901,7 +901,7 @@ Public Class TwistFold7
 
             Try
                 gapVertex.Driven = False
-                doku.Update2()
+                sk3D.Solve()
                 adjuster.GetMinimalDimension(gapVertex)
 
             Catch ex As Exception
@@ -1369,7 +1369,7 @@ Public Class TwistFold7
 
 
             dc.Parameter._Value = majorLine.Length - thicknessCM * 5
-            doku.Update2(True)
+            sk3D.Solve()
             bandLines.Add(l)
             firstLine = l
             lastLine = l
@@ -1940,7 +1940,7 @@ Public Class TwistFold7
                 adjuster.GetMinimalDimension(gapVertex)
             Catch ex As Exception
             End Try
-            doku.Update2(True)
+            sk3D.Solve()
             thirdLine = l
             lastLine = l
             bandLines.Add(l)
@@ -2089,7 +2089,7 @@ Public Class TwistFold7
                             gccll2.Delete()
                             acbl2bl3.Driven = False
                             acbl2bl3.Parameter._Value = 0.01
-                            doku.Update2(True)
+                            sk3D.Solve()
                             adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI / 3)
                             adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI * 2 / 3)
                             adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI)
@@ -2099,7 +2099,7 @@ Public Class TwistFold7
                             gccll2.Delete()
                             acbl2bl3.Driven = False
                             acbl2bl3.Parameter._Value = 0.01
-                            doku.Update2(True)
+                            sk3D.Solve()
 
                             acbl2bl3.Driven = True
                             gccll2 = sk3D.GeometricConstraints3D.AddCollinear(l, bl2)
@@ -2120,7 +2120,7 @@ Public Class TwistFold7
                                 gccll2.Delete()
                                 acbl2bl3.Driven = False
                                 acbl2bl3.Parameter._Value = 0.01
-                                doku.Update2(True)
+                                sk3D.Solve()
                                 adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI / 3)
                                 adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI * 2 / 3)
                                 adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI)
@@ -2130,7 +2130,7 @@ Public Class TwistFold7
                                 gccll2.Delete()
                                 acbl2bl3.Driven = False
                                 acbl2bl3.Parameter._Value = 0.01
-                                doku.Update2(True)
+                                sk3D.Solve()
 
                                 acbl2bl3.Driven = True
                                 gccll2 = sk3D.GeometricConstraints3D.AddCollinear(l, bl2)
@@ -2170,7 +2170,7 @@ Public Class TwistFold7
 
                 End Try
                 Try
-                    doku.Update()
+                    sk3D.Solve()
                 Catch ex As Exception
                 End Try
 
@@ -2195,7 +2195,7 @@ Public Class TwistFold7
                                 gccll2.Delete()
                                 acbl2bl3.Driven = False
                                 acbl2bl3.Parameter._Value = 0.01
-                                doku.Update2(True)
+                                sk3D.Solve()
                                 adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI / 3)
                                 adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI * 2 / 3)
                                 adjuster.AdjustDimensionConstraint3DSmothly(acbl2bl3, Math.PI)
@@ -2205,7 +2205,7 @@ Public Class TwistFold7
                                 gccll2.Delete()
                                 acbl2bl3.Driven = False
                                 acbl2bl3.Parameter._Value = 0.01
-                                doku.Update2(True)
+                                sk3D.Solve()
 
                                 acbl2bl3.Driven = True
                                 gccll2 = sk3D.GeometricConstraints3D.AddCollinear(l, bl2)
@@ -2254,7 +2254,7 @@ Public Class TwistFold7
                         End Try
                         adjuster.AdjustDimensionConstraint3DSmothly(dcl, GetParameter("b")._Value * 3 / 2)
                         Try
-                            doku.Update()
+                            sk3D.Solve()
                         Catch ex As Exception
 
                         End Try
@@ -2289,7 +2289,7 @@ Public Class TwistFold7
                             Catch ex8 As Exception
                             End Try
                         End Try
-                        doku.Update()
+                        sk3D.Solve()
                     Catch ex3 As Exception
                         Try
                             gcplcl4 = sk3D.GeometricConstraints3D.AddParallel(cl4, minorLine)
@@ -2361,7 +2361,7 @@ Public Class TwistFold7
 
 
 
-            doku.Update2(True)
+            sk3D.Solve()
             thirdLine = l
             lastLine = l
             bandLines.Add(l)
@@ -2444,7 +2444,7 @@ Public Class TwistFold7
                         End If
 
                         gapVertex.Driven = False
-                        doku.Update2()
+                        sk3D.Solve()
                         If gapVertex.Parameter._Value > gap1CM * 3 Then
                             adjuster.GetMinimalDimension(gapVertex)
                         End If
@@ -2463,7 +2463,7 @@ Public Class TwistFold7
                                     ac.Delete()
                                     gapVertex.Driven = False
                                     dc.Driven = False
-                                    doku.Update2()
+                                    sk3D.Solve()
                                     vbl3 = thirdLine.Geometry.Direction.AsVector
                                     vbl4 = l.Geometry.Direction.AsVector
                                     d = vbl3.DotProduct(vbl4)
@@ -2496,7 +2496,7 @@ Public Class TwistFold7
 
             Try
                 gapVertex.Driven = False
-                doku.Update2()
+                sk3D.Solve()
                 adjuster.GetMinimalDimension(gapVertex)
             Catch ex As Exception
                 gapVertex.Driven = True
@@ -2527,7 +2527,7 @@ Public Class TwistFold7
                 adjuster.GetMinimalDimension(gapVertex)
             Catch ex As Exception
             End Try
-            doku.Update2(True)
+            sk3D.Solve()
             gapFold.Driven = True
             lastLine = l
             constructionLines.Add(l)
@@ -2637,11 +2637,11 @@ Public Class TwistFold7
             dc5 = sk3D.DimensionConstraints3D.AddLineLength(l3)
             Try
                 dc5.Parameter._Value = GetParameter("b")._Value
-                doku.Update2(True)
+                sk3D.Solve()
             Catch ex As Exception
                 adjuster.AdjustDimensionConstraint3DSmothly(dc5, GetParameter("b")._Value)
                 dc5.Parameter._Value = GetParameter("b")._Value
-                doku.Update2(True)
+                sk3D.Solve()
             End Try
 
             'sk3D.GeometricConstraints3D.AddCoincident(l3.EndPoint, bl4)
@@ -2746,7 +2746,7 @@ Public Class TwistFold7
                     End If
                     Try
                         gapVertex.Driven = False
-                        doku.Update2()
+                        sk3D.Solve()
                         If gapVertex.Parameter._Value > gap1CM * 3 Then
                             If adjuster.AdjustDimensionConstraint3DSmothly(gapVertex, gap1CM) Then
                                 gapVertex.Driven = True
@@ -2868,7 +2868,7 @@ Public Class TwistFold7
                         End If
                         Try
                             gapVertex.Driven = False
-                            doku.Update2()
+                            sk3D.Solve()
                             If gapVertex.Parameter._Value > gap1CM * 3 Then
                                 adjuster.GetMinimalDimension(gapVertex)
                             End If
@@ -3009,7 +3009,7 @@ Public Class TwistFold7
                     ac.Delete()
                     gapVertex.Driven = False
 
-                    doku.Update2()
+                    sk3D.Solve()
 
                     limit = limit + 1
                 Catch ex As Exception

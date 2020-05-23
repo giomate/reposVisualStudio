@@ -360,7 +360,7 @@ Public Class OriginSketch
             'gc = TryPerpendicular(l, cl5)
             l.Construction = True
 
-            doku.Update2(True)
+            sk3D.Solve()
             If IsFirstLineInsideCylinder() Then
                 ForceFirstLineOutside()
             End If
@@ -768,7 +768,7 @@ Public Class OriginSketch
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, bl4)
             dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(l.EndPoint, cl3.EndPoint)
             adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value / 2)
-            adjuster.AdjustTwoPointsSmothly(dc, 1 / 10)
+            adjuster.AdjustDimensionConstraint3DSmothly(dc, 1 / 10)
             dc2 = sk3D.DimensionConstraints3D.AddLineLength(l)
             If dc2.Parameter._Value > curve3D.DP.b * 3 / 20 Then
                 If adjuster.AdjustDimensionConstraint3DSmothly(dc2, curve3D.DP.b * 5 / 40) Then
@@ -801,7 +801,7 @@ Public Class OriginSketch
             End Try
             CorrectFirstLine()
             CorrectGap()
-            adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM * 5)
+            adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM * 3)
             gapFold.Driven = True
 
             Try
@@ -900,7 +900,7 @@ Public Class OriginSketch
             CorrectTangent()
 
             CorrectGap()
-            adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM * 5)
+            adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM * 3)
             gapFold.Driven = True
             l.Construction = True
             constructionLines.Add(l)
@@ -1027,7 +1027,8 @@ Public Class OriginSketch
                 ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, secondLine)
                 Try
                     ac.Parameter._Value = Math.PI / 2
-                    doku.Update()
+                    sk3D.Solve()
+
                 Catch ex3 As Exception
 
                 End Try
@@ -1149,7 +1150,7 @@ Public Class OriginSketch
                 gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, pl)
             End Try
             gapFold.Driven = True
-            doku.Update2(True)
+            sk3D.Solve()
             gc.Delete()
             lastLine = l
             bandLines.Add(l)
@@ -1347,25 +1348,7 @@ Public Class OriginSketch
             Return Nothing
         End Try
     End Function
-    Function AdjustTwoPointsSmothly(dc As TwoPointDistanceDimConstraint3D, v As Double) As Boolean
 
-        Dim dName As String
-        Dim b As Boolean = False
-
-        dName = dc.Parameter.Name
-
-        If doku.Update2() Then
-            If adjuster.UpdateDocu(doku) Then
-                If adjuster.AdjustDimensionSmothly(dName, v) Then
-                    b = True
-                End If
-            End If
-        End If
-
-
-
-        Return b
-    End Function
     Function IsThereCoincidentConstrains(line As SketchLine3D) As Boolean
         For Each o As Object In refLine.Constraints3D
             If o.Type = ObjectTypeEnum.kCoincidentConstraint3DObject Then

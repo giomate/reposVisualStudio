@@ -552,14 +552,14 @@ Public Class RodMaker
                             dc1.Parameter._Value = dc1.Parameter._Value / 1.02
                             dc2 = ps.DimensionConstraints.AddTwoPointDistance(lpt2, skpt, DimensionOrientationEnum.kAlignedDim, lpt2.Geometry)
                             dc2.Parameter._Value = dc2.Parameter._Value * 1.04
-                            doku.Update2(True)
+                            sk3D.Solve()
                             Try
                                 rf = doku.ComponentDefinition.Features.RevolveFeatures.AddFull(pro, workAxis, PartFeatureOperationEnum.kJoinOperation)
 
                             Catch ex5 As Exception
                                 dc1.Parameter._Value = dc1.Parameter._Value * 24 / 27
                                 dc2.Parameter._Value = dc2.Parameter._Value * 24 / 28
-                                doku.Update2(True)
+                                sk3D.Solve()
                                 rf = doku.ComponentDefinition.Features.RevolveFeatures.AddFull(pro, workAxis, PartFeatureOperationEnum.kJoinOperation)
 
                             End Try

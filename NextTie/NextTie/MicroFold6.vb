@@ -418,7 +418,7 @@ Public Class MicroFold6
             End If
 
             dc.Parameter._Value = minorLine.Length - thickness
-            doku.Update2(True)
+            sk3D.Solve()
             bandLines.Add(l)
             firstLine = l
             lastLine = l
@@ -568,7 +568,7 @@ Public Class MicroFold6
 
 
             dc = sk3D.DimensionConstraints3D.AddLineLength(l)
-            If AdjustLineLenghtSmothly(dc, GetParameter("b")._Value / 1) Then
+            If adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value / 1) Then
                 dc.Parameter._Value = GetParameter("b")._Value
             Else
                 dc.Driven = True
@@ -594,7 +594,7 @@ Public Class MicroFold6
                 TryParallel(thirdLine)
             End If
             Try
-                doku.Update2()
+                sk3D.Solve()
                 If monitor.IsSketch3DHealthy(sk3D) Then
                 Else
                     Try
@@ -619,7 +619,7 @@ Public Class MicroFold6
     Function IsTiltAngleOk() As Boolean
         Try
             Try
-                doku.Update2()
+                sk3D.Solve()
                 If monitor.IsSketch3DHealthy(sk3D) Then
                 Else
                     Try
@@ -733,25 +733,7 @@ Public Class MicroFold6
             Return gc
         End Try
     End Function
-    Function AdjustLineLenghtSmothly(dc As LineLengthDimConstraint3D, v As Double) As Boolean
 
-        Dim dName As String
-        Dim b As Boolean = False
-
-        dName = dc.Parameter.Name
-
-        If doku.Update2() Then
-            If adjuster.UpdateDocu(doku) Then
-                If adjuster.AdjustDimensionSmothly(dName, v) Then
-                    b = True
-                End If
-            End If
-        End If
-
-
-
-        Return b
-    End Function
     Function GetStartPoint() As Point
         Dim pt As Point
         Dim v As Vector

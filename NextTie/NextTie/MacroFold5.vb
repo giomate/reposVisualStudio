@@ -453,7 +453,7 @@ Public Class MacroFold5
 
 
             dc.Parameter._Value = majorLine.Length - thicknessCM * 5
-            doku.Update2(True)
+            sk3D.Solve()
             bandLines.Add(l)
             firstLine = l
             lastLine = l
@@ -1053,7 +1053,7 @@ Public Class MacroFold5
                             gapFold.Driven = False
                             adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 17 / 16)
                             gapFold.Driven = True
-                            doku.Update2()
+                            sk3D.Solve()
 
                         Catch ex2 As Exception
                             counterLimit = counterLimit + 1
