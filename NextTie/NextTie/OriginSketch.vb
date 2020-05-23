@@ -453,6 +453,10 @@ Public Class OriginSketch
             gc = sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, curve)
             dc = sk3D.DimensionConstraints3D.AddLineLength(l)
             firstLine = l
+            tensorFirstLine = sk3D.SketchLines3D.AddByTwoPoints(zAxisLine.Geometry.MidPoint, firstLine.StartPoint, False)
+            sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, zAxisLine)
+            TryPerpendicular(zAxisLine, l)
+            tensorFirstLine.Construction = True
             If dc.Parameter._Value > b Then
                 Do
                     delta = (b - dc.Parameter._Value) / b
@@ -480,10 +484,7 @@ Public Class OriginSketch
                 End If
             End If
 
-            tensorFirstLine = sk3D.SketchLines3D.AddByTwoPoints(zAxisLine.Geometry.MidPoint, firstLine.StartPoint, False)
-            sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, zAxisLine)
-            TryPerpendicular(zAxisLine, l)
-            tensorFirstLine.Construction = True
+
             Return l
         Catch ex As Exception
             MsgBox(ex.ToString())
