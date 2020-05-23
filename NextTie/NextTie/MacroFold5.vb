@@ -943,7 +943,14 @@ Public Class MacroFold5
 
 
             l = sk3D.SketchLines3D.AddByTwoPoints(bl3.EndSketchPoint.Geometry, optpoint, False)
-            sk3D.GeometricConstraints3D.AddCoincident(bl3.EndPoint, l)
+            Try
+                sk3D.GeometricConstraints3D.AddCoincident(bl3.EndPoint, l)
+            Catch ex As Exception
+                gapVertex.Driven = True
+                sk3D.Solve()
+                sk3D.GeometricConstraints3D.AddCoincident(bl3.EndPoint, l)
+            End Try
+
             Try
                 sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
             Catch ex As Exception
@@ -1007,7 +1014,7 @@ Public Class MacroFold5
     Function AdjustLastAngle() As Boolean
 
         Try
-                Dim fourLine, sixthLine, cl3, cl2 As SketchLine3D
+            Dim fourLine, sixthLine, cl3, cl2 As SketchLine3D
             Dim ac As TwoLineAngleDimConstraint3D
             Dim limit As Double = 0.16
             Dim counterLimit As Integer = 0
@@ -1121,11 +1128,20 @@ Public Class MacroFold5
                     gapVertex.Driven = True
                 End Try
             End Try
+            RegenerateGapVertex(True)
             Return b
-            Catch ex As Exception
-                MsgBox(ex.ToString())
-                Return Nothing
-            End Try
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+    End Function
+    Function RegenerateGapVertex(driven As Boolean) As DimensionConstraint3D
+        Dim cl1 As SketchLine3D = constructionLines(1)
+        gapVertex.Delete()
+        sk3D.Solve()
+        gapVertex = sk3D.DimensionConstraints3D.AddLineLength(cl1)
+        gapVertex.Driven = driven
+        Return gapVertex
     End Function
     Function CalculateRoof() As Double
         Dim fourLine, sixthLine, cl3, cl2 As SketchLine3D
