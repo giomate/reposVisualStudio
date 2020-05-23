@@ -984,7 +984,7 @@ Public Class OriginSketch
             l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.EndPoint, firstLine.StartPoint, False)
             thirdLine = l
             bandLines.Add(l)
-            AdjustThirdLine()
+            AdjustThirdLine(b)
 
             If secondLine.Length > b Then
                 dc = sk3D.DimensionConstraints3D.AddLineLength(secondLine)
@@ -1013,7 +1013,7 @@ Public Class OriginSketch
             Dim dc, ac As DimensionConstraint3D
             Dim gc As GeometricConstraint3D
             Dim b As Double = GetParameter("b")._Value
-            AdjustThirdLine()
+            AdjustThirdLine(2 * b)
             v2 = tangentLine.Geometry.Direction.AsVector
             v3 = firstLine.Geometry.Direction.AsVector
             v1 = v2.CrossProduct(v3)
@@ -1073,13 +1073,13 @@ Public Class OriginSketch
         End Try
         Return Nothing
     End Function
-    Function AdjustThirdLine() As DimensionConstraint3D
+    Function AdjustThirdLine(bi As Double) As DimensionConstraint3D
         Dim dc As DimensionConstraint3D
-
         Dim b As Double = GetParameter("b")._Value
+
         If thirdLine.Length > 2 * b Then
             dc = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
-            adjuster.AdjustDimensionConstraint3DSmothly(dc, b)
+            adjuster.AdjustDimensionConstraint3DSmothly(dc, bi)
             dc.Delete()
         End If
         Return dc
@@ -1279,7 +1279,7 @@ Public Class OriginSketch
             Dim hecho As Boolean
             CorrectFirstLine()
             Do
-                AdjustThirdLine()
+                AdjustThirdLine(2 * b)
                 hecho = adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 7 / 8)
                 dc.Driven = True
 
