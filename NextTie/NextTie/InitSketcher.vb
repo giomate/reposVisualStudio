@@ -1000,6 +1000,7 @@ Public Class InitSketcher
     Function CorrectLastAngle(aci As DimensionConstraint3D) As DimensionConstraint3D
         Dim bl6, bl4 As SketchLine3D
         Dim dc As DimensionConstraint3D
+        Dim b As Double = GetParameter("b")._Value
         Try
             bl4 = bandLines(4)
             bl6 = bandLines(6)
@@ -1008,9 +1009,12 @@ Public Class InitSketcher
             ' dc.Driven = True
             aci.Driven = False
             dimConstrainBandLine2.Driven = False
-            adjuster.AdjustDimensionConstraint3DSmothly(dimConstrainBandLine2, dimConstrainBandLine2.Parameter._Value * 4 / 3)
+            If secondLine.Length < b Then
+                adjuster.AdjustDimensionConstraint3DSmothly(dimConstrainBandLine2, 3 * b / 2)
+            Else
+                adjuster.AdjustDimensionConstraint3DSmothly(dimConstrainBandLine2, dimConstrainBandLine2.Parameter._Value * 4 / 3)
+            End If
             dimConstrainBandLine2.Delete()
-
             If gapFold.Parameter._Value > gapFoldCM * 2 Then
                 For i = 1 To 32
                     gapFold.Driven = True
@@ -1024,9 +1028,10 @@ Public Class InitSketcher
                             comando.UndoCommand()
                             comando.UndoCommand()
                             comando.UndoCommand()
-
+                            gapFold.Driven = False
                             sk3D.Solve()
                             If monitor.IsSketch3DHealthy(sk3D) Then
+
                                 gapFold.Parameter._Value *= 16 / 15
                                 sk3D.Solve()
                                 If monitor.IsSketch3DHealthy(sk3D) Then

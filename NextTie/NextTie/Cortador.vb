@@ -385,41 +385,41 @@ Public Class Cortador
     Function InitCutProfil(rl As SketchLine3D) As Profile
         Try
             'lamp.HighLighFace(maxface1)
-            Dim planarSketch As PlanarSketch
-            planarSketch = compDef.Sketches.Add(cutFace)
+            Dim ps As PlanarSketch
+            ps = compDef.Sketches.Add(cutFace)
             Dim sl, fl, mjl, mnl, u, pfl, cutl As SketchLine
             Dim gcpl, gccc, gccc2 As GeometricConstraint
-            fl = planarSketch.AddByProjectingEntity(rl)
+            fl = ps.AddByProjectingEntity(rl)
             fl.Construction = True
-            mjl = planarSketch.AddByProjectingEntity(GetInitFaceCutEdges(cutFace))
-            u = planarSketch.AddByProjectingEntity(CutEdge3)
+            mjl = ps.AddByProjectingEntity(GetInitFaceCutEdges(cutFace))
+            u = ps.AddByProjectingEntity(CutEdge3)
 
-            mnl = planarSketch.AddByProjectingEntity(cutEdge2)
-            pfl = planarSketch.SketchLines.AddByTwoPoints(fl.Geometry.StartPoint, fl.Geometry.EndPoint)
+            mnl = ps.AddByProjectingEntity(cutEdge2)
+            pfl = ps.SketchLines.AddByTwoPoints(fl.Geometry.StartPoint, fl.Geometry.EndPoint)
             pfl.Construction = True
-            cutl = planarSketch.SketchLines.AddByTwoPoints(pfl.StartSketchPoint.Geometry, pfl.EndSketchPoint.Geometry)
-            gcpl = planarSketch.GeometricConstraints.AddCoincident(cutl.StartSketchPoint, mnl)
+            cutl = ps.SketchLines.AddByTwoPoints(pfl.StartSketchPoint.Geometry, pfl.EndSketchPoint.Geometry)
+            gcpl = ps.GeometricConstraints.AddCoincident(cutl.StartSketchPoint, mnl)
 
             If mnl.EndSketchPoint.Geometry.DistanceTo(cutl.Geometry.StartPoint) < mnl.StartSketchPoint.Geometry.DistanceTo(cutl.Geometry.StartPoint) Then
 
-                gccc = planarSketch.GeometricConstraints.AddCoincident(mnl.EndSketchPoint, cutl)
+                gccc = ps.GeometricConstraints.AddCoincident(mnl.EndSketchPoint, cutl)
                 Try
-                    gccc2 = planarSketch.GeometricConstraints.AddCoincident(cutl.EndSketchPoint, mjl)
+                    gccc2 = ps.GeometricConstraints.AddCoincident(cutl.EndSketchPoint, mjl)
                 Catch ex As Exception
                     gcpl.Delete()
-                    gccc2 = planarSketch.GeometricConstraints.AddCoincident(cutl.EndSketchPoint, mjl)
+                    gccc2 = ps.GeometricConstraints.AddCoincident(cutl.EndSketchPoint, mjl)
                     gccc.Delete()
-                    gccc = planarSketch.GeometricConstraints.AddCoincident(cutl.StartSketchPoint, mnl)
+                    gccc = ps.GeometricConstraints.AddCoincident(cutl.StartSketchPoint, mnl)
                 End Try
             Else
-                gccc = planarSketch.GeometricConstraints.AddCoincident(mnl.StartSketchPoint, cutl)
+                gccc = ps.GeometricConstraints.AddCoincident(mnl.StartSketchPoint, cutl)
                 Try
-                    gccc2 = planarSketch.GeometricConstraints.AddCoincident(cutl.EndSketchPoint, mjl)
+                    gccc2 = ps.GeometricConstraints.AddCoincident(cutl.EndSketchPoint, mjl)
                 Catch ex As Exception
                     gcpl.Delete()
-                    gccc2 = planarSketch.GeometricConstraints.AddCoincident(cutl.EndSketchPoint, mjl)
+                    gccc2 = ps.GeometricConstraints.AddCoincident(cutl.EndSketchPoint, mjl)
                     gccc.Delete()
-                    gccc = planarSketch.GeometricConstraints.AddCoincident(cutl.StartSketchPoint, mnl)
+                    gccc = ps.GeometricConstraints.AddCoincident(cutl.StartSketchPoint, mnl)
                 End Try
             End If
             'gcpl.Delete()
@@ -427,12 +427,12 @@ Public Class Cortador
 
 
 
-            planarSketch.GeometricConstraints.AddParallel(cutl, pfl)
+            ps.GeometricConstraints.AddParallel(cutl, pfl)
 
             initCutLine = cutl
 
 
-            cutProfile = planarSketch.Profiles.AddForSolid
+            cutProfile = ps.Profiles.AddForSolid
             sk3D = compDef.Sketches3D.Add()
             cutLine3D = sk3D.Include(cutl)
             sk3D.Name = "initCutLine"

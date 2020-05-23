@@ -523,6 +523,8 @@ Public Class MacroFold5
             gapVertex = sk3D.DimensionConstraints3D.AddLineLength(l)
             Try
                 adjuster.GetMinimalDimension(gapVertex)
+                gapVertex.Delete()
+                gapVertex = sk3D.DimensionConstraints3D.AddLineLength(l)
             Catch ex As Exception
 
             End Try
@@ -541,8 +543,10 @@ Public Class MacroFold5
 
     End Function
     Function DrawSecondConstructionLine() As SketchLine3D
+        Dim gc As GeometricConstraint3D
+        Dim cl1 As SketchLine3D = constructionLines(1)
         Try
-            Dim l, ol As SketchLine3D
+            Dim l As SketchLine3D
             Dim endPoint As Point
             Dim v As Vector
             Dim pl As Plane
@@ -551,10 +555,19 @@ Public Class MacroFold5
             v.ScaleBy(-1)
             endPoint = firstLine.EndSketchPoint.Geometry
             endPoint.TranslateBy(v)
-            ol = constructionLines(1)
+
             l = sk3D.SketchLines3D.AddByTwoPoints(firstLine.EndPoint, endPoint, False)
-            Dim gc As GeometricConstraint3D
-            gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, firstLine)
+            Try
+                gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, firstLine)
+            Catch ex As Exception
+                l.Delete()
+                gapVertex.Delete()
+                gapVertex = sk3D.DimensionConstraints3D.AddLineLength(cl1)
+                l = sk3D.SketchLines3D.AddByTwoPoints(firstLine.EndPoint, endPoint, False)
+                gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, firstLine)
+            End Try
+
+
             Dim dc As DimensionConstraint3D
             dc = sk3D.DimensionConstraints3D.AddLineLength(l)
             Try
@@ -564,7 +577,7 @@ Public Class MacroFold5
                 dc.Parameter._Value = GetParameter("b")._Value
             End Try
 
-            gc.Delete()
+            GC.Delete()
             l.Construction = True
             constructionLines.Add(l)
 

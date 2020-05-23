@@ -609,11 +609,10 @@ Public Class SketchAdjust
         Try
             oPartDoc = p.Parent
             While Not monitor.IsSketch3DHealthy(oSk3D)
-                comando.UndoCommand()
-                oPartDoc.Update()
+                comando.UndoCommand(oPartDoc)
 
                 If Not monitor.IsSketch3DHealthy(oSk3D) Then
-                    UpdateDocu(oPartDoc)
+                    oPartDoc.Update()
                     comando.UndoCommand()
                 End If
                 posible = p
@@ -631,11 +630,12 @@ Public Class SketchAdjust
     End Function
     Public Function RecoveryUnhealthySketch(sk As Sketch3D) As Sketch3D
         Try
-
+            compDef = sk.Parent
+            oPartDoc = compDef.Document
             Dim skerror As Integer = skcounter
             While Not monitor.IsSketch3DHealthy(sk)
                 For index = 1 To skerror + 1
-                    comando.UndoCommand()
+                    comando.UndoCommand(oPartDoc)
                 Next
                 sk.Solve()
 
