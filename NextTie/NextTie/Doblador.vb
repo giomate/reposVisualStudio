@@ -163,29 +163,33 @@ Public Class Doblador
 
     End Function
     Function AdjustFoldDefinition(i As Integer) As FoldDefinition
+        Try
+            features = doku.ComponentDefinition.Features
+            Dim oFoldDefinition As FoldDefinition
+            If i > 3 Then
 
-        features = doku.ComponentDefinition.Features
-        Dim oFoldDefinition As FoldDefinition
-        If i > 3 Then
+                If bendAngle.Parameter._Value > Math.PI / 2 Then
+                    oFoldDefinition = features.FoldFeatures.CreateFoldDefinition(bendLine, bendAngle.Parameter._Value)
+                Else
+                    oFoldDefinition = features.FoldFeatures.CreateFoldDefinition(bendLine, Math.PI - bendAngle.Parameter._Value)
+                End If
 
-            If bendAngle.Parameter._Value > Math.PI / 2 Then
-                oFoldDefinition = features.FoldFeatures.CreateFoldDefinition(bendLine, bendAngle.Parameter._Value)
             Else
-                oFoldDefinition = features.FoldFeatures.CreateFoldDefinition(bendLine, Math.PI - bendAngle.Parameter._Value)
+                If bendAngle.Parameter._Value > Math.PI / 2 Then
+                    oFoldDefinition = features.FoldFeatures.CreateFoldDefinition(bendLine, Math.PI - bendAngle.Parameter._Value)
+                Else
+                    oFoldDefinition = features.FoldFeatures.CreateFoldDefinition(bendLine, bendAngle.Parameter._Value)
+                End If
+
             End If
 
-        Else
-            If bendAngle.Parameter._Value > Math.PI / 2 Then
-                oFoldDefinition = features.FoldFeatures.CreateFoldDefinition(bendLine, Math.PI - bendAngle.Parameter._Value)
-            Else
+            foldDefinition = oFoldDefinition
+            Return oFoldDefinition
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
 
-                oFoldDefinition = features.FoldFeatures.CreateFoldDefinition(bendLine, bendAngle.Parameter._Value)
-            End If
-
-        End If
-
-        foldDefinition = oFoldDefinition
-        Return oFoldDefinition
     End Function
 
     Public Function GetBendLine(workFace As Face, line As SketchLine3D) As SketchLine

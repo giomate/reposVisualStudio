@@ -362,6 +362,7 @@ Public Class OriginSketch
             If IsFirstLineInsideCylinder() Then
                 ForceFirstLineOutside()
             End If
+            CorrectSecondLine()
             lastLine = l
             constructionLines.Add(l)
 
@@ -1279,6 +1280,7 @@ Public Class OriginSketch
             Dim hecho As Boolean
             CorrectFirstLine()
             Do
+                dc.Driven = False
                 AdjustThirdLine(2 * b)
                 hecho = adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 7 / 8)
                 dc.Driven = True
@@ -1295,6 +1297,17 @@ Public Class OriginSketch
 
         End If
         Return 0
+    End Function
+    Public Function CorrectSecondLine() As Boolean
+        Dim dc As DimensionConstraint3D
+        Dim b As Double = GetParameter("b")._Value
+        If secondLine.Length < b Then
+            dc = sk3D.DimensionConstraints3D.AddLineLength(secondLine)
+            CorrectSecondLine = adjuster.AdjustDimConstrain3DSmothly(dc, b)
+            dc.Delete()
+            Return CorrectSecondLine
+        End If
+        Return True
     End Function
     Function CalculateEntryRodFactor() As Double
         Dim vz As Vector = tg.CreateVector(0, 0, -1)
@@ -1324,7 +1337,7 @@ Public Class OriginSketch
                 End If
             End If
 
-
+            CorrectSecondLine()
             lastLine = l
             bandLines.Add(l)
             done = 1

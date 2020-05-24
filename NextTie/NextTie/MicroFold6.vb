@@ -16,7 +16,7 @@ Public Class MicroFold6
     Public farPoint, point1, point2, point3 As Point
     Dim tg As TransientGeometry
     Dim initialPlane As Plane
-    Dim gap1CM, thickness As Double
+    Dim gap1CM, thickness, bendGap As Double
     Dim partNumber, paralelLimit As Integer
     Dim adjuster As SketchAdjust
     Dim bandLines, constructionLines As ObjectCollection
@@ -53,6 +53,7 @@ Public Class MicroFold6
         constructionLines = app.TransientObjects.CreateObjectCollection
         lamp = New Highlithing(doku)
         thickness = compDef.Thickness._Value
+        bendGap = 2 * thickness
         bender = New Doblador(doku)
         nombrador = New Nombres(doku)
         gap1CM = 3 / 10
@@ -402,9 +403,10 @@ Public Class MicroFold6
         Try
 
             Dim l As SketchLine3D
+            Dim pt As Point = GetStartPoint()
             minorLine = sk3D.Include(minorEdge)
             majorLine = sk3D.Include(majorEdge)
-            l = sk3D.SketchLines3D.AddByTwoPoints(GetStartPoint(), majorEdge.GetClosestPointTo(GetStartPoint()))
+            l = sk3D.SketchLines3D.AddByTwoPoints(pt, majorEdge.GetClosestPointTo(pt))
 
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, minorLine)
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, majorLine)
@@ -417,7 +419,7 @@ Public Class MicroFold6
                 dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(l.StartPoint, minorLine.StartPoint)
             End If
 
-            dc.Parameter._Value = minorLine.Length - thickness
+            dc.Parameter._Value = minorLine.Length - bendGap
             sk3D.Solve()
             bandLines.Add(l)
             firstLine = l
@@ -751,7 +753,7 @@ Public Class MicroFold6
 
 
         v.AsUnitVector.AsVector()
-        v.ScaleBy(2 * thickness / 10)
+        v.ScaleBy(bendGap / 10)
         pt.TranslateBy(v)
         'lamp.HighLighObject(pt)
         point1 = pt

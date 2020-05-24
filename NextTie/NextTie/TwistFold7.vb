@@ -647,8 +647,10 @@ Public Class TwistFold7
                 nextSketch.CorrectGap()
 
                 CorrectGaptFold()
+                nextSketch.CorrectSecondLine()
                 TryPerpendicularGap(nextSketch.angleTangent, nextSketch.gapFold)
                 nextSketch.angleTangent.Driven = True
+                CorrectFoldAngle()
                 reduced = (TryPerpendicularGap(angleTangent, gapFold) Or reduced)
                 limit = limit + 1
             Loop Until (limit > 16 Or (gapFold.Parameter._Value < 2 * gap1CM) Or (nextSketch.gapFold.Parameter._Value < gap1CM) Or (Math.Abs(angleTangent.Parameter._Value - Math.PI / 2) < 1 / 128))
@@ -660,6 +662,30 @@ Public Class TwistFold7
             Return Nothing
         End Try
         Return reduced
+    End Function
+    Function CorrectFoldAngle() As Boolean
+        Dim cl4 As SketchLine3D = constructionLines(4)
+        Dim vcl4 As Vector = cl4.Geometry.Direction.AsVector
+
+        Dim vpl As Vector = initialPlane.Normal.AsVector
+        Dim d As Double = vcl4.DotProduct(vpl)
+        If d > 0 Then
+            angleTangent.Driven = True
+            For i = 1 To 16
+                CorrectFoldAngle = adjuster.AdjustDimConstrain3DSmothly(gapFold, gap1CM * 3)
+                vcl4 = cl4.Geometry.Direction.AsVector
+                d = vcl4.DotProduct(vpl)
+                If d < 0 Then
+                    gapFold.Driven = True
+                    Return CorrectFoldAngle
+                End If
+
+            Next
+        Else
+            Return True
+        End If
+
+        Return False
     End Function
     Function CorrectFirstLine() As Boolean
 

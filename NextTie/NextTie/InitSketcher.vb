@@ -862,7 +862,7 @@ Public Class InitSketcher
 
             Dim ac, dc, acl4l6 As DimensionConstraint3D
             Dim gc As GeometricConstraint3D
-            Dim limit As Double = Math.PI / 32
+            Dim limit As Double = Math.PI / 16
             Dim angleLimit As Double = 1.8
             Dim d As Double
             Dim counterLimit As Integer = 0
@@ -912,11 +912,8 @@ Public Class InitSketcher
             If d > 0 Then
                 dc.Driven = True
                 Try
-                    Try
-                        '  adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 2)
-                    Catch ex As Exception
-                    End Try
-                    '  adjuster.AdjustGapSmothly(gapFold, gapFoldCM, dc)
+
+                    adjuster.AdjustGapSmothly(gapFold, gapFoldCM * 2, dc, limit)
                     Try
                         While (dc.Parameter._Value < angleLimit And dc.Parameter._Value > angleLimit / 2) And counterLimit < 4
                             lastAngle = ac.Parameter._Value
@@ -962,7 +959,7 @@ Public Class InitSketcher
                         End Try
                     End If
                     dc.Driven = True
-                    While ((d < 0 Or dc.Parameter._Value > Math.PI - limit / 1) And counterLimit < 16)
+                    While ((d < 0 Or dc.Parameter._Value > Math.PI - 3 * limit / 4) And counterLimit < 16)
                         Try
                             gapFold.Driven = False
                             adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 17 / 16)
@@ -988,6 +985,11 @@ Public Class InitSketcher
                 End Try
             End If
             ac.Delete()
+            Try
+                gc.Delete()
+            Catch ex As Exception
+
+            End Try
 
 
 
@@ -1001,13 +1003,15 @@ Public Class InitSketcher
         Dim bl6, bl4 As SketchLine3D
         Dim dc As DimensionConstraint3D
         Dim b As Double = GetParameter("b")._Value
+        Dim d As Double
         Try
             bl4 = bandLines(4)
             bl6 = bandLines(6)
-            dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(bl4.EndPoint, bl6.EndPoint)
-            dc = RecoverGapFold(dc)
-            ' dc.Driven = True
             aci.Driven = False
+            dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(bl4.EndPoint, bl6.EndPoint)
+            ' dc = RecoverGapFold(dc)
+            dc.Driven = True
+
             dimConstrainBandLine2.Driven = False
             If secondLine.Length < b Then
                 adjuster.AdjustDimensionConstraint3DSmothly(dimConstrainBandLine2, 3 * b / 2)
@@ -1016,37 +1020,39 @@ Public Class InitSketcher
             End If
             dimConstrainBandLine2.Delete()
             If gapFold.Parameter._Value > gapFoldCM * 2 Then
-                For i = 1 To 32
-                    gapFold.Driven = True
-                    aci.Driven = False
-                    If adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 15 / 16) Then
-                        aci.Driven = True
+                aci.Driven = False
+                For i = 1 To 64
+                    ' gapFold.Driven = True
+                    d = (gapFold.Parameter._Value * 31 / 32) * (1 / (1 + Math.Exp(-(dc.Parameter._Value - 4 * gapFoldCM) / gapFoldCM)))
+
+                    If adjuster.AdjustDimensionConstraint3DSmothly(gapFold, d) Then
+                        '  aci.Driven = True
                         sk3D.Solve()
                     Else
-                        aci.Driven = True
+                        ' aci.Driven = True
                         For j = 1 To 8
-                            comando.UndoCommand()
+
                             comando.UndoCommand()
                             comando.UndoCommand()
                             gapFold.Driven = False
                             sk3D.Solve()
                             If monitor.IsSketch3DHealthy(sk3D) Then
 
-                                gapFold.Parameter._Value *= 16 / 15
+                                gapFold.Parameter._Value *= 32 / 31
                                 sk3D.Solve()
                                 If monitor.IsSketch3DHealthy(sk3D) Then
                                     dc = RecoverGapFold(dc)
                                     Exit For
                                 Else
+
                                     comando.UndoCommand()
                                     comando.UndoCommand()
-                                    comando.UndoCommand()
-                                    sk3D.Solve()
+                                    doku.Update()
                                     adjuster.RecoveryUnhealthySketch(sk3D)
                                 End If
 
                             Else
-                                comando.UndoCommand()
+
                                 comando.UndoCommand()
                                 comando.UndoCommand()
                                 sk3D.Solve()
