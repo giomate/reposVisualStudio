@@ -1280,7 +1280,9 @@ Public Class OriginSketch
         Return 0
     End Function
     Function CorrectThirdLine() As Boolean
-        Dim e As Double = Math.Cos(Math.PI * (1 / 2 + 1 / 48))
+        Dim dif1 As Double = Math.PI / 2 - 1.48
+        Dim dif2 As Double = Math.PI / 2 - 1.59
+        Dim e As Double = Math.Cos(Math.PI / 2 + (dif1 + dif2) / 2)
         Dim d As Double = CalculateEntryRodFactor()
         Dim b As Double = GetParameter("b")._Value
         If d < e Then

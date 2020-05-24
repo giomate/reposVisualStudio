@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
+    <assemblyIdentity   type="win32" name="gioInventorAddIn1" version="1.0.0.0" />
+  <file name="gioInventorAddIn1.dll">
+    <comClass clsid="{3D9DBAD8-A78E-4E0C-9CB8-F0163352CA19}" />
+    <typelib tlbid="{0C229CB0-EE81-4E33-A8CE-57BF745E158C}" version="1.0" helpdir=""/>
+  </file>
+</assembly>

@@ -1,0 +1,44 @@
+//-----------------------------------------------------------------------------
+//----- InventorAddIn1.idl : IDL source for InventorAddIn1.dll
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//----- This file will be processed by the MIDL tool to
+//----- produce the type library (InventorAddIn1.tlb) and marshalling code.
+import "oaidl.idl";
+import "ocidl.idl";
+
+	[
+		object,
+		uuid(84B381A7-777B-4108-9BD8-1F51DCD38502),
+		dual,
+		helpstring("IInventorAddIn1AddInServer Interface"),
+		pointer_default(unique)
+	]
+	interface IInventorAddIn1AddInServer : IDispatch
+	{
+		[id(0x03001201)] HRESULT Activate([in] IDispatch * pDisp, [in] VARIANT_BOOL FirstTime);
+		[id(0x03001202)] HRESULT Deactivate();
+		[id(0x03001203)] HRESULT ExecuteCommand([in] long CommandID);
+		[propget, id(0x03001204)] HRESULT Automation([out, retval] IDispatch * * Result);
+	};
+
+[
+	uuid(0C229CB0-EE81-4E33-A8CE-57BF745E158C),
+	version(1.0),
+	helpstring("InventorAddIn1 1.0 Type Library")
+]
+library InventorAddIn1Lib
+{
+	importlib("stdole32.tlb");
+	importlib("stdole2.tlb");
+
+	[
+		uuid(3D9DBAD8-A78E-4E0C-9CB8-F0163352CA19),
+		helpstring("InventorAddIn1AddInServer Class")
+	]
+	coclass InventorAddIn1AddInServer
+	{
+		[default] interface IInventorAddIn1AddInServer;
+	};
+};

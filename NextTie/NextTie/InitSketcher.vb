@@ -912,7 +912,9 @@ Public Class InitSketcher
             If d > 0 Then
                 dc.Driven = True
                 Try
-
+                    If adjuster.IsLastAngleOk(dc, limit) Then
+                        adjuster.AdjustDimConstrain3DSmothly(gapFold, gapFold.Parameter._Value * 6 / 5)
+                    End If
                     adjuster.AdjustGapSmothly(gapFold, gapFoldCM * 2, dc, limit)
                     Try
                         While (dc.Parameter._Value < angleLimit And dc.Parameter._Value > angleLimit / 2) And counterLimit < 4

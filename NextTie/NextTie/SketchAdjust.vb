@@ -351,8 +351,8 @@ Public Class SketchAdjust
 
             dci.Driven = False
             While (((Math.Abs(delta * resolution * SetpointCorrector)) > (setpoint / resolution)) And (monitor.IsSketch3DHealthy(oSk3D)))
-                r = pit.Value * calculateGain(setpoint, dci)
-                pit.Value = r
+                r = pit._Value * calculateGain(setpoint, dci)
+                dci.Parameter._Value = r
                 oSk3D.Solve()
                 AdjustResolution(dci, pit._Value)
                 Form1.Label1.Text = "Adjusting " & pit.Name & " = " & pit.Value.ToString
@@ -397,7 +397,7 @@ Public Class SketchAdjust
             calculateGain(setpoint, gap)
             SetpointCorrector = AdjustResolution(gap, setpoint) * 4
             While (((Math.Abs(delta * resolution * SetpointCorrector)) > (setpoint / resolution)) And (monitor.IsSketch3DHealthy(oSk3D)) And (Not IsLastAngleOk(angle)) And (counter < Math.Pow(4 * 4, 4)))
-                pit._Value = pit._Value * Math.Pow(calculateGain(setpoint, gap), 1 / 4)
+                gap.Parameter._Value = pit._Value * Math.Pow(calculateGain(setpoint, gap), 1 / 4)
                 oSk3D.Solve()
                 AdjustResolution(gap, pit._Value)
 
@@ -450,7 +450,7 @@ Public Class SketchAdjust
             calculateGain(setpoint, gap)
             SetpointCorrector = AdjustResolution(gap, setpoint) * 4
             While (((Math.Abs(delta * resolution * SetpointCorrector)) > (setpoint / resolution)) And (monitor.IsSketch3DHealthy(oSk3D)) And (Not IsLastAngleOk(angle, angleLimit)) And (counter < Math.Pow(4 * 4, 4)))
-                pit._Value = pit._Value * Math.Pow(calculateGain(setpoint, gap), 1 / 4)
+                gap.Parameter._Value = pit._Value * Math.Pow(calculateGain(setpoint, gap), 1 / 4)
                 oSk3D.Solve()
                 AdjustResolution(gap, pit._Value)
 
@@ -511,7 +511,7 @@ Public Class SketchAdjust
 
             End If
             While (((Math.Abs(delta * resolution) * SetpointCorrector) > (Math.Pow(10, -3) / resolution)) And (monitor.IsSketch3DHealthy(oSk3D)) And (errorCounter < climit) And (counter < climit * 4))
-                pit.Value = pit.Value * calculateGainForMinimun(setPoint, dc)
+                dc.Parameter._Value = pit._Value * calculateGainForMinimun(setPoint, dc)
                 oSk3D.Solve()
                 AdjustResolution(dc, pit._Value)
                 counter = counter + 1
@@ -577,7 +577,7 @@ Public Class SketchAdjust
 
             End If
             While (((Math.Abs(delta * resolution) * SetpointCorrector) > (Math.Pow(10, -3) / resolution)) And (monitor.IsSketch3DHealthy(oSk3D)) And (errorCounter < climit))
-                pit.Value = pit.Value * calculateGainForMaximun(setPoint, dc)
+                dc.Parameter._Value = pit._Value * calculateGainForMaximun(setPoint, dc)
                 oSk3D.Solve()
                 AdjustResolution(dc, pit._Value)
                 counter = counter + 1

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Addin Type="Standard">
+    <!--Created for Autodesk Inventor Version 23.0-->
+    <ClassId>{3D9DBAD8-A78E-4E0C-9CB8-F0163352CA19}</ClassId>
+    <ClientId>{3D9DBAD8-A78E-4E0C-9CB8-F0163352CA19}</ClientId>   
+    <DisplayName>InventorAddIn1AddInServer</DisplayName>
+    <Description></Description>
+    <Assembly>c:\users\giova\source\repos\InventorAddIn1\InventorAddIn1\Debug\gioInventorAddIn1.dll</Assembly>
+                <LoadOnStartUp>1</LoadOnStartUp>
+        <UserUnloadable>1</UserUnloadable>
+    <Hidden>0</Hidden>
+    <SupportedSoftwareVersionGreaterThan>22..</SupportedSoftwareVersionGreaterThan>
+    <DataVersion>1</DataVersion>
+    <UserInterfaceVersion>1</UserInterfaceVersion>
+  </Addin>
