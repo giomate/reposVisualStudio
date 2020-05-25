@@ -961,7 +961,7 @@ Public Class InitSketcher
                         End Try
                     End If
                     dc.Driven = True
-                    While ((d < 0 Or dc.Parameter._Value > Math.PI - 3 * limit / 4) And counterLimit < 16)
+                    While ((d < 0 Or dc.Parameter._Value > Math.PI - 3 * limit / 4) And counterLimit < 32)
                         Try
                             gapFold.Driven = False
                             adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 17 / 16)
