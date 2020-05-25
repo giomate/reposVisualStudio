@@ -862,7 +862,7 @@ Public Class InitSketcher
 
             Dim ac, dc, acl4l6 As DimensionConstraint3D
             Dim gc As GeometricConstraint3D
-            Dim limit As Double = Math.PI / 16
+            Dim limit As Double = Math.PI / 12
             Dim angleLimit As Double = 1.8
             Dim d As Double
             Dim counterLimit As Integer = 0
@@ -1025,7 +1025,7 @@ Public Class InitSketcher
                 aci.Driven = False
                 For i = 1 To 64
                     ' gapFold.Driven = True
-                    d = (gapFold.Parameter._Value * 31 / 32) * (1 / (1 + Math.Exp(-(dc.Parameter._Value - 4 * gapFoldCM) / gapFoldCM)))
+                    d = (gapFold.Parameter._Value * (31 + (1 / (1 + Math.Exp(-(-dc.Parameter._Value + 2 * gapFoldCM) / gapFoldCM)))) / 32)
 
                     If adjuster.AdjustDimensionConstraint3DSmothly(gapFold, d) Then
                         '  aci.Driven = True
