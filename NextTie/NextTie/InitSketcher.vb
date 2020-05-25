@@ -972,10 +972,20 @@ Public Class InitSketcher
                     dc.Driven = True
                     While ((d < 0 Or dc.Parameter._Value > Math.PI - 3 * limit / 4) And counterLimit < 32)
                         Try
-                            gapFold.Driven = False
-                            adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 17 / 16)
-                            gapFold.Driven = True
-                            sk3D.Solve()
+                            If adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFold.Parameter._Value * 17 / 16) Then
+                            Else
+                                ac.Driven = True
+                            End If
+                            If d > 0 Then
+                                adjuster.AdjustDimConstrain3DSmothly(dc, dc.Parameter._Value * 15 / 16)
+                                dc.Driven = True
+                            Else
+                                If gapFold.Parameter._Value > 20 / 10 Then
+                                    adjuster.AdjustDimConstrain3DSmothly(dc, Math.PI)
+                                    dc.Driven = True
+                                End If
+                            End If
+
 
                         Catch ex2 As Exception
                             counterLimit = counterLimit + 1
