@@ -1026,14 +1026,12 @@ Public Class InitSketcher
                 For i = 1 To 64
                     ' gapFold.Driven = True
                     d = (gapFold.Parameter._Value * (31 + (1 / (1 + Math.Exp(-(-dc.Parameter._Value + 2 * gapFoldCM) / gapFoldCM)))) / 32)
-
                     If adjuster.AdjustDimensionConstraint3DSmothly(gapFold, d) Then
                         '  aci.Driven = True
                         sk3D.Solve()
                     Else
                         ' aci.Driven = True
                         For j = 1 To 8
-
                             comando.UndoCommand()
                             comando.UndoCommand()
                             gapFold.Driven = False
