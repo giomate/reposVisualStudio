@@ -28,6 +28,7 @@ Public Class InitSketcher
     Public ID1, ID2, qvalue As Integer
     Dim k1(), k2() As Byte
     Dim backwards As Boolean
+    Dim lamp As Highlithing
 
 
 
@@ -36,7 +37,7 @@ Public Class InitSketcher
         doku = docu
         app = doku.Parent
         comando = New Commands(app)
-
+        lamp = New Highlithing(doku)
         curve3D = New Curves3D(doku)
         monitor = New DesignMonitoring(doku)
         adjuster = New SketchAdjust(doku)
@@ -360,7 +361,7 @@ Public Class InitSketcher
 
 
 
-
+            lamp.FitView(doku)
 
             point1 = l.StartSketchPoint.Geometry
             point2 = l.EndSketchPoint.Geometry
@@ -913,8 +914,16 @@ Public Class InitSketcher
                 dc.Driven = True
                 Try
                     If adjuster.IsLastAngleOk(dc, limit) Then
-                        adjuster.AdjustDimConstrain3DSmothly(gapFold, gapFold.Parameter._Value * 6 / 5)
+                        For index = 1 To 16
+                            adjuster.AdjustDimConstrain3DSmothly(gapFold, gapFold.Parameter._Value * 17 / 16)
+                            adjuster.AdjustDimConstrain3DSmothly(dc, dc.Parameter._Value * 15 / 16)
+                            If Not adjuster.IsLastAngleOk(dc, limit) Then
+                                Exit For
+                            End If
+                        Next
+
                     End If
+                    dc.Driven = True
                     adjuster.AdjustGapSmothly(gapFold, gapFoldCM * 2, dc, limit)
                     Try
                         While (dc.Parameter._Value < angleLimit And dc.Parameter._Value > angleLimit / 2) And counterLimit < 4

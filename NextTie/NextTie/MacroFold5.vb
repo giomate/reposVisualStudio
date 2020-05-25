@@ -457,7 +457,7 @@ Public Class MacroFold5
             bandLines.Add(l)
             firstLine = l
             lastLine = l
-
+            lamp.FitView(doku)
             Return l
         Catch ex As Exception
             MsgBox(ex.ToString())

@@ -43,19 +43,24 @@ Public Class Highlithing
     End Sub
     Public Sub LookAtFace(f As Face)
         Dim oSSet As SelectSet
-        If f.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
-            oSSet = doku.SelectSet
+        Try
+            If f.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                oSSet = doku.SelectSet
 
 
-            oSSet.Select(f)
+                oSSet.Select(f)
 
-            'change active view camera orientation
-            Dim oControlDef As ControlDefinition
-            oControlDef = app.CommandManager.ControlDefinitions.Item("AppLookAtCmd")
-            oControlDef.Execute()
-            Beep()
-            oSSet.Clear()
-        End If
+                'change active view camera orientation
+                Dim oControlDef As ControlDefinition
+                oControlDef = app.CommandManager.ControlDefinitions.Item("AppLookAtCmd")
+                oControlDef.Execute()
+                Beep()
+                oSSet.Clear()
+            End If
+
+        Catch ex As Exception
+
+        End Try
 
 
 
@@ -75,6 +80,22 @@ Public Class Highlithing
         Beep()
         oSSet.Clear()
 
+
+
+    End Sub
+    Public Sub FitView(d As PartDocument)
+        Dim dMax As Double = 0
+        Dim fMax As Face
+        Dim oCamera As Camera
+        Try
+
+            oCamera = app.ActiveView.Camera
+
+            oCamera.Fit()
+            oCamera.Apply()
+        Catch ex As Exception
+
+        End Try
 
 
     End Sub

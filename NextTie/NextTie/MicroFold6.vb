@@ -424,7 +424,7 @@ Public Class MicroFold6
             bandLines.Add(l)
             firstLine = l
             lastLine = l
-
+            lamp.FitView(doku)
 
 
 

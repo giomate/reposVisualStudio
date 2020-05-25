@@ -1399,7 +1399,7 @@ Public Class TwistFold7
             bandLines.Add(l)
             firstLine = l
             lastLine = l
-
+            lamp.FitView(doku)
             Return l
         Catch ex As Exception
             MsgBox(ex.ToString())
