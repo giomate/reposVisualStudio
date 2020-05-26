@@ -49,6 +49,18 @@ Public Class Form1
             End Try
         End Try
     End Sub
+    Public Sub New(app As Inventor.Application)
+        oApp = app
+        iteration = 11
+        If oApp.Visible Then
+            started = True
+            done = AddInTies()
+        End If
+    End Sub
+    Public Function AddInTies() As Boolean
+        done = KeepMakingTies()
+        Return done
+    End Function
     Private Sub Form1_Closed(sender As Object, e As EventArgs) Handles Me.Closed
         If started Then
             'oApp.ActiveDocument.Close()

@@ -143,6 +143,7 @@
     <Compile Include="RodMaker.vb" />
     <Compile Include="SketchAdjust.vb" />
     <Compile Include="Sketcher3D.vb" />
+    <Compile Include="Starter.vb" />
     <Compile Include="TieMaker1.vb" />
     <Compile Include="TwistFold7.vb" />
   </ItemGroup>

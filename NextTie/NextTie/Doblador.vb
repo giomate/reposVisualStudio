@@ -1,5 +1,4 @@
 ﻿Imports Inventor
-
 Public Class Doblador
     Dim doku As PartDocument
     Dim app As Application
@@ -47,30 +46,7 @@ Public Class Doblador
     End Sub
 
 
-    Public Function MakeFirstFold(refDoc As FindReferenceLine) As Boolean
-        Dim b As Boolean
-        Try
 
-
-            sk3D = mainSketch.StartDrawingTranslated(refDoc, 1)
-            If mainSketch.done Then
-                doku.ComponentDefinition.Sketches3D.Item("s1").Visible = False
-                If DrawBandStripe().Count > 0 Then
-                    If MakeStartingFace(pro).GetHashCode > 0 Then
-
-
-                    End If
-                End If
-
-            End If
-
-            Return False
-        Catch ex As Exception
-            MsgBox(ex.ToString())
-            Return False
-        End Try
-
-    End Function
     Function DrawBandStripe() As Profile
         Dim ps As PlanarSketch
 

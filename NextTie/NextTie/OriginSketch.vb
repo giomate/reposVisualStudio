@@ -60,80 +60,8 @@ Public Class OriginSketch
         done = False
     End Sub
 
-    Public Function StartDrawing(ref As SketchLine3D) As Sketch3D
-        refLine = ref
-        wp1 = ref.StartSketchPoint.Geometry
-        wp3 = ref.EndSketchPoint.Geometry
-        sk3D = doku.ComponentDefinition.Sketches3D.Add()
-        sk3D.Name = "s1"
-        curve = curve3D.DrawTrobinaCurve(sk3D)
 
-        DrawInitialLine(refLine)
-        If sk3D.SketchLines3D.Count > 0 Then
 
-            'skRef = Form1.keyline.OpenMainSketch()
-            DrawLines()
-
-        End If
-
-        Return sk3D
-    End Function
-    Public Function StartDrawingTranslated(refDoc As FindReferenceLine, q As Integer) As Sketch3D
-
-        refSk = refDoc.OpenMainSketch(refDoc.oDoc)
-        refCurve = refDoc.oDoc.ComponentDefinition.Sketches3D.Item("refCurve").SketchEquationCurves3D.Item(1)
-        refLine = refDoc.GetKeyLine()
-
-        doku.Activate()
-
-        DrawTrobinaCurve(q)
-        DrawInitialLine(refLine)
-        comando.TopRightView()
-        If sk3D.SketchLines3D.Count > 0 Then
-
-            DrawLines()
-            If AdjustlastAngle() Then
-                point1 = firstLine.StartSketchPoint.Geometry
-                point2 = firstLine.EndSketchPoint.Geometry
-                point3 = secondLine.EndSketchPoint.Geometry
-                done = 1
-            End If
-        End If
-        Return sk3D
-    End Function
-    Public Function DrawNextMainSketch(rl As SketchLine3D, tl As SketchLine3D, fl As SketchLine3D, gfl As SketchLine3D) As SketchLine3D
-
-        twistLine = tl
-        doblezline = fl
-        sk3D = doku.ComponentDefinition.Sketches3D.Item(doku.ComponentDefinition.Sketches3D.Count)
-        refLine = rl
-        gapFoldLine = gfl
-        refLine.Construction = True
-        curve = sk3D.SketchEquationCurves3D.Item(sk3D.SketchEquationCurves3D.Count)
-        If refLine.Length > 0 Then
-            If DrawSingleFloatingLines() Then
-                point1 = firstLine.StartSketchPoint.Geometry
-                point2 = firstLine.EndSketchPoint.Geometry
-                point3 = secondLine.EndSketchPoint.Geometry
-                For Each sl As SketchLine3D In sk3D.SketchLines3D
-                    If sl.Equals(firstLine) Then
-                        ID1 = sl.AssociativeID
-
-                    Else
-
-                        If sl.Equals(secondLine) Then
-                            ID1 = sl.AssociativeID
-
-                        End If
-                    End If
-                Next
-                inputLine = firstLine
-                done = 1
-            End If
-        End If
-
-        Return firstLine
-    End Function
     Public Function DrawNextStartSketch(rl As SketchLine3D, tl As SketchLine3D, fl As SketchLine3D, gfl As SketchLine3D, spt As SketchPoint3D) As SketchLine3D
         intersectionPoint = spt
         twistLine = tl
@@ -205,43 +133,8 @@ Public Class OriginSketch
         End If
         Return hecho
     End Function
-    Function DrawLines() As Sketch3D
-        Dim i As Integer = 0
-        While Not done
-            DrawSingleLines(i)
-            i = i + 1
-        End While
-        done = 0
-        Return sk3D
-    End Function
-    Sub DrawSingleLines(i As Integer)
-
-        DrawFirstLine()
-
-        DrawSecondLine()
-
-        DrawFirstConstructionLine()
-
-        DrawThirdLine()
-
-        DrawSecondConstructionLine()
-
-        DrawFourthLine()
-
-        DrawFifthLine()
-
-        DrawThirdConstructionLine()
-        DrawFourthConstructionLine()
-
-        DrawSixthLine()
-
-        DrawSeventhLine()
 
 
-
-
-
-    End Sub
     Function DrawSingleFloatingLines() As Boolean
         Try
             'If DrawCentroLine().Length > 0 Then
@@ -304,7 +197,7 @@ Public Class OriginSketch
             Dim vcl1, vbl2, v As Vector
 
 
-
+            CorrectSecondLine()
             vcl1 = cl1.Geometry.Direction.AsVector
             vbl2 = secondLine.Geometry.Direction.AsVector
             v = vcl1.CrossProduct(vbl2)
