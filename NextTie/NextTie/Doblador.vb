@@ -1,7 +1,5 @@
 ﻿Imports Inventor
-Imports DrawingMainSketch
-Imports GetInitialConditions
-Imports DrawInitialSketch
+
 Public Class Doblador
     Dim doku As PartDocument
     Dim app As Application

@@ -1,7 +1,7 @@
 ﻿Imports Inventor
 Imports System
-Imports GetInitialConditions
-Imports DrawInitialSketch
+
+
 
 Public Class InitSketcher
     Dim doku As PartDocument

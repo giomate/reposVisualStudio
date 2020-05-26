@@ -1,6 +1,5 @@
 ﻿Imports Inventor
-Imports ThirdFold
-Imports FourthFold
+
 
 Public Class MacroFold5
     Public doku As PartDocument
@@ -303,6 +302,42 @@ Public Class MacroFold5
         majorEdge = e1
         Return e1
     End Function
+    Function GetMinorAdjacentEdge() As Edge
+        Dim e1, e2, e3 As Edge
+        Dim min1, min2, min3 As Double
+        min1 = 99999
+        min2 = 99999
+        min3 = 99999
+        e1 = adjacentFace.Edges.Item(1)
+        e2 = e1
+        e3 = e2
+        For Each ed As Edge In adjacentFace.Edges
+            If ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point) < min2 Then
+
+                If ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point) < min1 Then
+                    min3 = min2
+                    e3 = e2
+                    min2 = min1
+                    e2 = e1
+                    min1 = ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point)
+                    e1 = ed
+                Else
+                    min3 = min2
+                    e3 = e2
+                    min2 = ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point)
+                    e2 = ed
+                End If
+            Else
+
+                min3 = ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point)
+                e3 = ed
+
+            End If
+
+        Next
+
+        Return e1
+    End Function
     Function GetStartPoint() As Point
         Try
 
@@ -390,16 +425,18 @@ Public Class MacroFold5
     Function GetClosestPointTrobina(b As Point, o As Point) As Point
         Try
             Dim l As SketchLine3D
-            Dim dc As DimensionConstraint3D
+            Dim dc, dce As DimensionConstraint3D
             Dim cp As Point
             l = sk3D.SketchLines3D.AddByTwoPoints(b, o, False)
             sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, bendLine3D)
             sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
             dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+            dce = sk3D.DimensionConstraints3D.AddTwoPointDistance(l.StartPoint, GetMinorAdjacentEdge().StartVertex)
             adjuster.GetMinimalDimension(dc)
             cp = l.EndSketchPoint.Geometry
             Try
                 dc.Delete()
+                dce.Delete()
                 l.Delete()
             Catch ex As Exception
             End Try
@@ -409,30 +446,7 @@ Public Class MacroFold5
             Return Nothing
         End Try
     End Function
-    Function GetClosestPointTrobina(o As Point) As Point
-        Try
-            Dim l As SketchLine3D
-            Dim dc As DimensionConstraint3D
-            Dim cp As Point
-            l = sk3D.SketchLines3D.AddByTwoPoints(bendLine3D.EndPoint, o, False)
-            sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
-            dc = sk3D.DimensionConstraints3D.AddLineLength(l)
-            adjuster.GetMinimalDimension(dc)
-            cp = l.EndSketchPoint.Geometry
-            Try
-                dc.Delete()
-                l.Delete()
-            Catch ex As Exception
 
-            End Try
-            Return cp
-        Catch ex As Exception
-            MsgBox(ex.ToString())
-            Return Nothing
-        End Try
-
-
-    End Function
     Function DrawFirstLine() As SketchLine3D
         Try
 

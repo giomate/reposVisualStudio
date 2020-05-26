@@ -6,7 +6,7 @@ Imports System.IO
 Imports System.Text
 Imports System.IO.Directory
 Imports Inventor
-Imports GetInitialConditions
+
 Public Class Form1
     Dim oApp As Inventor.Application
     Dim oDoc As Inventor.Document

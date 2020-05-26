@@ -1,6 +1,5 @@
 ﻿Imports Inventor
-Imports ThirdFold
-Imports FourthFold
+
 
 Public Class TwistFold7
     Dim doku As PartDocument

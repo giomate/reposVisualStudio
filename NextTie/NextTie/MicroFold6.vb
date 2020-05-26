@@ -1,6 +1,5 @@
 ﻿Imports Inventor
-Imports FifthFold
-Imports FourthFold
+
 Public Class MicroFold6
     Public doku As PartDocument
     Dim app As Application
