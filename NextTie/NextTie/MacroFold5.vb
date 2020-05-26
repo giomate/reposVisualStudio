@@ -378,6 +378,7 @@ Public Class MacroFold5
         Try
             Dim pt, opt As Point
             Dim minDis As Double = 9999999999
+            Dim minDisAdj As Double = 999999999
             Dim minOpt As Double = 999999999
             Dim minEdge As Double = minDis
             Dim l As SketchLine3D
@@ -390,27 +391,33 @@ Public Class MacroFold5
                     opt = GetClosestPointTrobina(pt, o)
                     minOpt = 99999999
                     minEdge = minOpt
-                    For Each ed As Edge In workFace.Edges
-                        If ed.Equals(bendEdge) Then
-                        Else
-                            If ed.GetClosestPointTo(o).DistanceTo(opt) < minOpt Then
-                                minOpt = ed.GetClosestPointTo(o).DistanceTo(opt)
-                                If ed.GetClosestPointTo(o).DistanceTo(bendEdge.GetClosestPointTo(o)) < bendLine3D.Length + gap1CM * 2 Then
-                                    If ed.GetClosestPointTo(opt).DistanceTo(opt) < minEdge Then
-                                        minEdge = ed.GetClosestPointTo(opt).DistanceTo(opt)
-                                        followEdge = leadingEdge
-                                        leadingEdge = ed
+                    If opt.DistanceTo(pt) < minDisAdj Then
+                        minDisAdj = opt.DistanceTo(pt)
+                        For Each ed As Edge In workFace.Edges
+                            If ed.Equals(bendEdge) Then
+                            Else
+                                If ed.GetClosestPointTo(o).DistanceTo(opt) < minOpt Then
+                                    minOpt = ed.GetClosestPointTo(o).DistanceTo(opt)
+                                    If ed.GetClosestPointTo(o).DistanceTo(bendEdge.GetClosestPointTo(o)) < bendLine3D.Length + gap1CM * 2 Then
+                                        If ed.GetClosestPointTo(opt).DistanceTo(opt) < minEdge Then
+                                            minEdge = ed.GetClosestPointTo(opt).DistanceTo(opt)
+                                            followEdge = leadingEdge
+                                            leadingEdge = ed
+                                        Else
+                                            followEdge = ed
+                                        End If
                                     Else
                                         followEdge = ed
                                     End If
                                 Else
                                     followEdge = ed
                                 End If
-                            Else
-                                followEdge = ed
                             End If
-                        End If
-                    Next
+                        Next
+
+                    End If
+
+
                 End If
             Next
             point1 = pt
