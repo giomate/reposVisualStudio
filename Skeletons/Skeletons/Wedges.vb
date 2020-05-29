@@ -115,7 +115,7 @@ Public Class Wedges
 
         trobinaCurve = New Curves3D(doku)
         palito = New RodMaker(doku)
-        DP.Dmax = 200 / 10
+        DP.Dmax = 171 / 10 * (200 / 194)
         DP.Dmin = 1 / 10
         Tr = (DP.Dmax + DP.Dmin) / 4
         Cr = (DP.Dmax - DP.Dmin) / 4
@@ -1934,7 +1934,7 @@ Public Class Wedges
                 skeq = curvesSketch.SketchEquationCurves3D.Item(2)
 
                 Try
-                    wptt = compDef.WorkPoints.AddByCurveAndEntity(skeq, wpl)
+                    wptt = compDef.WorkPoints.AddFixed(GetClosestIntersectionPoint(skeq, wpl, skpt))
                     wptt.Visible = False
                     ptOpt = wptt.Point
                     ls = tg.CreateLineSegment(ptOpt, wptHigh.Point)
@@ -1957,7 +1957,7 @@ Public Class Wedges
             Else
                 skeq = curvesSketch.SketchEquationCurves3D.Item(3)
                 Try
-                    wptt = compDef.WorkPoints.AddByCurveAndEntity(skeq, wpl)
+                    wptt = compDef.WorkPoints.AddFixed(GetClosestIntersectionPoint(skeq, wpl, skpt))
                     wptt.Visible = False
                     ptOpt = wptt.Point
                     ls = tg.CreateLineSegment(ptOpt, wptLow.Point)
@@ -1987,6 +1987,20 @@ Public Class Wedges
             Return Nothing
         End Try
 
+    End Function
+    Function GetClosestIntersectionPoint(seq As SketchEquationCurve3D, wpl As WorkPlane, skpt As SketchPoint3D) As Point
+        Dim pl As Plane = wpl.Plane
+        Dim ptMin As Point = seq.StartSketchPoint.Geometry
+        Dim d, dMin As Double
+        dMin = 9999999
+        For Each pt As Point In pl.IntersectWithCurve(seq.Geometry)
+            d = pt.DistanceTo(skpt.Geometry)
+            If d < dMin Then
+                dMin = d
+                ptMin = pt
+            End If
+        Next
+        Return ptMin
     End Function
     Function SketchOptimalPoint(wpti As WorkPoint, ptt As Point, skeq As SketchEquationCurve3D, fi As Face) As SketchLine3D
         Dim v1 As Vector
@@ -2454,7 +2468,7 @@ Public Class Wedges
 
             ps = doku.ComponentDefinition.Sketches.Add(wpl)
             lamp.LookAtPlane(wpl)
-            pr = DrawSingleCircle(ps, 8 / 10)
+            pr = DrawSingleCircle(ps, 6 / 10)
             ps.Visible = False
             sk3D.Visible = False
             wpl.Visible = False

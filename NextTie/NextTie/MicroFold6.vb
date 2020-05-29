@@ -487,6 +487,11 @@ Public Class MicroFold6
             End If
             tiltAngle = sk3D.DimensionConstraints3D.AddTwoLineAngle(firstLine, minorLine)
             tiltAngle.Driven = True
+            If l.Length > 35 / 10 Then
+                dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+                adjuster.AdjustDimConstrain3DSmothly(dc, 25 / 10)
+                dc.Delete()
+            End If
             point3 = l.EndSketchPoint.Geometry
             lastLine = l
             bandLines.Add(l)

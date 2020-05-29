@@ -16,7 +16,7 @@ Public Class TwistFold7
     Public farPoint, point1, point2, point3, curvePoint, startPoint, centroPoint As Point
     Dim tg As TransientGeometry
     Dim initialPlane, adjacentPlane As Plane
-    Dim gap1CM, thicknessCM As Double
+    Dim gap1CM, thicknessCM, diff1, diff2 As Double
     Dim partNumber As Integer
     Dim adjuster As SketchAdjust
     Dim bandLines, constructionLines, intersectionPoints As ObjectCollection
@@ -78,7 +78,8 @@ Public Class TwistFold7
         manager = New FoldingEvaluator(doku)
         cilindro = New RodMaker(doku)
 
-
+        diff1 = Math.PI / 2 - 1.64
+        diff2 = Math.PI / 2 - 1.43
         done = False
     End Sub
     Public Function MakeFinalTwist() As Boolean
@@ -143,7 +144,7 @@ Public Class TwistFold7
             Dim l As SketchLine3D
             sk3D = compDef.Sketches3D.Add()
             l = sk3D.Include(nextLine)
-            sk3D.Name = "nextIntroLine"
+            sk3D.Name = "introLine"
             tante3D = connectLine
             sk3D = compDef.Sketches3D.Add()
             l = sk3D.Include(tante3D)
@@ -1589,7 +1590,7 @@ Public Class TwistFold7
         Return hecho
     End Function
     Function CorrectTangent() As Boolean
-        Dim e As Double = Math.Cos(Math.PI * (1 / 2 + 1 / 48))
+        Dim e As Double = Math.Cos(Math.PI * (diff1 + diff2) / 2)
         Dim d As Double = CalculateEntryRodFactor()
 
         If d < e Then
@@ -1911,7 +1912,7 @@ Public Class TwistFold7
 
     End Function
     Function DrawTangentLine() As SketchLine3D
-        Dim l, cl4, cl3, bl2, cl2 As SketchLine3D
+        Dim l, cl4, cl3, bl2, cl2, cl1 As SketchLine3D
 
         Dim dc As DimensionConstraint3D
 
@@ -1965,7 +1966,14 @@ Public Class TwistFold7
                 adjuster.GetMinimalDimension(gapVertex)
             Catch ex As Exception
             End Try
-            sk3D.Solve()
+            Try
+                sk3D.Solve()
+            Catch ex As Exception
+                cl1 = constructionLines(1)
+                gapVertex.Delete()
+                gapVertex = sk3D.DimensionConstraints3D.AddLineLength(cl1)
+            End Try
+
             thirdLine = l
             lastLine = l
             bandLines.Add(l)
@@ -2536,7 +2544,7 @@ Public Class TwistFold7
         End Try
     End Function
     Function DrawTangentParallel() As SketchLine3D
-        Dim l, bl3, cl4 As SketchLine3D
+        Dim l, bl3, cl4, cl1 As SketchLine3D
         Dim gc As GeometricConstraint3D
         Try
 
@@ -2552,7 +2560,13 @@ Public Class TwistFold7
                 adjuster.GetMinimalDimension(gapVertex)
             Catch ex As Exception
             End Try
-            sk3D.Solve()
+            Try
+                sk3D.Solve()
+            Catch ex As Exception
+                cl1 = constructionLines(1)
+                gapVertex.Delete()
+                gapVertex = sk3D.DimensionConstraints3D.AddLineLength(cl1)
+            End Try
             gapFold.Driven = True
             lastLine = l
             constructionLines.Add(l)

@@ -96,6 +96,7 @@
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
       <DependentUpon>Application.myapp</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <Compile Include="My Project\Resources.Designer.vb">
       <AutoGen>True</AutoGen>
@@ -112,6 +113,7 @@
     <Compile Include="Skeletons.vb" />
     <Compile Include="SketchAdjust.vb" />
     <Compile Include="Stanzer.vb" />
+    <Compile Include="Starter.vb" />
     <Compile Include="SubinaStruct.vb" />
     <Compile Include="Surfacer.vb" />
     <Compile Include="Sweeper.vb" />

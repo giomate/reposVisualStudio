@@ -21,6 +21,15 @@ Public Class Commands
         ' Execute the command. 
         Call oControlDef.Execute()
     End Sub
+    Public Sub UndoCommand(doku As PartDocument)
+        ' Get control definition for the line command. 
+
+        oControlDef = oCommandMgr.ControlDefinitions.Item("AppUndoCmd")
+
+        ' Execute the command. 
+        Call oControlDef.Execute()
+        doku.Update()
+    End Sub
     Function IsUndoable() As Boolean
         Dim ud As Boolean
         oControlDef = oCommandMgr.ControlDefinitions.Item("AppUndoCmd")

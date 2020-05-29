@@ -19,7 +19,7 @@ Public Class Form1
     Public Sub New()
         ' This call is required by the designer.
         InitializeComponent()
-        iteration = 8
+        iteration = 13
         ' Add any initialization after the InitializeComponent() call.
         Try
             oApp = Marshal.GetActiveObject("Inventor.Application")
@@ -96,7 +96,7 @@ Public Class Form1
             If (started) Then
                 Dim p As String = oDesignProjectMgr.ActiveDesignProject.WorkspacePath
                 Dim ffn As String
-                ffn = String.Concat(p, "\Iteration8\Band9.ipt")
+                ffn = String.Concat(p, "\Iteration13\Band9.ipt")
                 oDoc = invDoc.OpenFullFileName(ffn)
                 esqueleto = New Skeletons(oDoc)
                 esqueleto.RecoverSkeletonIteration(iteration)

@@ -136,7 +136,9 @@ Public Class TieMaker1
                 End If
 
             End If
-            If compDef.Sketches3D.Item("nextIntroLine").SketchLines3D.Count > 0 Then
+            doku.Update()
+            doku.Update()
+            If compDef.Sketches3D.Item("introLine").SketchLines3D.Count > 0 Then
                 ' fp = compDef.FlatPattern
                 If compDef.HasFlatPattern Then
                     done = True
@@ -391,7 +393,7 @@ Public Class TieMaker1
 
         If d.ComponentDefinition.Features.Count > 5 Then
             Try
-                If d.ComponentDefinition.Sketches3D.Item("nextIntroLine").SketchLines3D.Count > 0 Then
+                If d.ComponentDefinition.Sketches3D.Item("introLine").SketchLines3D.Count > 0 Then
                     b = True
                 End If
             Catch ex As Exception

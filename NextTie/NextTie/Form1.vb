@@ -131,7 +131,7 @@ Public Class Form1
 
                 While (q < tie0.trobinaCurve.DP.q And b)
                     If nextTie.MakeNextTie().ComponentDefinition.Features.Count > 5 Then
-                        If nextTie.compDef.Sketches3D.Item("nextIntroLine").SketchLines3D.Count > 0 Then
+                        If nextTie.compDef.Sketches3D.Item("introLine").SketchLines3D.Count > 0 Then
                             b = nextTie.done
                             If b Then
                                 oDoc = nextTie.doku

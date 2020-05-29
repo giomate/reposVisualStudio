@@ -18,13 +18,15 @@ Public Class OriginSketch
     Public vp, point1, point2, point3, centroPoint As Point
     Dim intersectionPoint As SketchPoint3D
     Dim tg As TransientGeometry
-    Dim gapFoldCM, radioCylinder As Double
+    Dim gapFoldCM, radioCylinder, diff2, diff1 As Double
     Dim adjuster As SketchAdjust
     Public bandLines, constructionLines As ObjectCollection
     Dim comando As Commands
     Dim nombrador As Nombres
     Public metro, gapFold, dcThirdLine, angleGap, angleTangent As DimensionConstraint3D
     Public ID1, ID2 As Integer
+
+
 
 
 
@@ -43,6 +45,8 @@ Public Class OriginSketch
         gapFoldCM = 3 / 10
         radioCylinder = 20 / 10
         done = False
+        diff1 = Math.PI / 2 - 1.48
+        diff2 = Math.PI / 2 - 1.58
     End Sub
     Public Sub New(docu As Inventor.Document, tl As SketchLine3D)
         doku = docu
@@ -58,6 +62,8 @@ Public Class OriginSketch
         gapFoldCM = 3 / 10
         twistLine = tl
         done = False
+        diff1 = Math.PI / 2 - 1.64
+        diff2 = Math.PI / 2 - 1.43
     End Sub
 
 
@@ -138,22 +144,21 @@ Public Class OriginSketch
     Function DrawSingleFloatingLines() As Boolean
         Try
             'If DrawCentroLine().Length > 0 Then
-            If DrawFirstFloatingLine().Length > 0 Then
-                    If DrawSecondLine().Length > 0 Then
-                        If DrawFirstConstructionLine().Construction Then
-                            If DrawThirdLine().Length > 0 Then
-                                If DrawSecondConstructionLine().Construction Then
-                                    If DrawFourthFloatingLine().Length > 0 Then
-                                        If DrawFifthLine().Length > 0 Then
-                                            If DrawThirdConstructionLine().Construction Then
-                                                If DrawFourthConstructionLine().Construction Then
-                                                    If DrawSixthLine().Length > 0 Then
-                                                        If DrawSeventhLine().Length > 0 Then
-                                                            ' Return True
-                                                            If DrawFifthConstructionLine().Length > 0 Then
-                                                                If DrawTangentParallel().Length > 0 Then
-                                                                    Return True
-                                                                End If
+            If DrawFirstLine().Length > 0 Then
+                If DrawSecondLine().Length > 0 Then
+                    If DrawFirstConstructionLine().Construction Then
+                        If DrawThirdLine().Length > 0 Then
+                            If DrawSecondConstructionLine().Construction Then
+                                If DrawFourLine().Length > 0 Then
+                                    If DrawFifthLine().Length > 0 Then
+                                        If DrawThirdConstructionLine().Construction Then
+                                            If DrawFourthConstructionLine().Construction Then
+                                                If DrawSixthLine().Length > 0 Then
+                                                    If DrawSeventhLine().Length > 0 Then
+                                                        ' Return True
+                                                        If DrawFifthConstructionLine().Length > 0 Then
+                                                            If DrawTangentParallel().Length > 0 Then
+                                                                Return True
                                                             End If
                                                         End If
                                                     End If
@@ -162,7 +167,6 @@ Public Class OriginSketch
                                         End If
                                     End If
                                 End If
-
                             End If
 
                         End If
@@ -170,6 +174,8 @@ Public Class OriginSketch
                     End If
 
                 End If
+
+            End If
             '  End If
 
         Catch ex As Exception
@@ -195,7 +201,7 @@ Public Class OriginSketch
             cl1 = constructionLines.Item(1)
             Dim pt As Point = cl1.Geometry.MidPoint
             Dim vcl1, vbl2, v As Vector
-
+            CorrectGap()
 
             CorrectSecondLine()
             vcl1 = cl1.Geometry.Direction.AsVector
@@ -216,7 +222,7 @@ Public Class OriginSketch
                 l2.Construction = True
                 gcpp = sk3D.GeometricConstraints3D.AddPerpendicular(l, l2)
             Catch ex2 As Exception
-                    MsgBox(ex2.ToString())
+                MsgBox(ex2.ToString())
                 Return Nothing
             End Try
             dc = sk3D.DimensionConstraints3D.AddLineLength(l)
@@ -305,31 +311,8 @@ Public Class OriginSketch
         sk3D.GeometricConstraints3D.AddGround(curve)
         Return curve
     End Function
+
     Function DrawFirstLine() As SketchLine3D
-        Try
-
-            Dim l As SketchLine3D = Nothing
-
-            If IsThereCoincidentConstrains(refLine) Then
-                Dim p1 As Point = FindCommonCoincidentConstrainCurve(refLine).SketchPoint.Geometry
-            Else
-                l = sk3D.SketchLines3D.AddByTwoPoints(refLine.StartSketchPoint.Geometry, refLine.EndSketchPoint.Geometry)
-                sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, curve)
-            End If
-            point1 = l.StartSketchPoint.Geometry
-            point2 = l.EndSketchPoint.Geometry
-            bandLines.Add(l)
-            firstLine = l
-            lastLine = l
-
-            Return l
-        Catch ex As Exception
-            MsgBox(ex.ToString())
-            Return Nothing
-        End Try
-        Return Nothing
-    End Function
-    Function DrawFirstFloatingLine() As SketchLine3D
         Dim l As SketchLine3D
         Dim dc, ac As DimensionConstraint3D
         Dim gc As GeometricConstraint3D
@@ -438,15 +421,18 @@ Public Class OriginSketch
         Dim b As Double = GetParameter("b")._Value
         Dim gc As GeometricConstraint3D
         Try
-            Dim v1, v2, v3 As Vector
+            Dim v1, v2, v3, v4 As Vector
+            v4 = intersectionPoint.Geometry.VectorTo(curve.EndSketchPoint.Geometry)
+            v4.Normalize()
             v1 = firstLine.Geometry.Direction.AsVector
             v1.Normalize()
             v3 = tangentLine.Geometry.Direction.AsVector
             v3.Normalize()
+            v3.AddVector(v4)
             Dim l As SketchLine3D
             Dim d As Double
             Dim dc, ac As DimensionConstraint3D
-            Dim optpoint As Point
+            Dim optpoint As Point = curve.EndSketchPoint.Geometry
             Dim p As Plane
             p = tg.CreatePlane(lastLine.EndSketchPoint.Geometry, v1)
             Dim minDis As Double = 9999999999
@@ -982,23 +968,8 @@ Public Class OriginSketch
         End If
         Return dc
     End Function
-    Function DrawFourthLine() As SketchLine3D
-        Try
-            Dim l, pl As SketchLine3D
 
-            pl = firstLine
-            l = sk3D.SketchLines3D.AddByTwoPoints(pl.StartPoint, lastLine.EndSketchPoint.Geometry, False)
-            sk3D.GeometricConstraints3D.AddPerpendicular(l, lastLine)
-            sk3D.GeometricConstraints3D.AddCoincident(lastLine.EndPoint, l)
-            lastLine = l
-            bandLines.Add(l)
-            Return l
-        Catch ex As Exception
-            MsgBox(ex.ToString())
-            Return Nothing
-        End Try
-    End Function
-    Function DrawFourthFloatingLine() As SketchLine3D
+    Function DrawFourLine() As SketchLine3D
         Try
             Dim l, pl As SketchLine3D
             Dim dcl, acl, dcl4 As DimensionConstraint3D
@@ -1145,24 +1116,31 @@ Public Class OriginSketch
         End Try
     End Function
     Function CorrectTangent() As Boolean
-        Dim e As Double = Math.Cos(Math.PI * (1 / 2 + 1 / 48))
+        Dim e As Double = Math.Cos(Math.PI * (1 / 2 + (diff1 + diff2) / 2))
         Dim d As Double = CalculateEntryRodFactor()
-
+        Dim b As Double = GetParameter("b")._Value
         If d < e Then
             Dim l As SketchLine3D = sk3D.SketchLines3D.AddByTwoPoints(firstLine.StartPoint, intersectionPoint, False)
             Dim dc As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddLineLength(l)
+            Dim dct As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddLineLength(tangentLine)
+            dct.Driven = True
             Dim limit As Integer = 0
             Dim hecho As Boolean
             CorrectFirstLine()
             Do
                 hecho = adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 7 / 8)
                 dc.Driven = True
+                If tangentLine.Length > 4 * b Then
+                    adjuster.AdjustDimConstrain3DSmothly(dct, 7 * b / 2)
+                    dct.Driven = True
+                End If
 
                 CorrectGap()
                 d = CalculateEntryRodFactor()
                 limit = limit + 1
             Loop Until (d > e Or limit > 16)
             dc.Delete()
+            dct.Delete()
             l.Delete()
             Return hecho
         Else
@@ -1172,14 +1150,14 @@ Public Class OriginSketch
         Return 0
     End Function
     Function CorrectThirdLine() As Boolean
-        Dim dif1 As Double = Math.PI / 2 - 1.48
-        Dim dif2 As Double = Math.PI / 2 - 1.59
-        Dim e As Double = Math.Cos(Math.PI / 2 + (dif1 + dif2) / 2)
+
+        Dim e As Double = Math.Cos(Math.PI / 2 + (diff1 + diff2) / 2)
         Dim d As Double = CalculateEntryRodFactor()
         Dim b As Double = GetParameter("b")._Value
         If d < e Then
             Dim l As SketchLine3D = sk3D.SketchLines3D.AddByTwoPoints(firstLine.StartPoint, intersectionPoint, False)
             Dim dc As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddLineLength(l)
+            Dim dct As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddLineLength(tangentLine)
             Dim limit As Integer = 0
             Dim hecho As Boolean
             CorrectFirstLine()
@@ -1188,12 +1166,16 @@ Public Class OriginSketch
                 AdjustThirdLine(2 * b)
                 hecho = adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 7 / 8)
                 dc.Driven = True
-
+                If tangentLine.Length > 4 * b Then
+                    adjuster.AdjustDimConstrain3DSmothly(dct, 7 * b / 2)
+                    dct.Driven = True
+                End If
 
                 d = CalculateEntryRodFactor()
                 limit = limit + 1
             Loop Until (d > e Or limit > 16)
             dc.Delete()
+            dct.Delete()
             l.Delete()
             Return hecho
         Else

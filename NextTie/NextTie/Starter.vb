@@ -12,10 +12,9 @@ Public Class Starter
 
     Public Sub New(app As Inventor.Application)
         oApp = app
-        iteration = 11
+        iteration = 13
         If oApp.Visible Then
             started = True
-            done = AddInTies()
         End If
     End Sub
     Public Function AddInTies() As Boolean
@@ -42,7 +41,7 @@ Public Class Starter
 
                 While (q < tie0.trobinaCurve.DP.q And b)
                     If nextTie.MakeNextTie().ComponentDefinition.Features.Count > 5 Then
-                        If nextTie.compDef.Sketches3D.Item("nextIntroLine").SketchLines3D.Count > 0 Then
+                        If nextTie.compDef.Sketches3D.Item("introLine").SketchLines3D.Count > 0 Then
                             b = nextTie.done
                             If b Then
                                 oDoc = nextTie.doku

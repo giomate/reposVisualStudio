@@ -34,7 +34,7 @@ Public Class FindReferenceLine
         Return line
     End Function
     Function OpenIntroLine(oDoc As PartDocument) As Sketch3D
-        sk3D = oDoc.ComponentDefinition.Sketches3D.Item("nextIntroLine")
+        sk3D = oDoc.ComponentDefinition.Sketches3D.Item("introLine")
         Return sk3D
     End Function
     Function OpenKanteSketch(oDoc As PartDocument) As Sketch3D

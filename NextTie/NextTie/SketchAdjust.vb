@@ -355,7 +355,7 @@ Public Class SketchAdjust
                 dci.Parameter._Value = r
                 oSk3D.Solve()
                 AdjustResolution(dci, pit._Value)
-                Form1.Label1.Text = "Adjusting " & pit.Name & " = " & pit.Value.ToString
+
                 counter = counter + 1
 
             End While
@@ -582,7 +582,7 @@ Public Class SketchAdjust
                 AdjustResolution(dc, pit._Value)
                 counter = counter + 1
                 Debug.Print("iterating Number:  " & counter.ToString() & "  " & pit.Name & " = " & pit.Value.ToString)
-                Form1.Label1.Text = "Adjusting " & pit.Name & " = " & pit.Value.ToString
+
             End While
             counter = 0
             If Not monitor.IsSketch3DHealthy(oSk3D) Then

@@ -113,7 +113,7 @@ Public Class Skeletons
 
         trobinaCurve = New Curves3D(doku)
         palitos = New RodMaker(doku)
-        DP.Dmax = 200 / 10
+        DP.Dmax = 171 / 10 * (200 / 194)
         DP.Dmin = 1 / 10
         Tr = (DP.Dmax + DP.Dmin) / 4
         Cr = (DP.Dmax - DP.Dmin) / 4
@@ -456,12 +456,12 @@ Public Class Skeletons
         GetConvergePointHiLo(q)
         Dim wpl As WorkPlane = compDef.WorkPlanes.AddByThreePoints(wpt, skptHigh, skptLow)
         wpl.Visible = False
-        Dim seq As SketchEquationCurve3D = trobinaCurve.DrawXYPlaneRing(sk3D, 55 / 1, 20 / 1, q)
+        Dim seq As SketchEquationCurve3D = trobinaCurve.DrawXYPlaneRing(sk3D, 44 / 1, 16 / 1, q)
         sk3D.GeometricConstraints3D.AddGround(seq)
         wptHigh = compDef.WorkPoints.AddByCurveAndEntity(seq, wpl)
         wptHigh.Name = String.Concat("wptHigh")
         wptHigh.Visible = False
-        seq = trobinaCurve.DrawXYPlaneRing(sk3D, 55 / 1, -20 / 1, q)
+        seq = trobinaCurve.DrawXYPlaneRing(sk3D, 44 / 1, -16 / 1, q)
         sk3D.GeometricConstraints3D.AddGround(seq)
         wptLow = compDef.WorkPoints.AddByCurveAndEntity(seq, wpl)
         wptLow.Name = "wptLow"

@@ -562,18 +562,18 @@ Public Class RodMaker
         Dim ps As PlanarSketch
         Dim v1, v2, v3, v4 As Vector2d
         Dim skpt3D, skpt2, skpt3, skpt1 As SketchPoint3D
-        Dim sp1, sp2, sp3, spc As SketchPoint
-        Dim l12d, l22d, l32d, mne, slme As SketchLine
+        Dim sp1, sp2, sp3, sp4, spc As SketchPoint
+        Dim l12d, l22d, cl1, slme As SketchLine
         Dim skpoints As ObjectCollection = app.TransientObjects.CreateObjectCollection
 
-        Dim gc, gccc As GeometricConstraint
+        Dim gc, gccl As GeometricConstraint
         Dim sen As SketchEntitiesEnumerator
         Dim sa, saf As SketchArc
 
         Dim dc As DimensionConstraint
         Dim pro As Profile
-        Dim pt3D As Point
-        Dim pt2D As Point2d
+
+        Dim pt2D, pt2DCl As Point2d
         Dim d As Double = 0
         Dim i As Integer
         Dim v As Vector
@@ -631,6 +631,14 @@ Public Class RodMaker
             v2 = sp2.Geometry.VectorTo(sp3.Geometry)
             v3 = v2
             v3.AddVector(v1)
+            pt2DCl = sp3.Geometry
+            v4 = v3
+            v4.ScaleBy(16)
+            pt2DCl.TranslateBy(v4)
+            sp4 = ps.SketchPoints.Add(pt2DCl)
+            ps.GeometricConstraints.AddGround(sp4)
+            cl1 = ps.SketchLines.AddByTwoPoints(sp3, sp4)
+            cl1.Construction = True
             angle = v1.AngleTo(v2)
             angleRod = angle
             d = wp1.Point.DistanceTo(wp2.Point)
@@ -651,10 +659,12 @@ Public Class RodMaker
             pt2D = sp3.Geometry
             pt2D.TranslateBy(v3)
             sa = ps.SketchArcs.AddByThreePoints(l12d.EndSketchPoint, pt2D, l22d.EndSketchPoint)
-            dc = ps.DimensionConstraints.AddTwoPointDistance(sp3, sa.CenterSketchPoint, DimensionOrientationEnum.kAlignedDim, sa.CenterSketchPoint.Geometry)
+            gccl = ps.GeometricConstraints.AddCoincident(sa.CenterSketchPoint, cl1)
+            dc = ps.DimensionConstraints.AddTwoPointDistance(sp4, sa.CenterSketchPoint, DimensionOrientationEnum.kAlignedDim, sa.CenterSketchPoint.Geometry)
             adjuster.AdjustDimensionConstraint2D(dc, dc.Parameter.Value / 16)
             dc.Delete()
             gc = ps.GeometricConstraints.AddTangent(sa, l22d)
+            gccl.Delete()
             Try
                 gc = ps.GeometricConstraints.AddTangent(sa, l12d)
             Catch ex As Exception
@@ -826,7 +836,7 @@ Public Class RodMaker
     End Function
     Function TorusRadius(pt As Point) As Double
 
-        Return Math.Pow(Math.Pow(Math.Pow(Math.Pow(pt.X, 2) + Math.Pow(pt.Y, 2), 1 / 2) - 50 / 10, 2) + Math.Pow(pt.Z, 2), 1 / 2)
+        Return Math.Pow(Math.Pow(Math.Pow(Math.Pow(pt.X, 2) + Math.Pow(pt.Y, 2), 1 / 2) - 43 / 10, 2) + Math.Pow(pt.Z, 2), 1 / 2)
     End Function
     Function RevolveFace(pro As Profile) As RevolveFeature
         Dim rf As RevolveFeature

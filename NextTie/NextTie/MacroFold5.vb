@@ -1122,7 +1122,7 @@ Public Class MacroFold5
                     gapVertex.Driven = False
                     counterLimit = 0
                     lastValue = 0
-                    While (Math.Abs(gapVertex.Parameter._Value - lastValue) > gap1CM / 32) And counterLimit < 32
+                    While (Math.Abs(gapVertex.Parameter._Value - lastValue) > gap1CM / 64) And counterLimit < 64
                         lastValue = gapVertex.Parameter._Value
                         adjuster.GetMinimalDimension(gapVertex)
                         counterLimit = counterLimit + 1
@@ -1140,7 +1140,7 @@ Public Class MacroFold5
                     gapVertex.Driven = False
                     counterLimit = 0
                     lastValue = 0
-                    While (Math.Abs(gapVertex.Parameter._Value - lastValue) > gap1CM / 32) And counterLimit < 32
+                    While (Math.Abs(gapVertex.Parameter._Value - lastValue) > gap1CM / 64) And counterLimit < 64
                         lastValue = gapVertex.Parameter._Value
                         adjuster.GetMinimalDimension(gapVertex)
                         counterLimit = counterLimit + 1
