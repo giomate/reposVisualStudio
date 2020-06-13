@@ -106,9 +106,11 @@ Public Class MicroFold6
     Public Function MakeEvenFold(s As String) As Boolean
         Try
             If GetWorkFace().SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                lamp.LookAtFace(workFace)
                 If mainSketch.DrawTrobinaCurve(nombrador.GetQNumber(doku), nombrador.GetNextSketchName(doku)).Construction Then
                     sk3D = mainSketch.sk3D
                     curve = mainSketch.curve
+                    lamp.ZoomSelected(curve)
                     If GetMinorEdge(workFace).GeometryType = CurveTypeEnum.kLineSegmentCurve Then
                         If DrawFirstLine().Length > 0 Then
                             If DrawSecondLine().Length > 0 Then
@@ -132,7 +134,7 @@ Public Class MicroFold6
                                                     folded = bender.FoldBand(bandLines.Count)
                                                     folded = CheckFoldSide(folded)
                                                     folded.Name = s
-                                                    'lamp.LookAtFace(workFace)
+                                                    ' lamp.LookAtFace(workFace)
                                                     doku.Update2(True)
                                                     If monitor.IsFeatureHealthy(folded) Then
                                                         comando.UnfoldBand(doku)
@@ -423,7 +425,7 @@ Public Class MicroFold6
             bandLines.Add(l)
             firstLine = l
             lastLine = l
-            lamp.FitView(doku)
+            ' lamp.FitView(doku)
 
 
 

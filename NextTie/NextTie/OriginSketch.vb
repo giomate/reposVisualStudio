@@ -23,7 +23,7 @@ Public Class OriginSketch
     Public bandLines, constructionLines As ObjectCollection
     Dim comando As Commands
     Dim nombrador As Nombres
-    Public metro, gapFold, dcThirdLine, angleGap, angleTangent As DimensionConstraint3D
+    Public metro, gapFold, dcThirdLine, angleGap, angleTangent, inletGap, outletGap As DimensionConstraint3D
     Public ID1, ID2 As Integer
 
 
@@ -68,15 +68,16 @@ Public Class OriginSketch
 
 
 
-    Public Function DrawNextStartSketch(rl As SketchLine3D, tl As SketchLine3D, fl As SketchLine3D, gfl As SketchLine3D, spt As SketchPoint3D) As SketchLine3D
+    Public Function DrawNextStartSketch(rl As SketchLine3D, tl As SketchLine3D, fl As SketchLine3D, zline As SketchLine3D, spt As SketchPoint3D, oGap As DimensionConstraint3D) As SketchLine3D
         intersectionPoint = spt
         twistLine = tl
         tangentLine = tl
         doblezline = fl
-        zAxisLine = gfl
+        zAxisLine = zline
         sk3D = doku.ComponentDefinition.Sketches3D.Item(doku.ComponentDefinition.Sketches3D.Count)
         refLine = rl
-        gapFoldLine = gfl
+        outletGap = oGap
+
         refLine.Construction = True
         curve = sk3D.SketchEquationCurves3D.Item(sk3D.SketchEquationCurves3D.Count)
         sk3D.GeometricConstraints3D.AddGround(intersectionPoint)
@@ -112,7 +113,7 @@ Public Class OriginSketch
         PullUpLine(tensorFirstLine)
         Dim dc As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddLineLength(tensorFirstLine)
 
-        hecho = adjuster.AdjustDimensionConstraint3DSmothly(dc, radioCylinder * 6 / 5)
+        hecho = adjuster.AdjustDimensionConstraint3DSmothly(dc, radioCylinder + outletGap.Parameter._Value / 2)
         dc.Delete()
         Return hecho
     End Function
@@ -359,8 +360,8 @@ Public Class OriginSketch
                     ForceFirstLineOutside()
                 End If
             End If
-
-
+            inletGap = sk3D.DimensionConstraints3D.AddTwoPointDistance(firstLine.StartPoint, intersectionPoint)
+            inletGap.Driven = True
             Return l
         Catch ex As Exception
             MsgBox(ex.ToString())
@@ -785,7 +786,7 @@ Public Class OriginSketch
 
 
             End Try
-            CorrectTangent()
+            CorrectEntryGap()
 
             CorrectGap()
             adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM * 5)
@@ -1011,11 +1012,11 @@ Public Class OriginSketch
             'sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
             lastLine = l
             bandLines.Add(l)
-            CorrectTangent()
+            CorrectEntryGap()
             dcl4 = sk3D.DimensionConstraints3D.AddTwoPointDistance(l.EndPoint, curve.EndSketchPoint)
             adjuster.AdjustDimConstrain3DSmothly(dcl4, gapFoldCM * 8)
             dcl4.Delete()
-            CorrectTangent()
+            CorrectEntryGap()
             Return l
         Catch ex As Exception
             MsgBox(ex.ToString())
@@ -1065,7 +1066,7 @@ Public Class OriginSketch
         Dim b As Double = GetParameter("b")._Value
         Try
 
-            CorrectTangent()
+            CorrectEntryGap()
             bl4 = bandLines.Item(4)
             If bl4.Length > 2 * b Then
                 dc = sk3D.DimensionConstraints3D.AddLineLength(bl4)
@@ -1115,33 +1116,34 @@ Public Class OriginSketch
             Return Nothing
         End Try
     End Function
-    Function CorrectTangent() As Boolean
-        Dim e As Double = Math.Cos(Math.PI * (1 / 2 + (diff1 + diff2) / 2))
-        Dim d As Double = CalculateEntryRodFactor()
+    Public Function CorrectEntryGap() As Boolean
+
+
         Dim b As Double = GetParameter("b")._Value
-        If d < e Then
-            Dim l As SketchLine3D = sk3D.SketchLines3D.AddByTwoPoints(firstLine.StartPoint, intersectionPoint, False)
-            Dim dc As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddLineLength(l)
+        Dim d As Double = Math.Abs(inletGap.Parameter._Value - outletGap.Parameter._Value)
+
+        If d > 1 / 16 Then
+
             Dim dct As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddLineLength(tangentLine)
             dct.Driven = True
             Dim limit As Integer = 0
             Dim hecho As Boolean
             CorrectFirstLine()
             Do
-                hecho = adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 7 / 8)
-                dc.Driven = True
+                hecho = adjuster.AdjustDimensionConstraint3DSmothly(inletGap, outletGap.Parameter._Value)
+                inletGap.Driven = True
                 If tangentLine.Length > 4 * b Then
                     adjuster.AdjustDimConstrain3DSmothly(dct, 7 * b / 2)
                     dct.Driven = True
                 End If
 
                 CorrectGap()
-                d = CalculateEntryRodFactor()
-                limit = limit + 1
-            Loop Until (d > e Or limit > 16)
-            dc.Delete()
+                d = Math.Abs(inletGap.Parameter._Value - outletGap.Parameter._Value)
+                limit += 1
+            Loop Until (d < 1 / 16 Or limit > 16)
+            inletGap.Driven = True
             dct.Delete()
-            l.Delete()
+
             Return hecho
         Else
             Return True
@@ -1151,32 +1153,37 @@ Public Class OriginSketch
     End Function
     Function CorrectThirdLine() As Boolean
 
-        Dim e As Double = Math.Cos(Math.PI / 2 + (diff1 + diff2) / 2)
-        Dim d As Double = CalculateEntryRodFactor()
         Dim b As Double = GetParameter("b")._Value
-        If d < e Then
-            Dim l As SketchLine3D = sk3D.SketchLines3D.AddByTwoPoints(firstLine.StartPoint, intersectionPoint, False)
-            Dim dc As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddLineLength(l)
+        Dim d As Double = Math.Abs(inletGap.Parameter._Value - outletGap.Parameter._Value)
+
+        If d > 1 / 16 Then
+
             Dim dct As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddLineLength(tangentLine)
             Dim limit As Integer = 0
             Dim hecho As Boolean
             CorrectFirstLine()
             Do
-                dc.Driven = False
+                inletGap.Driven = False
                 AdjustThirdLine(2 * b)
-                hecho = adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 7 / 8)
-                dc.Driven = True
+                If inletGap.Parameter._Value > b Then
+                    hecho = adjuster.AdjustDimensionConstraint3DSmothly(inletGap, inletGap.Parameter._Value * 7 / 8)
+                Else
+                    hecho = adjuster.AdjustDimensionConstraint3DSmothly(inletGap, outletGap.Parameter._Value)
+
+                End If
+
+                inletGap.Driven = True
                 If tangentLine.Length > 4 * b Then
                     adjuster.AdjustDimConstrain3DSmothly(dct, 7 * b / 2)
                     dct.Driven = True
                 End If
 
-                d = CalculateEntryRodFactor()
-                limit = limit + 1
-            Loop Until (d > e Or limit > 16)
-            dc.Delete()
+                d = Math.Abs(inletGap.Parameter._Value - outletGap.Parameter._Value)
+                limit += 1
+            Loop Until (d < 1 / 16 Or limit > 16)
+
             dct.Delete()
-            l.Delete()
+
             Return hecho
         Else
             Return True

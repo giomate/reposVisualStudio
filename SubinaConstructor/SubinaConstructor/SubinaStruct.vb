@@ -157,9 +157,62 @@ Public Class SubinaStruct
                 If partCounter = DP.q Then
                     cf = CombineBodies()
                     If monitor.IsFeatureHealthy(cf) Then
-                        SaveAsSilent(String.Concat(dn, "\Subina1.ipt"))
+                        SaveAsSilent(String.Concat(dn, "\Subina.ipt"))
                         done = True
                     End If
+                Else
+                    done = False
+                End If
+
+            End If
+
+
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+        Return doku
+    End Function
+    Public Function MakeCondesatorStruct(i As Integer) As PartDocument
+        Dim p As String = projectManager.ActiveDesignProject.WorkspacePath
+        Dim q As Integer
+        Dim dn, rn, bn, sn As String
+        dn = String.Concat(p, "\Iteration", i.ToString)
+        Dim dpc As DerivedPartComponent
+        Dim t As PartDocument
+        Dim ws As WorkSurface
+        Dim partCounter As Integer = 0
+        Dim cf As CombineFeature
+        Dim ffn As String = doku.FullFileName
+
+        Try
+            If (Directory.Exists(dn)) Then
+                t = app.Documents.Add(DocumentTypeEnum.kPartDocumentObject,, True)
+                Conversions.SetUnitsToMetric(t)
+                partCounter = 0
+                t.Update2(True)
+                doku = DocUpdate(t)
+                fullFileNames = Directory.GetFiles(dn, "*.ipt")
+                For i = 1 To DP.q
+                    bn = nombrador.MakeBandFileName(ffn, i)
+                    If System.IO.File.Exists(bn) Then
+                        dpc = DeriveBand(bn)
+                        lamp.FitView(doku)
+                        If monitor.IsDerivedPartHealthy(dpc) Then
+                            partCounter += 1
+                            done = True
+                        Else
+                            done = False
+                            Exit For
+                        End If
+                    End If
+
+                Next
+                If partCounter = DP.q Then
+                    SaveAsSilent(String.Concat(dn, "\Condesator1.ipt"))
+                    done = True
                 Else
                     done = False
                 End If
@@ -661,6 +714,12 @@ Public Class SubinaStruct
             Return dpc
         End If
         Return Nothing
+    End Function
+    Function DeriveBand(bn As String) As DerivedPartComponent
+        Dim dpc As DerivedPartComponent = DeriveSinglePart(bn)
+
+
+        Return dpc
     End Function
     Function CutSmallBodies() As SurfaceBody
         Try

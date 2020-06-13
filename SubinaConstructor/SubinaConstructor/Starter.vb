@@ -1,46 +1,50 @@
-﻿Imports System.Type
-Imports System.Activator
-Imports System.Runtime.InteropServices
+﻿Imports Inventor
 Imports System
 Imports System.IO
+
 Imports System.Text
 Imports System.IO.Directory
-Imports Inventor
+Imports System.Type
+Imports System.Activator
+Imports System.Runtime.InteropServices
 Public Class Starter
     Dim oApp As Inventor.Application
     Dim oDoc As Inventor.Document
-    Public started, running, done As Boolean
+    Dim started, running, done As Boolean
     Dim oDesignProjectMgr As DesignProjectManager
     Dim invDoc As InventorFile
-    Dim iteration As Integer
-    Dim piedra As Wedges
-    Dim esqueleto As Skeletons
+    Public iteration As Integer
+    Dim nido As SubinaStruct
+
     Public Sub New(app As Inventor.Application)
         oApp = app
         iteration = 14
         oDesignProjectMgr = oApp.DesignProjectManager
-        invDoc = New InventorFile(oApp)
+
         If oApp.Visible Then
             started = True
         End If
     End Sub
-    Public Function AddInSkeletons(i As Integer) As Boolean
+    Public Function AddInSubina(i As Integer) As Boolean
         iteration = i
-        done = MakeAllSkeletons()
+        done = MakeTort()
         Return done
     End Function
-    Public Function MakeAllSkeletons() As Boolean
+
+
+    Public Function MakeTort() As Boolean
         Dim b As Boolean
         Try
             If (started) Then
+                oDesignProjectMgr = oApp.DesignProjectManager
                 Dim p As String = oDesignProjectMgr.ActiveDesignProject.WorkspacePath
                 Dim ffn As String
-                ffn = String.Concat(p, "\Iteration", iteration.ToString, "\Band9.ipt")
+                ffn = String.Concat(p, "\Iteration", iteration.ToString, "\Skeleton1.ipt")
+                invDoc = New InventorFile(oApp)
                 oDoc = invDoc.OpenFullFileName(ffn)
-                esqueleto = New Skeletons(oDoc)
-                esqueleto.MakeSkeletonIteration(iteration)
-
-                b = esqueleto.done
+                nido = New SubinaStruct(oDoc)
+                nido.MakeNestStruct(iteration)
+                b = nido.done
             End If
             Return b
         Catch ex As Exception
@@ -49,4 +53,5 @@ Public Class Starter
         End Try
 
     End Function
+
 End Class

@@ -92,73 +92,13 @@ Public Class SketchAdjust
         Return strFullFileName
     End Function
 
-    Function ThethaAdjust(fileName As String, theta As Double) As Double
-        openFile(createFileName(fileName))
-        'calculateGain(theta, "angulo")
-        sp = theta
-        Try
-            changeParameter(openMainSketch(oPartDoc))
-            checkBuilder()
-            MsgBox("done!!")
 
-        Catch ex As Exception
-            Call UndoCommand()
-            makeallDriven()
-            MsgBox(ex.ToString())
-        End Try
-
-        Return oTheta._Value
-    End Function
     Function openMainSketch(oDoc As PartDocument) As Sketch3D
 
         oSk3D = oDoc.ComponentDefinition.Sketches3D.Item("MainSketch")
         Return oSk3D
     End Function
-    Public Sub changeParameter(oSk3D As Sketch3D)
-        Try
 
-            oTheta = getParameter("angulo")
-
-            oSk3D.Edit()
-            checkOtherVariables("angulo")
-            calculateGain(sp, "angulo")
-
-            While (objetiveZero() > sp / resolution)
-                p = iterate("angulo", sp)
-                While kapput
-                    checkBuilder()
-                    If k.Name = Nothing Then
-                        checkGaps(p.Name)
-                    Else
-                        checkGaps(k.Name)
-                    End If
-
-                End While
-                checkOtherVariables("angulo")
-                calculateGain(sp, "angulo")
-
-
-
-
-            End While
-
-            oSk3D.Solve()
-            oSk3D.ExitEdit()
-
-        Catch ex4 As Exception
-            Call UndoCommand()
-            makeallDriven()
-            If resolution < maxRes Then
-                resolution = resolution * 2
-            End If
-            MsgBox(ex4.ToString())
-            MsgBox("Fail adjusting " & oTheta.Name & " ...last value:" & oTheta.Value.ToString)
-            checkOtherVariables(oTheta.Name)
-            Exit Sub
-        End Try
-
-
-    End Sub
 
     Public Sub makeallDriven()
         GetDimension("techo").Driven = True
@@ -199,6 +139,18 @@ Public Class SketchAdjust
     End Function
 
     Function calculateGain(setValue As Double, dc As DimensionConstraint3D) As Double
+        Try
+            p = dc.Parameter
+            delta = (setValue - p._Value) / (setValue * resolution)
+            gain = Math.Exp(delta)
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            MsgBox("Fail Calculating " & p.Name)
+        End Try
+
+        Return gain
+    End Function
+    Function calculateGain(setValue As Double, dc As DimensionConstraint) As Double
         Try
             p = dc.Parameter
             delta = (setValue - p._Value) / (setValue * resolution)
@@ -256,88 +208,9 @@ Public Class SketchAdjust
         ' Execute the command. 
         Call oControlDef.Execute()
     End Sub
-    Public Sub checkGaps(name As String)
-
-        Try
-            Select Case name
-                Case "techo"
-                    checkAngulos(name, 2.7, 3.1, Math.Max(2.7, getParameter(name)._Value * 0.9))
-                Case "gap1"
-                    checkDimension(name, 3, 10, 10 * Math.Max(0.3, getParameter(name)._Value / 2))
-                Case "gap2"
-                    checkDimension(name, 2, 9, 10 * Math.Max(0.2, getParameter(name)._Value / 2))
-                Case "foldez"
-                    checkDimension(name, getParameter("doblez")._Value * 10, 2, 10 * Math.Max(getParameter("doblez")._Value, getParameter(name)._Value / 2))
-                Case "doblez"
-                    checkDimension(name, 0.01, 0.9, 10 * Math.Max(0.001, getParameter(name)._Value / 2))
-                    'kapput = False
-            End Select
 
 
 
-        Catch ex As Exception
-            UndoCommand()
-            makeallDriven()
-            If resolution < maxRes Then
-                resolution = resolution * 2
-            End If
-            MsgBox(ex.ToString())
-            MsgBox("Fail Iteration  checkGaps: " & p.Value.ToString)
-        End Try
-
-    End Sub
-
-    Public Function iterate(name As String, setpoint As Double) As Parameter
-        Dim pit As Parameter
-        pit = getParameter(name)
-
-        Try
-            calculateGain(setpoint, name)
-            makeallDriven()
-            GetDimension(name).Driven = False
-            While ((Math.Abs(delta * resolution)) > (setpoint / resolution) And (Not kapput))
-                pit.Value = pit.Value * calculateGain(setpoint, name)
-                Debug.Print("iterating  " & pit.Name & " = " & pit.Value.ToString)
-                checkOtherVariables(pit.Name)
-                checkBuilder()
-                If resolution > minRes Then
-                    resolution = resolution - 1
-                    Debug.Print("Resolution:  " & resolution.ToString)
-                End If
-
-            End While
-            Debug.Print("adjusting " & pit.Name & " = " & pit.Value.ToString)
-            Debug.Print("Resolution:  " & resolution.ToString)
-            If kapput Then
-                If resolution < maxRes Then
-                    resolution = resolution + 10
-                End If
-                UndoCommand()
-                'getDimension("techo").Driven = False
-                Return k
-            Else
-                If resolution > minRes Then
-                    resolution = resolution - 1
-                End If
-
-            End If
-            GetDimension("techo").Driven = False
-
-        Catch ex As Exception
-            UndoCommand()
-            If resolution < maxRes Then
-                resolution = resolution * 2
-            End If
-            MsgBox(ex.ToString())
-            Debug.Print("Fail adjusting " & pit.Name & " ...last value:" & pit.Value.ToString)
-            GetDimension(pit.Name).Driven = True
-            checkOtherVariables(pit.Name)
-            Return pit
-
-        End Try
-
-        Return p
-    End Function
     Function AdjustDimConstrain3DSmothly(dci As DimensionConstraint3D, setpoint As Double) As Boolean
         Dim pit As Parameter
         Dim b As Boolean = False
@@ -368,11 +241,6 @@ Public Class SketchAdjust
                 Debug.Print("adjusted " & pit.Name & " = " & pit.Value.ToString)
                 Debug.Print("Resolution:  " & resolution.ToString)
             End If
-
-
-
-
-
         Catch ex As Exception
 
             Debug.Print(ex.ToString())
@@ -643,16 +511,25 @@ Public Class SketchAdjust
     End Function
     Function IsLastAngleOk(ac As DimensionConstraint3D) As Boolean
         Dim limit As Double = 0.16
-        If (ac.Parameter._Value < limit Or ac.Parameter._Value > (Math.PI - limit)) Then
-            Return True
-        End If
-        Return False
+
+        Return IsLastAngleOk(ac, limit)
     End Function
     Function IsLastAngleOk(ac As DimensionConstraint3D, limit As Double) As Boolean
-
-        If (ac.Parameter._Value < limit Or ac.Parameter._Value > (Math.PI - limit)) Then
-            Return True
+        If ac.Parameter._Value > Math.PI / 2 Then
+            If Math.Abs(ac.Parameter._Value - (Math.PI - limit)) < 1 / 32 Then
+                Return True
+            Else
+                Return False
+            End If
+        Else
+            If Math.Abs(ac.Parameter._Value - limit) < 1 / 32 Then
+                Return True
+            Else
+                Return False
+            End If
         End If
+
+
         Return False
     End Function
 
@@ -739,78 +616,10 @@ Public Class SketchAdjust
         End If
         Return c
     End Function
-    Public Sub checkOtherVariables(name As String)
-        Dim variable As String
-        prio = False
-        For Each variable In variables
-            If prio Then
-                checkGaps(variable)
-            ElseIf name = variable Then
-                prio = True
-                If name = variables.Last Then
-                    kapput = False
-                End If
-            End If
-
-
-        Next
 
 
 
 
-    End Sub
-    Public Sub checkBuilder()
-        Try
-            oSk3D.Solve()
-            oSk3D.ExitEdit()
-
-            oSk3D.Edit()
-
-        Catch ex As Exception
-            UndoCommand()
-            'makeallDriven()
-            'kapput = True
-            k = p
-            If resolution < maxRes Then
-                resolution = resolution * 2
-            End If
-
-            MsgBox(ex.ToString())
-            MsgBox("Fail adjusting " & p.Name & " ...last value:" & p.Value.ToString)
-            GetDimension(k.Name).Driven = True
-            checkOtherVariables(k.Name)
-            Exit Sub
-        End Try
-
-    End Sub
-    Public Function checkDimension(name As String, a As Double, b As Double, setpoint As Double) As Parameter
-        p = getParameter(name)
-
-        If (p._Value < a / 10 Or p._Value > b / 10) Then
-            k = p
-            GetDimension(name).Driven = False
-            iterate(name, setpoint / 10)
-            GetDimension(name).Driven = True
-        Else
-            kapput = False
-        End If
-
-        Return p
-    End Function
-    Public Function checkAngulos(name As String, a As Double, b As Double, setpoint As Double) As Parameter
-        p = getParameter(name)
-
-        If (p._Value < a Or p._Value > b) Then
-            k = p
-            GetDimension(name).Driven = False
-            iterate(name, setpoint)
-            GetDimension(name).Driven = True
-        Else
-            kapput = False
-        End If
-
-        Return p
-    End Function
 
     Function GetDimension(name As String) As DimensionConstraint3D
         Try

@@ -2,7 +2,7 @@
 Public Class Starter
     Dim oApp As Inventor.Application
     Dim oDoc As Inventor.Document
-    Dim started, running, done As Boolean
+    Public started, running, done As Boolean
     Dim oDesignProjectMgr As DesignProjectManager
     Dim invDoc As InventorFile
     Dim iteration As Integer
@@ -12,12 +12,13 @@ Public Class Starter
 
     Public Sub New(app As Inventor.Application)
         oApp = app
-        iteration = 13
+        iteration = 14
         If oApp.Visible Then
             started = True
         End If
     End Sub
-    Public Function AddInTies() As Boolean
+    Public Function AddInTies(i As Integer) As Boolean
+        iteration = i
         done = KeepMakingTies()
         Return done
     End Function

@@ -112,6 +112,7 @@ Public Class InitSketcher
         compDef = doku.ComponentDefinition
         sheetMetalFeatures = compDef.Features
         curve = DrawTrobinaCurveFitted(q)
+        lamp.ZoomSelected(curve)
         DrawInitialLine(refLine)
         refLine.Construction = True
         If refLine.Length > 0 Then
@@ -257,6 +258,7 @@ Public Class InitSketcher
     End Function
     Function DrawFirstLine() As SketchLine3D
         Dim r1, r2 As Double
+        Dim dc As DimensionConstraint3D
         Try
 
             Dim l As SketchLine3D
@@ -285,12 +287,18 @@ Public Class InitSketcher
 
 
 
-            lamp.FitView(doku)
+            'lamp.FitView(doku)
 
             point1 = l.StartSketchPoint.Geometry
             point2 = l.EndSketchPoint.Geometry
             bandLines.Add(l)
             firstLine = l
+            dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+            If l.Length > 25 / 10 Then
+                adjuster.AdjustDimConstrain3DSmothly(dc, 25 / 10)
+            End If
+            dc.Delete()
+            ForceFirstLineInside()
             lastLine = l
 
             Return l
@@ -299,6 +307,46 @@ Public Class InitSketcher
             Return Nothing
         End Try
         Return Nothing
+    End Function
+    Function IsFirstLineInside() As Boolean
+
+        If firstLine.EndSketchPoint.Geometry.DistanceTo(curve.EndSketchPoint.Geometry) < firstLine.StartSketchPoint.Geometry.DistanceTo(curve.EndSketchPoint.Geometry) Then
+            Return True
+        Else
+            Return False
+
+        End If
+
+    End Function
+    Function ForceFirstLineInside() As Boolean
+        Dim limit As Integer = 0
+        Dim dc As DimensionConstraint3D
+        Try
+            dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(firstLine.EndPoint, curve.EndSketchPoint)
+            If dc.Parameter._Value > 75 / 10 Then
+                adjuster.AdjustDimConstrain3DSmothly(dc, 75 / 10)
+            End If
+            While (Not IsFirstLineInside() And limit < 8)
+                Try
+
+                    adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 3 / 4)
+
+
+                    limit += 1
+                Catch ex As Exception
+                    limit += 1
+                End Try
+
+            End While
+            dc.Delete()
+        Catch ex As Exception
+            Try
+                dc.Delete()
+            Catch ex2 As Exception
+
+            End Try
+        End Try
+        Return IsFirstLineInside()
     End Function
     Function CalculateOutPostionFactor(pt As Point) As Double
 
@@ -343,13 +391,21 @@ Public Class InitSketcher
         Try
             Dim v1, v2, v3 As Vector
             Dim p As Plane
+            Dim ls As LineSegment
             Dim l As SketchLine3D = Nothing
             Dim optpoint As Point = curve.EndSketchPoint.Geometry
             Dim dc, ac, dcfl As DimensionConstraint3D
             Dim d As Double
+            Dim b As Double = GetParameter("b")._Value
             v1 = lastLine.StartSketchPoint.Geometry.VectorTo(lastLine.EndSketchPoint.Geometry)
-            v3 = doku.ComponentDefinition.WorkPoints.Item(1).Point.VectorTo(firstLine.StartSketchPoint.Geometry)
-            p = tg.CreatePlane(lastLine.EndSketchPoint.Geometry, v1)
+            v3 = curve.StartSketchPoint.Geometry.VectorTo(curve.EndSketchPoint.Geometry)
+            If firstLine.Length < b Then
+                p = tg.CreatePlane(lastLine.EndSketchPoint.Geometry, v1)
+            Else
+                ls = firstLine.Geometry
+                p = tg.CreatePlane(ls.MidPoint, v1)
+            End If
+
             Dim minDis As Double = 9999999999
             For Each o As Point In p.IntersectWithCurve(curve.Geometry)
                 v2 = lastLine.EndSketchPoint.Geometry.VectorTo(o)
@@ -365,7 +421,7 @@ Public Class InitSketcher
 
 
             Next
-            If Math.Abs(firstLine.Length - GetParameter("b")._Value) < 1 / GetParameter("b")._Value Then
+            If Math.Abs(firstLine.Length - b) < 1 / b Then
                 dc = sk3D.DimensionConstraints3D.AddLineLength(firstLine)
                 adjuster.AdjustDimensionConstraint3DSmothly(dc, GetParameter("b")._Value * 24 / 25)
                 dc.Delete()
@@ -567,7 +623,7 @@ Public Class InitSketcher
             l = sk3D.SketchLines3D.AddByTwoPoints(pl.EndPoint, firstLine.StartPoint, False)
             thirdLine = l
             bandLines.Add(l)
-
+            CorrectThirdLine()
             lastLine = l
             Return l
         Catch ex As Exception
@@ -575,6 +631,29 @@ Public Class InitSketcher
             Return Nothing
         End Try
 
+    End Function
+    Function CorrectThirdLine() As Boolean
+        Dim dc, dc2 As DimensionConstraint3D
+        dc = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
+        For i = 1 To 4
+            If thirdLine.Length > 25 / 10 Then
+                CorrectThirdLine = adjuster.AdjustDimConstrain3DSmothly(dc, 25 / 10)
+                dc2 = sk3D.DimensionConstraints3D.AddTwoPointDistance(firstLine.EndPoint, curve.EndSketchPoint)
+                If dc2.Parameter._Value > 75 / 10 Then
+                    CorrectThirdLine = adjuster.AdjustDimConstrain3DSmothly(dc2, 75 / 10)
+                End If
+                dc2.Delete()
+            Else
+                dc2 = sk3D.DimensionConstraints3D.AddTwoPointDistance(firstLine.EndPoint, curve.EndSketchPoint)
+                If dc2.Parameter._Value > 75 / 10 Then
+                    CorrectThirdLine = adjuster.AdjustDimConstrain3DSmothly(dc2, 75 / 10)
+                End If
+                dc2.Delete()
+                Exit For
+            End If
+        Next
+        dc.Delete()
+        Return CorrectThirdLine
     End Function
     Function DrawSecondConstructionLine() As SketchLine3D
         Try
@@ -865,8 +944,9 @@ Public Class InitSketcher
 
                     End If
                     dc.Driven = True
-                    adjuster.AdjustGapSmothly(gapFold, gapFoldCM * 2, dc, limit)
+                    dc = AdjustPositiveAngle(dc, limit)
                     Try
+                        counterLimit = 0
                         While (dc.Parameter._Value < angleLimit And dc.Parameter._Value > angleLimit / 2) And counterLimit < 4
                             lastAngle = ac.Parameter._Value
                             adjuster.AdjustGapSmothly(gapFold, gapFoldCM * 5 / 4, dc)
@@ -975,6 +1055,39 @@ Public Class InitSketcher
             MsgBox(ex.ToString())
             Return Nothing
         End Try
+    End Function
+    Function AdjustPositiveAngle(ac As DimensionConstraint3D, limit As Double) As DimensionConstraint3D
+        Dim d As Double = CalculateRoof()
+        For i = 1 To 32
+            gapFold.Driven = True
+            If d > 0 Then
+
+                If ac.Parameter._Value > Math.PI / 2 Then
+                    adjuster.AdjustDimConstrain3DSmothly(ac, Math.PI - limit)
+                Else
+                    adjuster.AdjustDimConstrain3DSmothly(ac, limit)
+                End If
+            Else
+
+                If ac.Parameter._Value > Math.PI / 2 Then
+                    adjuster.AdjustDimConstrain3DSmothly(ac, Math.PI)
+                Else
+                    adjuster.AdjustDimConstrain3DSmothly(ac, 1 / 128)
+                End If
+                ac.Driven = True
+                adjuster.AdjustDimConstrain3DSmothly(gapFold, gapFold.Parameter._Value * 9 / 8)
+                gapFold.Driven = True
+                i = 1
+            End If
+            If adjuster.IsLastAngleOk(ac, limit) Then
+                Exit For
+            Else
+                d = CalculateRoof()
+            End If
+        Next
+
+        ac.Driven = True
+        Return ac
     End Function
     Function IsLastAngleOk(dc As DimensionConstraint3D, d As Double) As Boolean
         Dim e As Double

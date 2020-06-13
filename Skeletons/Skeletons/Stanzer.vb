@@ -14,7 +14,7 @@ Public Class Stanzer
     Dim refLine, firstLine, secondLine, thirdLine, lastLine, connectLine As SketchLine3D
     Dim curve, refCurve As SketchEquationCurve3D
     Public done, healthy As Boolean
-
+    Dim adjuster As SketchAdjust
     Dim monitor As DesignMonitoring
     Dim invFile As InventorFile
 
@@ -84,6 +84,7 @@ Public Class Stanzer
         comando = New Commands(app)
         monitor = New DesignMonitoring(doku)
         invFile = New InventorFile(app)
+
         projectManager = app.DesignProjectManager
 
         compDef = doku.ComponentDefinition
@@ -101,7 +102,7 @@ Public Class Stanzer
         surfaceBodies = app.TransientObjects.CreateObjectCollection
 
         lamp = New Highlithing(doku)
-
+        adjuster = New SketchAdjust(doku)
         gap1CM = 3 / 10
 
         nombrador = New Nombres(doku)
@@ -123,7 +124,7 @@ Public Class Stanzer
 
         compDef = doku.ComponentDefinition
         lamp = New Highlithing(doku)
-
+        adjuster = New SketchAdjust(doku)
         Return doku
     End Function
 
@@ -577,7 +578,7 @@ Public Class Stanzer
         End Try
         Return ef
     End Function
-    Public Function ExtrudeFrameLetter(name As String, wpt As WorkPoint, skl As SketchLine3D) As ExtrudeFeature
+    Public Function ExtrudeFrameLetter(name As String, wpt As WorkPoint, skl As SketchLine3D, fi As Face) As ExtrudeFeature
         Dim ef As ExtrudeFeature
         Dim s As String
         Dim q As Integer
@@ -586,7 +587,7 @@ Public Class Stanzer
             s = nombrador.ConvertQNumberLetter(q + 64 - 33)
 
             ' lamp.HighLighObject(ed)
-            ef = ExtrudeLetter(SketchFrameLetter(s, skl, wpt))
+            ef = ExtrudeLetter(SketchFrameLetter(s, skl, wpt, fi))
 
         Catch ex As Exception
             MsgBox(ex.ToString())
@@ -649,7 +650,7 @@ Public Class Stanzer
 
         Return oProfile
     End Function
-    Function SketchFrameLetter(s As String, skli As SketchLine3D, wpt As WorkPoint) As Profile
+    Function SketchFrameLetter(s As String, skli As SketchLine3D, wpt As WorkPoint, fi As Face) As Profile
         Dim oProfile As Profile
         Dim d, w, h As Double
 
@@ -658,21 +659,27 @@ Public Class Stanzer
             Dim spt, sptw As SketchPoint
             Dim skl As SketchLine
             Dim ps As PlanarSketch
+
             Dim v, vy, ve As Vector
-            sk3D = compDef.Sketches3D.Add
-            Dim skpt As SketchPoint3D = sk3D.SketchPoints3D.Add(wpt.Point)
-            Dim sklp As SketchLine3D = sk3D.SketchLines3D.AddByTwoPoints(skli.Geometry.MidPoint, wpt)
-            sklp.Construction = True
-            Dim gc As GeometricConstraint3D = sk3D.GeometricConstraints3D.AddCoincident(sklp.StartPoint, skli)
-            gc = sk3D.GeometricConstraints3D.AddPerpendicular(skli, sklp)
-            Dim wpl As WorkPlane = compDef.WorkPlanes.AddByThreePoints(skli.StartPoint, skli.EndPoint, wpt)
-            ps = doku.ComponentDefinition.Sketches.Add(wpl)
-            lamp.LookAtPlane(wpl)
-            spt = ps.AddByProjectingEntity(sklp.StartPoint)
-            sptw = ps.AddByProjectingEntity(skpt)
+
+            ' Dim wpl As WorkPlane = compDef.WorkPlanes.AddByThreePoints(skli.StartPoint, skli.EndPoint, sklp.EndPoint)
+            ps = doku.ComponentDefinition.Sketches.Add(fi)
+            lamp.LookAtFace(fi)
+
 
             skl = ps.AddByProjectingEntity(skli)
             skl.Construction = True
+            sk3D = compDef.Sketches3D.Add
+            Dim sklRef As SketchLine3D = sk3D.SketchLines3D.AddByTwoPoints(skl.StartSketchPoint.Geometry3d, skl.EndSketchPoint.Geometry3d, False)
+            sk3D.GeometricConstraints3D.AddGround(sklRef)
+            Dim sklp As SketchLine3D = CorrectFrameLetterPosition(sklRef, wpt, fi)
+            ps.Visible = False
+            Dim wpl As WorkPlane = compDef.WorkPlanes.AddByThreePoints(sklRef.StartPoint, sklRef.EndPoint, sklp.EndPoint)
+            ps = doku.ComponentDefinition.Sketches.Add(wpl)
+            spt = ps.AddByProjectingEntity(sklp.StartPoint)
+            Dim skpt As SketchPoint3D = sk3D.SketchPoints3D.Add(sklp.EndSketchPoint.Geometry)
+            sptw = ps.AddByProjectingEntity(skpt)
+
             Dim oTextBox As TextBox
             Dim oStyle As TextStyle
             Dim sText As String
@@ -724,6 +731,158 @@ Public Class Stanzer
         End Try
 
         Return oProfile
+    End Function
+    Function CorrectFrameLetterPosition(skli As SketchLine3D, wpt As WorkPoint, fi As Face) As SketchLine3D
+        Try
+            Dim seq As SketchEquationCurve3D
+            Dim vz As Vector = tg.CreateVector(0, 0, 1)
+            Dim curvesSketch As Sketch3D = compDef.Sketches3D.Item("curvas")
+            Dim sklRing, sklPlane, sklo, sklc, sklr, sklz, sklt, sklt2 As SketchLine3D
+            Dim ac, ac2, dcm As DimensionConstraint3D
+            sklPlane = sk3D.SketchLines3D.AddByTwoPoints(skli.Geometry.MidPoint, wpt.Point, False)
+            Dim gc As GeometricConstraint3D = sk3D.GeometricConstraints3D.AddOnFace(sklPlane, fi)
+            Dim sb As SurfaceBody = compDef.SurfaceBodies(1)
+            Dim pt As Point
+            Dim dpt(2) As Double
+            sk3D.GeometricConstraints3D.AddCoincident(sklPlane.StartPoint, skli)
+            sklPlane.Construction = True
+            comando.WireFrameView(doku)
+
+            If wpt.Point.Z > 0 Then
+                seq = curvesSketch.SketchEquationCurves3D.Item(2)
+
+            Else
+                seq = curvesSketch.SketchEquationCurves3D.Item(3)
+
+            End If
+
+            sklRing = sk3D.SketchLines3D.AddByTwoPoints(sklPlane.EndPoint, wpt.Point, False)
+
+            sk3D.GeometricConstraints3D.AddCoincident(sklRing.EndPoint, seq)
+            sklRing.Construction = True
+            sklz = sk3D.SketchLines3D.AddByTwoPoints(sklRing.EndPoint, sklPlane.EndSketchPoint.Geometry, False)
+            sk3D.GeometricConstraints3D.AddParallelToZAxis(sklz)
+            sklc = sk3D.SketchLines3D.AddByTwoPoints(compDef.WorkPoints(1), sklRing.EndPoint, False)
+            sklr = sk3D.SketchLines3D.AddByTwoPoints(sklRing.EndPoint, wpt.Point, False)
+            TryPerpendicular(sklr, sklc)
+            TryPerpendicular(sklr, sklz)
+            TryPerpendicular(sklRing, sklr)
+
+            TryPerpendicular(sklPlane, skli)
+            sklt = sk3D.SketchLines3D.AddByTwoPoints(sklPlane.EndPoint, wpt.Point, False)
+            sk3D.GeometricConstraints3D.AddOnFace(sklt, fi)
+            TryPerpendicular(sklPlane, sklt)
+            dcm = sk3D.DimensionConstraints3D.AddLineLength(sklt)
+            adjuster.AdjustDimConstrain3DSmothly(dcm, sklPlane.Length / 6)
+            sklt2 = sk3D.SketchLines3D.AddByTwoPoints(sklPlane.EndPoint, wpt.Point, False)
+            ' sk3D.GeometricConstraints3D.AddOnFace(sklt2, fi)
+            TryOpposite(sklt2, sklt)
+            sk3D.GeometricConstraints3D.AddEqual(sklt, sklt2)
+
+            ForceLetterMiddle(sklPlane, skli)
+            Dim dc As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddLineLength(sklPlane)
+            adjuster.AdjustDimConstrain3DSmothly(dc, 10 / 10)
+            dc.Driven = True
+            dc = sk3D.DimensionConstraints3D.AddLineLength(sklRing)
+            For i = 1 To 32
+                adjuster.AdjustDimConstrain3DSmothly(dc, dc.Parameter._Value * 15 / 16)
+                dc.Driven = True
+                adjuster.AdjustDimConstrain3DSmothly(dcm, sklPlane.Length / 4)
+                dcm.Driven = True
+                pt = sklt.EndSketchPoint.Geometry
+                dpt(0) = pt.X
+                dpt(1) = pt.Y
+                dpt(2) = pt.Z
+                If (sb.IsPointInside(dpt, False) = ContainmentEnum.kInsideContainment) Or (sklRing.Length < 12 / 10) Then
+                    Exit For
+                Else
+                    pt = sklt2.EndSketchPoint.Geometry
+                    dpt(0) = pt.X
+                    dpt(1) = pt.Y
+                    dpt(2) = pt.Z
+                    If (sb.IsPointInside(dpt, False) = ContainmentEnum.kInsideContainment) Then
+                        Exit For
+                    Else
+                        pt = sklPlane.EndSketchPoint.Geometry
+                        dpt(0) = pt.X
+                        dpt(1) = pt.Y
+                        dpt(2) = pt.Z
+                        If (sb.IsPointInside(dpt, False) = ContainmentEnum.kInsideContainment) Then
+                            Exit For
+                        End If
+                    End If
+
+                End If
+
+            Next
+
+
+            Return sklPlane
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+    End Function
+    Function ForceLetterMiddle(lp As SketchLine3D, lr As SketchLine3D) As Boolean
+        Dim dc As DimensionConstraint3D
+        Dim skpt As SketchPoint3D
+        If Math.Abs(lr.StartSketchPoint.Geometry.Z) < Math.Abs(lr.EndSketchPoint.Geometry.Z) Then
+            skpt = sk3D.SketchPoints3D.Add(lr.StartSketchPoint.Geometry)
+        Else
+            skpt = sk3D.SketchPoints3D.Add(lr.EndSketchPoint.Geometry)
+        End If
+        sk3D.GeometricConstraints3D.AddGround(skpt)
+        dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(lp.StartPoint, skpt)
+        ForceLetterMiddle = adjuster.AdjustDimConstrain3DSmothly(dc, lr.Length / 4)
+        dc.Delete()
+        Return ForceLetterMiddle
+    End Function
+    Function TryPerpendicular(l1 As SketchLine3D, l2 As SketchLine3D) As GeometricConstraint3D
+        Try
+            Dim ac As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddTwoLineAngle(l1, l2)
+            Dim gc As GeometricConstraint3D
+            If adjuster.AdjustDimConstrain3DSmothly(ac, Math.PI / 2) Then
+                ac.Driven = True
+                Try
+                    gc = sk3D.GeometricConstraints3D.AddPerpendicular(l1, l2)
+                    ac.Delete()
+                Catch ex2 As Exception
+                    If adjuster.AdjustDimConstrain3DSmothly(ac, Math.PI / 2) Then
+                        ac.Driven = True
+                        Try
+                            gc = sk3D.GeometricConstraints3D.AddPerpendicular(l1, l2)
+                        Catch ex3 As Exception
+                            ac.Driven = False
+                        End Try
+
+                    Else
+                        ac.Driven = False
+
+                    End If
+                End Try
+
+
+            Else
+                ac.Driven = False
+            End If
+            Return gc
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+    End Function
+    Function TryOpposite(l1 As SketchLine3D, l2 As SketchLine3D) As GeometricConstraint3D
+        Dim ac As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddTwoLineAngle(l1, l2)
+        Dim gc As GeometricConstraint3D
+        If adjuster.AdjustDimConstrain3DSmothly(ac, Math.PI) Then
+            ac.Delete()
+            gc = sk3D.GeometricConstraints3D.AddCollinear(l1, l2)
+        Else
+            ac.Driven = False
+        End If
+        Return gc
     End Function
     Function SketchLetter(s As String, f As Face, spti As SketchPoint3D) As Profile
         Dim oProfile As Profile
@@ -1040,7 +1199,7 @@ Public Class Stanzer
         Dim oExtrudeDef As ExtrudeDefinition
         Try
             oExtrudeDef = doku.ComponentDefinition.Features.ExtrudeFeatures.CreateExtrudeDefinition(pro, PartFeatureOperationEnum.kJoinOperation)
-            oExtrudeDef.SetDistanceExtent(3 / 10, PartFeatureExtentDirectionEnum.kSymmetricExtentDirection)
+            oExtrudeDef.SetDistanceExtent(3 / 10, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
             'oExtrudeDef.SetDistanceExtent(0.12, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
             Dim oExtrude As ExtrudeFeature
             oExtrude = doku.ComponentDefinition.Features.ExtrudeFeatures.Add(oExtrudeDef)

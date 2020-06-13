@@ -138,6 +138,7 @@ Public Class TieMaker1
             End If
             doku.Update()
             doku.Update()
+            compDef = doku.ComponentDefinition
             If compDef.Sketches3D.Item("introLine").SketchLines3D.Count > 0 Then
                 ' fp = compDef.FlatPattern
                 If compDef.HasFlatPattern Then

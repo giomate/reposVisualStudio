@@ -18,7 +18,7 @@ Public Class Form1
     Public Sub New()
         ' This call is required by the designer.
         InitializeComponent()
-        iteration = 1
+        iteration = 15
         ' Add any initialization after the InitializeComponent() call.
         Try
             oApp = Marshal.GetActiveObject("Inventor.Application")
@@ -56,7 +56,7 @@ Public Class Form1
     Private Sub Form1_Activated(sender As Object, e As EventArgs) Handles Me.Activated
         Try
 
-            done = MakeTort()
+            done = MakeCondesator()
             'done = AssemblyNestStruct()
 
             If done Then
@@ -77,11 +77,32 @@ Public Class Form1
                 oDesignProjectMgr = oApp.DesignProjectManager
                 Dim p As String = oDesignProjectMgr.ActiveDesignProject.WorkspacePath
                 Dim ffn As String
-                ffn = String.Concat(p, "\Iteration8\Skeleton1.ipt")
+                ffn = String.Concat(p, "\Iteration", iteration.ToString, "\Skeleton1.ipt")
                 invDoc = New InventorFile(oApp)
                 oDoc = invDoc.OpenFullFileName(ffn)
                 nido = New SubinaStruct(oDoc)
-                nido.MakeNestStruct(8)
+                nido.MakeNestStruct(13)
+                b = nido.done
+            End If
+            Return b
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return False
+        End Try
+
+    End Function
+    Public Function MakeCondesator() As Boolean
+        Dim b As Boolean
+        Try
+            If (started) Then
+                oDesignProjectMgr = oApp.DesignProjectManager
+                Dim p As String = oDesignProjectMgr.ActiveDesignProject.WorkspacePath
+                Dim ffn As String
+                ffn = String.Concat(p, "\Iteration", iteration.ToString, "\Band1.ipt")
+                invDoc = New InventorFile(oApp)
+                oDoc = invDoc.OpenFullFileName(ffn)
+                nido = New SubinaStruct(oDoc)
+                nido.MakeCondesatorStruct(iteration)
                 b = nido.done
             End If
             Return b
@@ -98,11 +119,11 @@ Public Class Form1
                 oDesignProjectMgr = oApp.DesignProjectManager
                 Dim p As String = oDesignProjectMgr.ActiveDesignProject.WorkspacePath
                 Dim ffn As String
-                ffn = String.Concat(p, "\Iteration8\Skeleton1.ipt")
+                ffn = String.Concat(p, "\Iteration13\Skeleton1.ipt")
                 invDoc = New InventorFile(oApp)
                 oDoc = invDoc.OpenFullFileName(ffn)
                 nido = New SubinaStruct(oDoc)
-                nido.AssemblyNest(8)
+                nido.AssemblyNest(13)
                 b = nido.done
             End If
             Return b

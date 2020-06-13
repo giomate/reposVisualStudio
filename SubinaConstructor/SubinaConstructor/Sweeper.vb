@@ -121,10 +121,10 @@ Public Class Sweeper
         DP.b = 25
 
         done = False
-        wptHigh = compDef.WorkPoints.Item("wptHigh")
-        wptLow = compDef.WorkPoints.Item("wptLow")
-        tangentSurfaces = compDef.WorkSurfaces.Item("tangents")
-        bandsurfaces = compDef.WorkSurfaces.Item(1)
+        ' wptHigh = compDef.WorkPoints.Item("wptHigh")
+        'wptLow = compDef.WorkPoints.Item("wptLow")
+        'tangentSurfaces = compDef.WorkSurfaces.Item("tangents")
+        'bandsurfaces = compDef.WorkSurfaces.Item(1)
     End Sub
     Function GetMajorEdge(wsi As WorkSurface) As Edge
         Dim e1, e2, e3 As Edge

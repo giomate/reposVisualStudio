@@ -91,7 +91,9 @@ Public Class InitFold
                         kanteLine = refDoc.GetKanteLine()
                         If MakeStartingFace(faceProfile).GetHashCode > 0 Then
                             If GetWorkFace().Evaluator.Area > 0 Then
+                                lamp.LookAtFace(workface)
                                 If GetBendLine(workface, mainSketch.thirdLine).Length > 0 Then
+                                    lamp.ZoomSelected(bendLine)
                                     mainWorkPlane.Visible = False
                                     If GetFoldingAngle().Parameter._Value > 0 Then
                                         comando.MakeInvisibleSketches(doku)

@@ -266,7 +266,7 @@ Public Class SketchAdjust
             End While
             counter = 0
             If Not monitor.IsSketch3DHealthy(oSk3D) Then
-                RecoveryUnhealthySketch(oSk3D)
+                RecoverUnhealthy3DSketch(oSk3D)
                 Return False
             Else
                 If ((Math.Abs(delta * resolution * SetpointCorrector)) > (setpoint / resolution)) Then
@@ -288,7 +288,7 @@ Public Class SketchAdjust
             MsgBox(ex.ToString())
             MsgBox("Fail adjusting " & pit.Name & " ...last value:" & pit.Value.ToString)
 
-            RecoveryUnhealthySketch(oSk3D)
+            RecoverUnhealthy3DSketch(oSk3D)
             Return False
 
         End Try
@@ -318,7 +318,7 @@ Public Class SketchAdjust
             End While
             counter = 0
             If Not monitor.IsSketch3DHealthy(oSk3D) Then
-                RecoveryUnhealthySketch(oSk3D)
+                RecoverUnhealthy3DSketch(oSk3D)
                 Return False
             Else
                 b = True
@@ -330,7 +330,7 @@ Public Class SketchAdjust
             Debug.Print(ex.ToString())
             Debug.Print("Fail adjusting " & pit.Name & " ...last value:" & pit.Value.ToString)
 
-            RecoveryUnhealthySketch(oSk3D)
+            RecoverUnhealthy3DSketch(oSk3D)
             Return False
 
         End Try
@@ -357,7 +357,7 @@ Public Class SketchAdjust
             End While
             counter = 0
             If Not monitor.IsSketch3DHealthy(oSk3D) Then
-                RecoveryUnhealthySketch(oSk3D)
+                RecoverUnhealthy3DSketch(oSk3D)
                 Return False
             Else
                 If ((Math.Abs(delta * resolution * SetpointCorrector)) > (setpoint / resolution)) Then
@@ -383,7 +383,7 @@ Public Class SketchAdjust
             MsgBox(ex.ToString())
             MsgBox("Fail adjusting " & pit.Name & " ...last value:" & pit.Value.ToString)
 
-            RecoveryUnhealthySketch(oSk3D)
+            RecoverUnhealthy3DSketch(oSk3D)
             Return False
 
         End Try
@@ -419,7 +419,7 @@ Public Class SketchAdjust
             counter = 0
             If Not monitor.IsSketch3DHealthy(oSk3D) Then
                 'dc.Driven = True
-                RecoveryUnhealthySketch(oSk3D)
+                RecoverUnhealthy3DSketch(oSk3D)
                 If monitor.IsSketch3DHealthy(oSk3D) Then
                     If errorCounter < climit Then
                         errorCounter = errorCounter + 1
@@ -433,7 +433,7 @@ Public Class SketchAdjust
                         Return True
                     End If
                 Else
-                    RecoveryUnhealthySketch(oSk3D)
+                    RecoverUnhealthy3DSketch(oSk3D)
                 End If
             Else
                 errorCounter = 0
@@ -448,7 +448,7 @@ Public Class SketchAdjust
             'comando.UndoCommand()
             Debug.Print(ex.ToString())
             Debug.Print("Fail adjusting " & pit.Name & " ...last value:" & pit.Value.ToString)
-            RecoveryUnhealthySketch(oSk3D)
+            RecoverUnhealthy3DSketch(oSk3D)
             errorCounter = errorCounter + 1
             GetMinimalDimension(dc)
             Return False
@@ -486,7 +486,7 @@ Public Class SketchAdjust
             counter = 0
             If Not monitor.IsSketch3DHealthy(oSk3D) Then
                 'dc.Driven = True
-                RecoveryUnhealthySketch(oSk3D)
+                RecoverUnhealthy3DSketch(oSk3D)
                 If monitor.IsSketch3DHealthy(oSk3D) Then
                     If errorCounter < climit Then
                         errorCounter = errorCounter + 1
@@ -499,7 +499,7 @@ Public Class SketchAdjust
                         Return True
                     End If
                 Else
-                    RecoveryUnhealthySketch(oSk3D)
+                    RecoverUnhealthy3DSketch(oSk3D)
                 End If
             Else
                 If errorCounter < climit Then
@@ -521,7 +521,7 @@ Public Class SketchAdjust
             'comando.UndoCommand()
             Debug.Print(ex.ToString())
             Debug.Print("Fail adjusting " & pit.Name & " ...last value:" & pit.Value.ToString)
-            RecoveryUnhealthySketch(oSk3D)
+            RecoverUnhealthy3DSketch(oSk3D)
             If errorCounter < climit Then
                 errorCounter = errorCounter + 1
                 ' dc.Driven = False
@@ -554,30 +554,8 @@ Public Class SketchAdjust
         End If
         Return False
     End Function
-    Function RecoveryUnhealthySketch(p As Parameter) As Parameter
-        Try
-            oPartDoc = p.Parent
-            While Not monitor.IsSketch3DHealthy(oSk3D)
-                comando.UndoCommand(oPartDoc)
 
-                If Not monitor.IsSketch3DHealthy(oSk3D) Then
-                    oPartDoc.Update()
-                    comando.UndoCommand()
-                End If
-                posible = p
-
-            End While
-            Return p
-        Catch ex As Exception
-            MsgBox(ex.ToString())
-            MsgBox("Fail Recovering " & p.Name & " ...last value:" & p.Value.ToString)
-            Return RecoveryUnhealthySketch(p)
-        End Try
-
-
-
-    End Function
-    Function RecoverUnhelathy3DSketch(sk As Sketch3D) As Sketch3D
+    Function RecoverUnhealthy3DSketch(sk As Sketch3D) As Sketch3D
         Try
             compDef = sk.Parent
             oPartDoc = compDef.Document
@@ -591,7 +569,7 @@ Public Class SketchAdjust
 
                 If Not monitor.IsSketch3DHealthy(sk) Then
                     skcounter = skcounter + 1
-                    RecoverUnhelathy3DSketch(sk)
+                    RecoverUnhealthy3DSketch(sk)
                 Else
                     skerror = 0
                 End If
@@ -606,7 +584,7 @@ Public Class SketchAdjust
         Catch ex As Exception
             MsgBox(ex.ToString())
             MsgBox("Fail Recovering " & sk.Name)
-            Return RecoverUnhelathy3DSketch(sk)
+            Return RecoverUnhealthy3DSketch(sk)
         End Try
 
 

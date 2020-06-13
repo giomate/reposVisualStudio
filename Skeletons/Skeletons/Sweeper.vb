@@ -735,7 +735,7 @@ Public Class Sweeper
         pro = ps.Profiles.AddForSolid
         Dim oExtrudeDef As ExtrudeDefinition
         oExtrudeDef = doku.ComponentDefinition.Features.ExtrudeFeatures.CreateExtrudeDefinition(pro, PartFeatureOperationEnum.kCutOperation)
-        oExtrudeDef.SetDistanceExtent(2 / 10, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
+        oExtrudeDef.SetDistanceExtent(6 / 10, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
         Dim oExtrude As ExtrudeFeature
         oExtrude = doku.ComponentDefinition.Features.ExtrudeFeatures.Add(oExtrudeDef)
 

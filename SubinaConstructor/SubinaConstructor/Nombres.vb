@@ -228,6 +228,22 @@ Public Class Nombres
 
         Return sn
     End Function
+    Public Function MakeBandFileName(ffn As String, i As Integer) As String
+        Dim s(), sn As String
+
+        Dim bn As String
+        If ffn.Contains("Skeleton") Then
+            bn = "Skeleton"
+        ElseIf ffn.Contains("Rib") Then
+            bn = "Rib"
+        ElseIf ffn.Contains("Band") Then
+            bn = "Band"
+        End If
+        s = Strings.Split(ffn, bn)
+        sn = String.Concat(s(0), "Band", i.ToString, ".ipt")
+
+        Return sn
+    End Function
     Public Function MakeRibFileName(ffn As String) As String
         Dim s(), sn As String
 

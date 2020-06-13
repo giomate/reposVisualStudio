@@ -40,6 +40,7 @@ Public Class TwistFold7
     Dim workFace, adjacentFace, bendFace, frontBendFace, cutFace, twistFace, nextworkFace As Face
     Dim bendAngle As DimensionConstraint
     Dim gapFold, gapVertex, gapTwist, gapTry, perpendicular1, cruzeta, dcCentroLine, angleTangent As DimensionConstraint3D
+    Public outletGap As DimensionConstraint3D
     Dim equalCl4, punchBandLine3 As GeometricConstraint3D
     Dim folded As FoldFeature
     Dim sheetMetalFeatures As SheetMetalFeatures
@@ -136,6 +137,7 @@ Public Class TwistFold7
             cutfeature.Name = "lastTwistCut"
             cutLine = lastCut.lastCutLine
             cutLine3D = lastCut.cutLine3D
+            lamp.FitView(doku)
         End If
         Return cutfeature
     End Function
@@ -250,9 +252,11 @@ Public Class TwistFold7
         Dim cl5, bl3 As SketchLine3D
         Try
             If GetWorkFace().SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                lamp.LookAtFace(workFace)
                 If curvas3D.DrawTrobinaCurve(nombrador.GetQNumber(doku), nombrador.GetNextSketchName(doku)).Construction Then
                     sk3D = curvas3D.sk3D
                     curve = curvas3D.curve
+                    lamp.ZoomSelected(curve)
                     If GetMajorEdge(workFace).GeometryType = CurveTypeEnum.kLineSegmentCurve Then
                         If DrawSingleLines().Length > 0 Then
 
@@ -262,7 +266,7 @@ Public Class TwistFold7
                             cl5 = constructionLines.Item(constructionLines.Count)
                             bl3 = bandLines.Item(3)
                             gapFold.Driven = True
-                            connectLine = nextSketch.DrawNextStartSketch(refLine, tl, firstLine, zAxisLine, sptRFront)
+                            connectLine = nextSketch.DrawNextStartSketch(refLine, tl, firstLine, zAxisLine, sptRFront, outletGap)
                             If connectLine.Length > 0 Then
                                 centroLine = nextSketch.centroLine
                                 If ReduceGap(nextSketch.gapFold) Then
@@ -641,7 +645,7 @@ Public Class TwistFold7
             nextSketch.CorrectFirstLine()
             Do
 
-                CorrectTangent()
+                nextSketch.CorrectEntryGap()
                 'adjuster.AdjustDimensionConstraint3DSmothly(nextSketch.gapFold, nextSketch.gapFold.Parameter._Value * 15 / 16)
                 'nextSketch.gapFold.Driven = True
                 nextSketch.CorrectGap()
@@ -1038,7 +1042,7 @@ Public Class TwistFold7
 
                             End If
 
-                            End If
+                        End If
 
                     End If
 
@@ -1399,7 +1403,7 @@ Public Class TwistFold7
             bandLines.Add(l)
             firstLine = l
             lastLine = l
-            lamp.FitView(doku)
+            ' lamp.FitView(doku)
             Return l
         Catch ex As Exception
             MsgBox(ex.ToString())
@@ -1950,7 +1954,8 @@ Public Class TwistFold7
                 dc = sk3D.DimensionConstraints3D.AddLineLength(radius)
                 adjuster.AdjustDimensionConstraint3DSmothly(dc, r)
                 dc.Parameter._Value = r
-
+                outletGap = sk3D.DimensionConstraints3D.AddTwoPointDistance(firstLine.EndPoint, sptRBack)
+                outletGap.Driven = True
                 TryPerpendicular(zAxisLine, radius)
                 radius.Construction = True
                 l = sk3D.SketchLines3D.AddByTwoPoints(bl2.StartPoint, radius.EndSketchPoint.Geometry, False)

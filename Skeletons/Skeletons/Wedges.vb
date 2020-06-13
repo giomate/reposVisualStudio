@@ -1,9 +1,5 @@
-﻿Imports Inventor
-
-Imports System
-Imports System.IO
-Imports System.Text
-Imports System.IO.Directory
+﻿Imports System.IO
+Imports Inventor
 
 Public Class Wedges
     Public doku As PartDocument
@@ -2019,18 +2015,11 @@ Public Class Wedges
             pt.TranslateBy(v2)
             Dim ln As SketchLine3D = sk3D.SketchLines3D.AddByTwoPoints(l.StartPoint, pt, False)
             sk3D.GeometricConstraints3D.AddGround(ln)
-            Dim a As Double
-            Dim dc As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, ln)
-            For i = 1 To 16
-                v1 = l.Geometry.Direction.AsVector
-                a = v1.AngleTo(v2)
-                If v1.DotProduct(v2) > 1 / 2 Then
-                    Exit For
-                Else
-                    adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 15 / 16)
-                End If
-            Next
-            dc.Driven = True
+            Dim a, c As Double
+            Dim acn As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, ln)
+            acn = AdjustNormal(ln, l, acn, 1)
+
+            acn.Driven = True
             Dim vc As Vector = compDef.WorkPoints(1).Point.VectorTo(l.EndSketchPoint.Geometry)
             Dim vz As Vector = tg.CreateVector(0, 0, l.EndSketchPoint.Geometry.Z)
             Dim vr As Vector = vc.CrossProduct(vz)
@@ -2041,52 +2030,12 @@ Public Class Wedges
             pt.TranslateBy(vz)
             Dim lz As SketchLine3D = sk3D.SketchLines3D.AddByTwoPoints(l.EndPoint, pt, False)
             sk3D.GeometricConstraints3D.AddParallelToZAxis(lz)
-            Dim ac As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddTwoLineAngle(lz, l)
-            For i = 1 To 16
-                If ac.Parameter._Value < Math.PI / 6 Then
-                    adjuster.AdjustDimensionConstraint3DSmothly(ac, ac.Parameter._Value * 17 / 16)
-                    ac.Driven = True
-                    For j = 1 To 8
-                        If dc.Parameter._Value > Math.PI / 4 Then
-                            adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 7 / 8)
-                            dc.Driven = True
-                        Else
-                            Exit For
-                        End If
-                    Next
-
-                Else
-                    Exit For
-                End If
-            Next
-            ac.Driven = True
+            Dim acz As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddTwoLineAngle(lz, l)
+            acz = AdjustZetaAngle(lz, l, ln, acn, acz, 1)
             Dim lc As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddLineLength(l)
-            For i = 1 To 16
-                If lc.Parameter._Value < 12 / 10 Then
-                    adjuster.AdjustDimensionConstraint3DSmothly(lc, lc.Parameter._Value * 17 / 16)
-                    lc.Driven = True
-                    For j = 1 To 8
-                        If ac.Parameter._Value < Math.PI / 4 Then
-                            adjuster.AdjustDimensionConstraint3DSmothly(ac, ac.Parameter._Value * 9 / 8)
-                            ac.Driven = True
-                            For k = 1 To 4
-                                If dc.Parameter._Value > Math.PI / 6 Then
-                                    adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 3 / 4)
-                                    dc.Driven = True
-                                Else
-                                    Exit For
-                                End If
-                            Next
+            lc = AdjustLineLength(lz, l, ln, acn, acz, lc)
 
-                        Else
-                            Exit For
-                        End If
-                    Next
 
-                Else
-                    Exit For
-                End If
-            Next
 
             coneLine = l
             coneAxes.Add(l)
@@ -2096,6 +2045,105 @@ Public Class Wedges
             Return Nothing
         End Try
 
+    End Function
+    Function AdjustLineLength(lz As SketchLine3D, l As SketchLine3D, ln As SketchLine3D,
+                  acn As DimensionConstraint3D, acz As DimensionConstraint3D, lc As DimensionConstraint3D) As DimensionConstraint3D
+        Dim j, k As Integer
+        j = 0
+        k = 0
+        For i = 1 To 16
+            If lc.Parameter._Value < 10 / 10 Then
+                adjuster.AdjustDimensionConstraint3DSmothly(lc, lc.Parameter._Value * 17 / 16)
+                lc.Driven = True
+                If acz.Parameter._Value < 16 * Math.PI / (6 * (16 - j)) Then
+                    If j > 15 Then
+                        j = 16
+                    Else
+                        j += 1
+                    End If
+
+                    acz = AdjustZetaAngle(lz, l, ln, acn, acz, (17 - j) / 16)
+                    i = 1
+                End If
+
+                If Math.Abs(Math.Cos(acn.Parameter._Value) * 16 / (16 - k)) < 1 / 2 Then
+
+                    If k > 15 Then
+                        k = 16
+                    Else
+                        k += 1
+                    End If
+                    acn = AdjustNormal(ln, l, acn, (17 - k) / 16)
+                    i = 1
+                End If
+
+            Else
+                Exit For
+            End If
+        Next
+        lc.Driven = True
+
+        Return lc
+    End Function
+    Function AdjustZetaAngle(lz As SketchLine3D, l As SketchLine3D, ln As SketchLine3D, acn As DimensionConstraint3D,
+                             acz As DimensionConstraint3D, k As Double) As DimensionConstraint3D
+        Dim j As Integer = 0
+        For i = 1 To 16
+            If acz.Parameter._Value < Math.PI / (6 * k) Then
+                adjuster.AdjustDimensionConstraint3DSmothly(acz, acz.Parameter._Value * 17 / 16)
+                acz.Driven = True
+                If Math.Abs(Math.Cos(acn.Parameter._Value) * 16 / (16 - j)) < 1 / 2 Then
+                    If j > 15 Then
+                        j = 16
+                    Else
+                        j += 1
+                    End If
+                    acn = AdjustNormal(ln, l, acn, (17 - j) / 16)
+                    i = 1
+                End If
+
+
+            Else
+                Exit For
+            End If
+        Next
+        acz.Driven = True
+        Return acz
+    End Function
+    Function AdjustNormal(ln As SketchLine3D, li As SketchLine3D, acn As DimensionConstraint3D, k As Double) As DimensionConstraint3D
+        Dim v1, v2 As Vector
+        v2 = ln.Geometry.Direction.AsVector
+
+        Dim a, c As Double
+
+        For i = 1 To 16
+            v1 = li.Geometry.Direction.AsVector
+            a = v1.AngleTo(v2)
+            c = Math.Cos(a)
+            If c > 0 Then
+                If c > 1 / (2 * k) Then
+                    Exit For
+
+                Else
+                    adjuster.AdjustDimensionConstraint3DSmothly(acn, acn.Parameter._Value * 15 / 16)
+                End If
+            Else
+                If c < -1 / (2 * k) Then
+                    Exit For
+                Else
+                    If acn.Parameter._Value > Math.PI / 2 Then
+                        adjuster.AdjustDimensionConstraint3DSmothly(acn, acn.Parameter._Value * 17 / 16)
+                    Else
+                        adjuster.AdjustDimensionConstraint3DSmothly(acn, acn.Parameter._Value * 15 / 16)
+                    End If
+
+                End If
+
+            End If
+
+        Next
+        acn.Driven = True
+        Return acn
     End Function
     Function IsCollision(skl As SketchLine3D, aci As DimensionConstraint3D, seq As SketchEquationCurve3D) As Boolean
         Dim wpt As WorkPoint

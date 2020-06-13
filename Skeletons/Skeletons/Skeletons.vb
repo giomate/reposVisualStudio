@@ -272,10 +272,12 @@ Public Class Skeletons
     End Function
     Function MakeFrameLetters(s As String) As ExtrudeFeature
         estampa = New Stanzer(doku)
-        Dim ef As ExtrudeFeature = estampa.ExtrudeFrameLetter(s, wptHigh, GetStampLine(wptHigh))
+        Dim skl As SketchLine3D = GetStampLine(wptHigh)
+        Dim ef As ExtrudeFeature = estampa.ExtrudeFrameLetter(s, wptHigh, skl, GetStampFace(wptHigh, skl))
         ef.Name = "LetterHigh"
         If monitor.IsFeatureHealthy(ef) Then
-            ef = estampa.ExtrudeFrameLetter(s, wptLow, GetStampLine(wptLow))
+            skl = GetStampLine(wptLow)
+            ef = estampa.ExtrudeFrameLetter(s, wptLow, skl, GetStampFace(wptLow, skl))
             ef.Name = "LetterLow"
             If monitor.IsFeatureHealthy(ef) Then
                 Return ef
@@ -284,27 +286,28 @@ Public Class Skeletons
         End If
         Return Nothing
     End Function
-    Function GetStampFace(wpt As WorkPoint) As Face
+    Function GetStampFace(wpt As WorkPoint, skli As SketchLine3D) As Face
 
-        Dim sb As SurfaceBody = tangentSurfaces._SurfaceBody
+
         Dim d, e, factor, dMax As Double
         Dim v1, v2, v3 As Vector
         dMax = 0
-        For Each f As Face In sb.Faces
-            d = f.GetClosestPointTo(wpt.Point).DistanceTo(wpt.Point)
-            For Each ed As Edge In f.Edges
-                e = ed.GetClosestPointTo(wpt.Point).DistanceTo(wpt.Point)
-                v1 = ed.GetClosestPointTo(wpt.Point).VectorTo(wpt.Point)
-                v2 = ed.StartVertex.Point.VectorTo(ed.StopVertex.Point)
-                v3 = v1.CrossProduct(v2)
-                factor = v3.Length * v2.Length / (v1.Length + 0.0000001)
-                If factor > dMax Then
-                    dMax = factor
-                    stampEdge = ed
-                    stampFace = f
-                End If
-            Next
+        Dim ls As LineSegment
+        For Each sb As SurfaceBody In tangentSurfaces.SurfaceBodies
+            For Each f As Face In sb.Faces
+                If f.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                    ls = skli.Geometry
+                    d = f.GetClosestPointTo(ls.MidPoint).DistanceTo(ls.MidPoint)
+                    factor = f.Evaluator.Area / (d + 0.0000001)
+                    If factor > dMax Then
+                        dMax = factor
 
+                        stampFace = f
+                    End If
+                End If
+
+
+            Next
         Next
 
 
@@ -321,13 +324,16 @@ Public Class Skeletons
         Next
         ave = ave / palitos.rodLines.Count
         For Each skl As SketchLine3D In palitos.rodLines
-            factor = skl.Length / (skl.Geometry.DistanceTo(wpt.Point) + Math.Exp(Math.Abs(skl.Geometry.MidPoint.Z) - 35 / 10))
-            If skl.Length > ave Then
-                If factor > dMax Then
-                    dMax = factor
-                    stampLine = skl
+            If skl.Geometry.MidPoint.Z * wpt.Point.Z > 0 Then
+                factor = skl.Length / (skl.Geometry.DistanceTo(wpt.Point) + Math.Exp(Math.Abs(skl.Geometry.MidPoint.Z) - 20 / 10))
+                If skl.Length > ave Then
+                    If factor > dMax Then
+                        dMax = factor
+                        stampLine = skl
+                    End If
                 End If
             End If
+
         Next
 
         ' lamp.HighLighObject(stampEdge)

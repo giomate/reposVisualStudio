@@ -93,9 +93,11 @@ Public Class MacroFold5
     Public Function MakeOddFold(s As String) As Boolean
         Try
             If GetWorkFace().SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                lamp.LookAtFace(workFace)
                 If mainSketch.DrawTrobinaCurve(nombrador.GetQNumber(doku), nombrador.GetNextSketchName(doku)).Construction Then
                     sk3D = mainSketch.sk3D
                     curve = mainSketch.curve
+                    lamp.ZoomSelected(curve)
                     If GetMajorEdge(workFace).GeometryType = CurveTypeEnum.kLineSegmentCurve Then
                         If DrawSingleLines() Then
                             If AdjustLastAngle() Then
@@ -116,7 +118,7 @@ Public Class MacroFold5
                                         folded = bender.FoldBand(bandLines.Count)
                                         folded = CheckFoldSide(folded)
                                         folded.Name = s
-                                        ' lamp.LookAtFace(workFace)
+                                        'lamp.LookAtFace(workFace)
                                         doku.Update2(True)
                                         If monitor.IsFeatureHealthy(folded) Then
                                             comando.UnfoldBand(doku)
@@ -478,7 +480,7 @@ Public Class MacroFold5
             bandLines.Add(l)
             firstLine = l
             lastLine = l
-            lamp.FitView(doku)
+            ' lamp.FitView(doku)
             Return l
         Catch ex As Exception
             MsgBox(ex.ToString())

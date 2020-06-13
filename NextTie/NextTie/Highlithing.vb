@@ -83,6 +83,24 @@ Public Class Highlithing
 
 
     End Sub
+    Public Sub ZoomSelected(obj As Object)
+        Dim oSSet As SelectSet
+
+        oSSet = doku.SelectSet
+
+
+        oSSet.Select(obj)
+
+        'change active view camera orientation
+        Dim oControlDef As ControlDefinition
+        oControlDef = app.CommandManager.ControlDefinitions.Item("AppZoomSelectCmd")
+        oControlDef.Execute()
+        'Beep()
+        oSSet.Clear()
+
+
+
+    End Sub
     Public Sub FitView(d As PartDocument)
         Dim dMax As Double = 0
         Dim fMax As Face

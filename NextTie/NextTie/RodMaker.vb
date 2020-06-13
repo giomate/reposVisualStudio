@@ -359,15 +359,16 @@ Public Class RodMaker
         Dim ps As PlanarSketch
         Dim wpl As WorkPlane
         Dim spt As SketchPoint
+        Dim sc As SketchCircle
         Try
             wpl = doku.ComponentDefinition.WorkPlanes.Item(3)
             wpl.Visible = False
             lamp.LookAtPlane(wpl)
             ps = doku.ComponentDefinition.Sketches.Add(wpl)
             spt = ps.AddByProjectingEntity(doku.ComponentDefinition.WorkPoints.Item(1))
-            ps.SketchCircles.AddByCenterRadius(spt, d)
+            sc = ps.SketchCircles.AddByCenterRadius(spt, d)
             pro = ps.Profiles.AddForSurface
-
+            lamp.ZoomSelected(sc)
             Return pro
         Catch ex As Exception
             MsgBox(ex.ToString())
