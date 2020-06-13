@@ -717,9 +717,18 @@ Public Class SubinaStruct
     End Function
     Function DeriveBand(bn As String) As DerivedPartComponent
         Dim dpc As DerivedPartComponent = DeriveSinglePart(bn)
+        Dim ws As WorkSurface
+        Dim q As Integer
+        If monitor.IsDerivedPartHealthy(dpc) Then
+            doku.Update2(True)
+            caraTrabajo = New Surfacer(doku)
+            q = nombrador.GetQNumberString(bn)
+            ws = caraTrabajo.GetTangentialsNumber(GetInitialFace(compDef.SurfaceBodies.Item(compDef.SurfaceBodies.Count)), q.ToString)
+            ws.Visible = False
+            Return dpc
+        End If
 
-
-        Return dpc
+        Return Nothing
     End Function
     Function CutSmallBodies() As SurfaceBody
         Try
@@ -1124,6 +1133,47 @@ Public Class SubinaStruct
                     End If
                 Next
             Next
+            lamp.HighLighFace(fmin1)
+            cylinderFace = fmin1
+
+
+            Return cylinderFace
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+    End Function
+    Function GetInitialFace(sbi As SurfaceBody) As Face
+
+        Dim ptc As Point
+
+        Dim min2, min1 As Double
+
+        Dim fmin1, fmin2 As Face
+        Try
+            ptc = doku.ComponentDefinition.WorkPoints.Item(1).Point
+            caras.Clear()
+            min1 = sbi.Faces.Item(1).Evaluator.Area
+            min2 = min1
+            fmin1 = sbi.Faces.Item(1)
+            fmin2 = fmin1
+
+            For Each fc As Face In sbi.Faces
+                If fc.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
+
+                    min2 = fc.Evaluator.Area
+                    If min2 < min1 Then
+                        min1 = min2
+                        fmin2 = fmin1
+                        fmin1 = fc
+                    Else
+                        fmin2 = fc
+                    End If
+
+
+                End If
+            Next
+
             lamp.HighLighFace(fmin1)
             cylinderFace = fmin1
 

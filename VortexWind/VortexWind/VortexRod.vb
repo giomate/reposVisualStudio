@@ -7,6 +7,7 @@ Public Class VortexRod
     Dim app As Application
     Dim sk3D, refSk As Sketch3D
     Dim sabana As Surfacer
+    Dim adjuster As SketchAdjust
 
 
     Dim curve, refCurve As SketchEquationCurve3D
@@ -68,7 +69,8 @@ Public Class VortexRod
     Dim spt2dHigh, spt2dLow As SketchPoint
     Dim sptHigh, sptLow, sptHigh2, sptLow2 As SketchPoint3D
     Dim freeRadius As Double
-
+    Public CW As Boolean
+    Dim rotationDirection As Double
 
     Dim arrayFunctions As Collection
     Dim fullFileNames As String()
@@ -91,6 +93,7 @@ Public Class VortexRod
         invFile = New InventorFile(app)
         sabana = New Surfacer(doku)
         estampa = New Stanzer(doku)
+        adjuster = New SketchAdjust(doku)
 
         projectManager = app.DesignProjectManager
 
@@ -117,17 +120,19 @@ Public Class VortexRod
         qValue = 0
         done = False
         guidePoints.Clear()
-        DP.Dmax = 200 / 10
+        DP.Dmax = 171 * 200 / 194
         DP.Dmin = 1 / 10
         Tr = (DP.Dmax + DP.Dmin) / 4
         Cr = (DP.Dmax - DP.Dmin) / 4
         DP.p = 11
         DP.q = 23
         DP.b = 25
+        rotationDirection = Math.Pow(-1, (1 + CInt(CW)))
         freeRadius = 20 / 10
-        startAngle = 4 * Math.PI * DP.p / (DP.q) + 0 * Math.PI / 2
-        cutAngle = Math.IEEERemainder(startAngle + 1 * Math.PI / 2, Math.PI * 2)
+        startAngle = rotationDirection * 4 * Math.PI * DP.p / (DP.q) + 0 * Math.PI / 2
+        cutAngle = Math.IEEERemainder(startAngle + 1 * rotationDirection * Math.PI / 2, Math.PI * 2)
         tangle = Math.PI - 2 * Math.Asin(freeRadius * 2 / DP.Dmax)
+
     End Sub
     Function SetConvergePoint(wp As WorkPoint) As WorkPoint
         Try
@@ -405,7 +410,56 @@ Public Class VortexRod
 
             Catch ex2 As Exception
 
-                If GetRadiusPoint(GetStartWorkPoint.Point) >= freeRadius - 1 / 1024 Then
+                If GetRadiusPoint(GetStartWorkPoint().Point) >= freeRadius - 1 / 1024 Then
+                    wpt1 = startWorkPoint
+                End If
+            End Try
+
+            Try
+
+                qValue = FindLastSW()
+                If qValue > 0 Then
+                    ef = StampNextWire(CInt(qValue / 2) + 1)
+                Else
+                    ef = StampNextWire(1)
+                End If
+
+            Catch ex As Exception
+
+            End Try
+
+
+
+
+
+
+            Return ef
+
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+    End Function
+    Public Function StampAllWireGuides(docu As PartDocument, cwi As Boolean) As ExtrudeFeature
+        Dim ef As ExtrudeFeature = Nothing
+        CW = cwi
+        rotationDirection = Math.Pow(-1, (1 + CInt(CW)))
+
+        startAngle = rotationDirection * 4 * Math.PI * DP.p / (DP.q) + 0 * Math.PI / 2
+        cutAngle = Math.IEEERemainder(startAngle + 1 * rotationDirection * Math.PI / 2, Math.PI * 2)
+        tangle = Math.PI - 2 * Math.Asin(freeRadius * 2 / DP.Dmax)
+        Dim wpt1 As WorkPoint
+        doku = DocUpdate(docu)
+        comando.WireFrameView(doku)
+        comando.HideSketches(doku)
+        Try
+            Try
+                wpt1 = compDef.WorkPoints.Item("wpt1")
+
+            Catch ex2 As Exception
+
+                If GetRadiusPoint(GetStartWorkPoint().Point) >= freeRadius - 1 / 1024 Then
                     wpt1 = startWorkPoint
                 End If
             End Try
@@ -1042,11 +1096,11 @@ Public Class VortexRod
         Try
             sws = 0
 
-            For Each ef As ExtrudeFeature In compDef.Features.ExtrudeFeatures
-                If Regex.IsMatch(ef.Name, pattern) Then
+            For Each ps As PlanarSketch In compDef.Sketches
+                If Regex.IsMatch(ps.Name, pattern) Then
                     s = String.Concat("sw", CInt(sws + 1).ToString)
                     Try
-                        If compDef.Features.ExtrudeFeatures.Item(s).SideFaces.Count > 1 Then
+                        If monitor.IsSketch2DhHealthy(ps) Then
                             sws += 1
                         Else
                             Return (windings + 1)
@@ -1401,7 +1455,7 @@ Public Class VortexRod
                 m = tg.CreateMatrix()
                 m.SetToIdentity()
                 vz = tg.CreateVector(0, 0, 1)
-                m.SetToRotation(driftAngle * (q - 1), vz, compDef.WorkPoints.Item(1).Point)
+                m.SetToRotation(driftAngle * rotationDirection * (q - 1), vz, compDef.WorkPoints.Item(1).Point)
                 pt1.TransformBy(m)
                 spt1 = sk3D.SketchPoints3D.Add(pt1)
                 wpt = compDef.WorkPoints.AddByPoint(spt1)
@@ -1495,7 +1549,7 @@ Public Class VortexRod
                 rMins(i) = 9999
                 bandNumbers(i) = i
             Next
-            Dim antr As Double = Math.IEEERemainder((q - 1) * 2 * Math.PI * passes / windings + cutAngle - (Math.Abs(CDbl(level)) * tangle), 2 * Math.PI)
+            Dim antr As Double = Math.IEEERemainder(rotationDirection * (q - 1) * 2 * Math.PI * passes / windings + cutAngle - (Math.Abs(CDbl(level)) * tangle * rotationDirection), 2 * Math.PI)
             For i = 1 To DP.q
 
                 ansu = Math.IEEERemainder(2 * Math.PI * (i + 1) * DP.p / DP.q, 2 * Math.PI)
@@ -1611,7 +1665,7 @@ Public Class VortexRod
                             If f.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
                                 If f.Evaluator.Area > 0.18 Then
                                     pt = f.GetClosestPointTo(wpti.Point)
-                                    If (pt.Z) * (Math.Pow(-1, CDbl(outlet))) > 0 Then
+                                    If (pt.Z) * (Math.Pow(-1, CDbl(outlet))) * rotationDirection > 0 Then
                                         Try
                                             ic = sk3D.IntersectionCurves.Add(wpl, f)
                                             lamp.HighLighFace(f)
@@ -1619,7 +1673,7 @@ Public Class VortexRod
                                             vr = vnp.CrossProduct(vpt)
                                             If ptRMax.Z > 0 Then
 
-                                                If vr.Z > 0 Then
+                                                If vr.Z * (Math.Pow(-1, CDbl(outlet))) * rotationDirection > 0 Then
                                                     e = ptRMax.DistanceTo(ptzFront)
                                                     If e < rMinFront Then
                                                         rMinFront = e
@@ -1631,7 +1685,7 @@ Public Class VortexRod
                                                     End If
                                                 End If
                                             Else
-                                                If vr.Z < 0 Then
+                                                If vr.Z * (Math.Pow(-1, CDbl(outlet))) * rotationDirection < 0 Then
                                                     e = ptRMax.DistanceTo(ptzBack)
                                                     If e < rMinBack Then
                                                         rMinBack = e

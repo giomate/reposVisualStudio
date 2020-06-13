@@ -222,6 +222,8 @@ Public Class Nombres
             bn = "Skeleton"
         ElseIf ffn.Contains("Rib") Then
             bn = "Rib"
+        ElseIf ffn.Contains("Band") Then
+            bn = "Band"
         End If
         s = Strings.Split(ffn, bn)
         sn = String.Concat(s(0), "Band", s(1))

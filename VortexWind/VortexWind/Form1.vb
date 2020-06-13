@@ -106,7 +106,7 @@ Public Class Form1
                 oDoc = invDoc.OpenFullFileName(ffn)
                 vortice = New VortexRod(oDoc)
                 monitor = New DesignMonitoring(vortice.doku)
-                If monitor.IsFeatureHealthy(vortice.StampAllWireGuides(vortice.doku)) Then
+                If monitor.IsFeatureHealthy(vortice.StampAllWireGuides(vortice.doku, True)) Then
                     b = vortice.done
                 End If
 
