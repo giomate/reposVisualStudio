@@ -79,6 +79,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Commands.vb" />
+    <Compile Include="Cortador.vb" />
     <Compile Include="Curves3D.vb" />
     <Compile Include="DesignMonitoring.vb" />
     <Compile Include="Highlithing.vb" />

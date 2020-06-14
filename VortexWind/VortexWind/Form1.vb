@@ -18,7 +18,7 @@ Public Class Form1
     Public Sub New()
         ' This call is required by the designer.
         InitializeComponent()
-        iteration = 15
+        iteration = 9
         ' Add any initialization after the InitializeComponent() call.
         Try
             oApp = Marshal.GetActiveObject("Inventor.Application")
@@ -101,10 +101,11 @@ Public Class Form1
                 oDesignProjectMgr = oApp.DesignProjectManager
                 Dim p As String = oDesignProjectMgr.ActiveDesignProject.WorkspacePath
                 Dim ffn As String
-                ffn = String.Concat(p, "\Iteration", iteration.ToString, "Condesator1.ipt")
+                ffn = String.Concat(p, "\Iteration", iteration.ToString, "\Condesator1.ipt")
                 invDoc = New InventorFile(oApp)
                 oDoc = invDoc.OpenFullFileName(ffn)
                 vortice = New VortexRod(oDoc)
+                vortice.iteration = iteration
                 monitor = New DesignMonitoring(vortice.doku)
                 If monitor.IsFeatureHealthy(vortice.StampAllWireGuides(vortice.doku, True)) Then
                     b = vortice.done

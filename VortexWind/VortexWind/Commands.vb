@@ -4,7 +4,6 @@ Public Class Commands
     Dim oControlDef As ControlDefinition
     Dim mainApp As Application
     Dim doku As Document
-    Dim app As Application
 
     Public Sub New(App As Inventor.Application)
         oCommandMgr = App.CommandManager
@@ -21,6 +20,15 @@ Public Class Commands
 
         ' Execute the command. 
         Call oControlDef.Execute()
+    End Sub
+    Public Sub UndoCommand(doku As PartDocument)
+        ' Get control definition for the line command. 
+
+        oControlDef = oCommandMgr.ControlDefinitions.Item("AppUndoCmd")
+
+        ' Execute the command. 
+        Call oControlDef.Execute()
+        doku.Update()
     End Sub
     Function IsUndoable() As Boolean
         Dim ud As Boolean
@@ -39,7 +47,7 @@ Public Class Commands
 
         Dim oCamera As Camera
         oCamera = mainApp.ActiveView.Camera
-        oCamera.ViewOrientationType = ViewOrientationTypeEnum.kTopViewOrientation
+        oCamera.ViewOrientationType = ViewOrientationTypeEnum.kIsoTopRightViewOrientation
         oCamera.Fit()
         oCamera.Apply()
 
@@ -74,18 +82,6 @@ Public Class Commands
 
 
     End Sub
-    Public Sub HideSketches(docu As Inventor.Document)
-        Dim part As PartDocument = docu
-        part.ObjectVisibility.Sketches3D = False
-        part.ObjectVisibility.Sketches = False
-
-
-
-    End Sub
-    Public Sub HideSurfaces(docu As Inventor.Document)
-        Dim part As PartDocument = docu
-        part.ObjectVisibility.ConstructionSurfaces = False
-    End Sub
     Public Sub MakeInvisibleWorkPlanes(docu As Inventor.Document)
         For Each wp As WorkPlane In docu.ComponentDefinition.WorkPlanes
             wp.Visible = False
@@ -95,7 +91,43 @@ Public Class Commands
 
 
     End Sub
+    Public Sub UnfoldBand(doku As PartDocument)
+        Dim oDef As ControlDefinition
+        Dim oCompDef As SheetMetalComponentDefinition
+        Try
 
+            mainApp = doku.Parent
+            oDef = mainApp.CommandManager.ControlDefinitions.Item("PartConvertToSheetMetalCmd")
+            oDef.Execute()
+
+            oCompDef = doku.ComponentDefinition
+            oCompDef.Unfold()
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+
+        End Try
+
+
+    End Sub
+    Public Sub RefoldBand(doku As PartDocument)
+
+        Dim oDef As ControlDefinition
+        mainApp = doku.Parent
+        oDef = mainApp.CommandManager.ControlDefinitions.Item("PartSwitchRepresentationCmd")
+        'oDef.Execute()
+        Dim oCompDef As SheetMetalComponentDefinition
+        oCompDef = doku.ComponentDefinition
+        oCompDef.FlatPattern.ExitEdit()
+
+    End Sub
+    Public Sub HideSketches(docu As Inventor.Document)
+        Dim part As PartDocument = docu
+        part.ObjectVisibility.Sketches3D = False
+        part.ObjectVisibility.Sketches = False
+
+
+
+    End Sub
     Public Sub HideAllSurfaces(docu As Inventor.Document)
         For Each ws As WorkSurface In docu.ComponentDefinition.WorkSurfaces
             ws.Visible = False
@@ -104,5 +136,9 @@ Public Class Commands
 
 
 
+    End Sub
+    Public Sub HideSurfaces(docu As Inventor.Document)
+        Dim part As PartDocument = docu
+        part.ObjectVisibility.ConstructionSurfaces = False
     End Sub
 End Class
