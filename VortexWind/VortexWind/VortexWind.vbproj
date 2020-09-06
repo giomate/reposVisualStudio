@@ -5,12 +5,13 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{8F194B33-0457-4B90-9F43-A45E380E5CC9}</ProjectGuid>
-    <OutputType>WinExe</OutputType>
-    <StartupObject>VortexWind.My.MyApplication</StartupObject>
+    <OutputType>Library</OutputType>
+    <StartupObject>
+    </StartupObject>
     <RootNamespace>VortexWind</RootNamespace>
     <AssemblyName>VortexWind</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <MyType>WindowsForms</MyType>
+    <MyType>Windows</MyType>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
@@ -101,6 +102,7 @@
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
       <DependentUpon>Application.myapp</DependentUpon>
+      <DesignTime>True</DesignTime>
     </Compile>
     <Compile Include="My Project\Resources.Designer.vb">
       <AutoGen>True</AutoGen>
@@ -114,6 +116,7 @@
     </Compile>
     <Compile Include="SketchAdjust.vb" />
     <Compile Include="Stanzer.vb" />
+    <Compile Include="Starter.vb" />
     <Compile Include="SubinaStruct.vb" />
     <Compile Include="Surfacer.vb" />
     <Compile Include="Sweeper.vb" />

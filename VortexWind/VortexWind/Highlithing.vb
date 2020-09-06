@@ -46,10 +46,7 @@ Public Class Highlithing
         Try
             If f.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
                 oSSet = doku.SelectSet
-
-
                 oSSet.Select(f)
-
                 'change active view camera orientation
                 Dim oControlDef As ControlDefinition
                 oControlDef = app.CommandManager.ControlDefinitions.Item("AppLookAtCmd")

@@ -1071,13 +1071,13 @@ Public Class Stanzer
         Dim skpto As SketchPoint3D
         Dim r As Integer
         Try
-            zMin = 1.8 / 10
+            zMin = 2 / 10
             overLapping = 0.01
             nLetters = Math.Floor(Math.Log10(q)) + 1
             comando.WireFrameView(doku)
             Dim pl As Plane = f.Geometry
             Dim edMax As Edge
-            edMax = GetOuterEdge(f, skpti.Geometry)
+            edMax = GetStampEdge(f, skpti.Geometry)
             skpto = sk3D.SketchPoints3D.Add(GetSecondStampPoint(edMax, f, skpti).EndSketchPoint.Geometry)
             ps = doku.ComponentDefinition.Sketches.AddWithOrientation(f, edMax, True, True, edMax.StartVertex,)
             spt = ps.AddByProjectingEntity(skpti)
@@ -1106,7 +1106,7 @@ Public Class Stanzer
 
             End If
             oStyle.FontSize = z
-            oStyle.Bold = True
+            oStyle.Bold = False
             doku.Update2(True)
             Dim ptBox As Point2d
             ptBox = tg.CreatePoint2d(spt.Geometry.X - oStyle.FontSize / 4, -1 / 100)
@@ -1300,7 +1300,6 @@ Public Class Stanzer
         e3 = e2
         For Each ed As Edge In f.Edges
             If ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point) < min2 Then
-
                 If ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point) < min1 Then
                     min3 = min2
                     e3 = e2
@@ -1314,11 +1313,7 @@ Public Class Stanzer
                     min2 = ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point)
                     e2 = ed
                 End If
-
-
-
             End If
-
         Next
 
         minorEdge = e1
@@ -1393,11 +1388,9 @@ Public Class Stanzer
         ' sk3D.SketchPoints3D.Add(pt1)
         For Each ed As Edge In f.Edges
             dis = ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point)
-            If dis > dMin / 2 Then
+            If dis > dMin / 3 Then
                 d = ed.GetClosestPointTo(pti).DistanceTo(pti)
-
                 If Math.Abs(d - e) < 1 / 10 Then
-
                     If d < mine2 Then
                         If d < mine1 Then
                             mine3 = mine2
@@ -1418,6 +1411,58 @@ Public Class Stanzer
                     End If
 
                 End If
+            End If
+
+
+
+        Next
+        lamp.HighLighObject(e1)
+
+        outerEdge = e1
+        Return e1
+    End Function
+    Function GetStampEdge(f As Face, pti As Point) As Edge
+        Dim e1, e2, e3 As Edge
+        Dim mine1, mine2, mine3, d, e, dis, dMin As Double
+
+        Dim pt1 As Point
+
+        mine1 = 99999
+        mine2 = 9999999
+        mine3 = 999999
+        e1 = GetMajorEdge(f)
+        e2 = e1
+        e3 = e2
+        pt1 = f.GetClosestPointTo(pti)
+        e = pt1.DistanceTo(pti)
+        dMin = e1.StartVertex.Point.DistanceTo(e1.StopVertex.Point)
+        ' sk3D.SketchPoints3D.Add(pt1)
+        For Each ed As Edge In f.Edges
+            dis = ed.StartVertex.Point.DistanceTo(ed.StopVertex.Point)
+            d = ed.GetClosestPointTo(pti).DistanceTo(pti)
+
+            If Math.Abs(d - e) < 1 / 10 Then
+
+                    If d < mine2 Then
+                        If d < mine1 Then
+                            mine3 = mine2
+                            e3 = e2
+                            mine2 = mine1
+                            e2 = e1
+                            mine1 = d
+                            e1 = ed
+                        Else
+                            mine3 = mine2
+                            e3 = e2
+                            mine2 = d
+                            e2 = ed
+                        End If
+                    Else
+                        mine3 = d
+                        e3 = ed
+                    End If
+
+
             End If
 
 
@@ -1478,6 +1523,7 @@ Public Class Stanzer
 
 
             Next
+            skl.Construction = True
             Return skl
         Catch ex As Exception
             MsgBox(ex.ToString())

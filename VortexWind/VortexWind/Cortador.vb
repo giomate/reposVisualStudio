@@ -473,25 +473,48 @@ Public Class Cortador
             smcd = doku.ComponentDefinition
             Dim smfcd As SheetMetalFeatures
             smfcd = doku.ComponentDefinition.Features
+            Dim ef As ExtrudeFeature
 
             compDef = smcd
             Dim cd As CutDefinition
             cd = smfcd.CutFeatures.CreateCutDefinition(pr)
             ' oFaceFeatureDefinition.Direction = PartFeatureExtentDirectionEnum.kNegativeExtentDirection
-            Dim cf As CutFeature
-            cf = smfcd.CutFeatures.Add(cd)
-            cutFeature = cf
-            If monitor.IsFeatureHealthy(cutFeature) Then
-                cutFeature.Name = String.Concat("wg", q.ToString)
-            End If
+            Dim cf As CutFeature = smfcd.CutFeatures(smfcd.CutFeatures.Count)
+            Try
+                cf = smfcd.CutFeatures.Add(cd)
+                cutFeature = cf
+                If monitor.IsFeatureHealthy(cutFeature) Then
+                    cutFeature.Name = String.Concat("wg", q.ToString)
+                End If
+            Catch ex As Exception
+                ef = ExtrudeNumber(pr)
+                If monitor.IsFeatureHealthy(ef) Then
+                    ef.Name = String.Concat("wg", q.ToString)
+                End If
+            End Try
+
+
             Return cf
         Catch ex As Exception
+
             MsgBox(ex.ToString())
             Return Nothing
 
         End Try
 
 
+    End Function
+    Function ExtrudeNumber(pro As Profile) As ExtrudeFeature
+        Dim oExtrudeDef As ExtrudeDefinition
+        oExtrudeDef = doku.ComponentDefinition.Features.ExtrudeFeatures.CreateExtrudeDefinition(pro, PartFeatureOperationEnum.kCutOperation)
+        oExtrudeDef.SetDistanceExtent(6 / 100, PartFeatureExtentDirectionEnum.kSymmetricExtentDirection)
+        'oExtrudeDef.SetDistanceExtent(0.12, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
+        Dim oExtrude As ExtrudeFeature
+        oExtrude = doku.ComponentDefinition.Features.ExtrudeFeatures.Add(oExtrudeDef)
+
+
+
+        Return oExtrude
     End Function
     Public Function MakeLastCut(fl As SketchLine3D, sl As SketchLine3D) As CutFeature
         Try

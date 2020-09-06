@@ -10,7 +10,7 @@ Imports System.Runtime.InteropServices
 Public Class Starter
     Dim oApp As Inventor.Application
     Dim oDoc As Inventor.Document
-    Dim started, running, done As Boolean
+    Public started, running, done As Boolean
     Dim oDesignProjectMgr As DesignProjectManager
     Dim invDoc As InventorFile
     Public iteration As Integer
@@ -27,7 +27,7 @@ Public Class Starter
     End Sub
     Public Function AddInSubina(i As Integer) As Boolean
         iteration = i
-        done = MakeTort()
+        done = MakeCondesator()
         Return done
     End Function
 
@@ -44,6 +44,27 @@ Public Class Starter
                 oDoc = invDoc.OpenFullFileName(ffn)
                 nido = New SubinaStruct(oDoc)
                 nido.MakeNestStruct(iteration)
+                b = nido.done
+            End If
+            Return b
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return False
+        End Try
+
+    End Function
+    Public Function MakeCondesator() As Boolean
+        Dim b As Boolean
+        Try
+            If (started) Then
+                oDesignProjectMgr = oApp.DesignProjectManager
+                Dim p As String = oDesignProjectMgr.ActiveDesignProject.WorkspacePath
+                Dim ffn As String
+                ffn = String.Concat(p, "\Iteration", iteration.ToString, "\Band1.ipt")
+                invDoc = New InventorFile(oApp)
+                oDoc = invDoc.OpenFullFileName(ffn)
+                nido = New SubinaStruct(oDoc)
+                nido.MakeCondesatorStruct(iteration)
                 b = nido.done
             End If
             Return b
