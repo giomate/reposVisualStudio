@@ -348,6 +348,7 @@ Public Class OriginSketch
             bandLines.Add(l)
             firstLine = l
             lastLine = l
+
             If sk3D.Name = "s7" Then
                 If IsFirstLineInside() Then
                 Else
@@ -361,6 +362,9 @@ Public Class OriginSketch
                 End If
             End If
             inletGap = sk3D.DimensionConstraints3D.AddTwoPointDistance(firstLine.StartPoint, intersectionPoint)
+            If inletGap.Parameter._Value > 2 * b Then
+                adjuster.AdjustDimConstrain3DSmothly(inletGap, inletGap.Parameter._Value / 2)
+            End If
             inletGap.Driven = True
             Return l
         Catch ex As Exception

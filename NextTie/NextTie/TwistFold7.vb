@@ -16,7 +16,7 @@ Public Class TwistFold7
     Public farPoint, point1, point2, point3, curvePoint, startPoint, centroPoint As Point
     Dim tg As TransientGeometry
     Dim initialPlane, adjacentPlane As Plane
-    Dim gap1CM, thicknessCM, diff1, diff2 As Double
+    Dim gap1CM, thicknessCM, diff1, diff2, radiusValue As Double
     Dim partNumber As Integer
     Dim adjuster As SketchAdjust
     Dim bandLines, constructionLines, intersectionPoints As ObjectCollection
@@ -81,6 +81,7 @@ Public Class TwistFold7
 
         diff1 = Math.PI / 2 - 1.64
         diff2 = Math.PI / 2 - 1.43
+        radiusValue = 20 / 10
         done = False
     End Sub
     Public Function MakeFinalTwist() As Boolean
@@ -1026,7 +1027,7 @@ Public Class TwistFold7
                             If DrawThirdConstructionLine().Construction Then
                                 If DrawFourthConstructionLine().Construction Then
                                     If DrawTangentLine.Length > 0 Then
-                                        'Return bandLines.Item(3)
+                                        Return bandLines.Item(3)
                                         If DrawTangentParallel.Length > 0 Then
                                             Return bandLines.Item(3)
                                             If DrawFifthConstructionLine().Length > 0 Then
@@ -1924,7 +1925,7 @@ Public Class TwistFold7
         Dim spt As SketchPoint3D
         Dim c As Cylinder
         Dim b As Double = GetParameter("b")._Value
-        Dim r As Double = 20 / 10
+        Dim r As Double = radiusValue
 
         Try
             bl2 = bandLines.Item(2)
@@ -1958,7 +1959,7 @@ Public Class TwistFold7
                 outletGap.Driven = True
                 TryPerpendicular(zAxisLine, radius)
                 radius.Construction = True
-                l = sk3D.SketchLines3D.AddByTwoPoints(bl2.StartPoint, radius.EndSketchPoint.Geometry, False)
+                l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.StartPoint, radius.EndSketchPoint.Geometry, False)
                 sk3D.GeometricConstraints3D.AddCoincident(radius.EndPoint, l)
                 TryPerpendicular(radius, l)
 

@@ -19,7 +19,7 @@ Public Class Curves3D
     Public Cr As Double
     Public Sub New(docu As Inventor.Document)
         oDoc = docu
-        DP.Dmax = 171 * 200 / 194
+        DP.Dmax = 200
         DP.Dmin = 1
         Tr = (DP.Dmax + DP.Dmin) / 4
         Cr = (DP.Dmax - DP.Dmin) / 4
@@ -35,6 +35,8 @@ Public Class Curves3D
         docu.ComponentDefinition.Parameters.ReferenceParameters.AddByValue(DP.q, UnitsTypeEnum.kUnitlessUnits, "q")
         docu.ComponentDefinition.Parameters.ReferenceParameters.AddByValue(DP.p, UnitsTypeEnum.kUnitlessUnits, "p")
         docu.ComponentDefinition.Parameters.ReferenceParameters.AddByValue(DP.b / 10, UnitsTypeEnum.kMillimeterLengthUnits, "b")
+        docu.ComponentDefinition.Parameters.ReferenceParameters.AddByValue(DP.Dmax / 10, UnitsTypeEnum.kMillimeterLengthUnits, "DMax")
+        docu.ComponentDefinition.Parameters.ReferenceParameters.AddByValue(DP.Dmin / 10, UnitsTypeEnum.kMillimeterLengthUnits, "DMin")
         p = oDoc.ComponentDefinition.Parameters.ReferenceParameters.Item(oDoc.ComponentDefinition.Parameters.ReferenceParameters.Count)
         Return p
     End Function
