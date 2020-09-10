@@ -18,7 +18,7 @@ Public Class VortexRod
     Dim windings, driftAngle, passes, startAngle, tangle, cutAngle As Double
     Dim estampa As Stanzer
     Dim puente As RodMaker
-    Dim lista As ExcelInterface
+    Dim lista, excelFile As ExcelInterface
 
     Public wp1, wp2, wp3, wpConverge, startWorkPoint, currentWorkPoint As WorkPoint
     Public farPoint, point1, point2, point3, curvePoint, ptRReference, ptzBack, ptZMax, pointCutRadiusMax, ptRMin As Point
@@ -63,7 +63,7 @@ Public Class VortexRod
     Dim foldFeature As FoldFeature
     Dim sections, stamPoints, surfaceBodies, bandas, guidePoints, cylinders, planarFaces, wedges, tangentials, arcPoints, surfacesSculpt As ObjectCollection
     Dim affectedBodies As ObjectCollection
-    Dim tanKeys(), bandKeys(), rodKeys(), keyPlanarFace As Long
+    Dim tanKeys(), bandKeys(), rodKeys(), keyPlanarFace, windingValues(), bandValues() As Long
     Dim edgeColl As EdgeCollection
     Dim twistPlane As WorkPlane
     Dim spt2dHigh, spt2dLow As SketchPoint
@@ -134,6 +134,8 @@ Public Class VortexRod
         cutAngle = Math.IEEERemainder(startAngle + 1 * rotationDirection * tangle / 2, Math.PI * 2)
 
         driftAngle = Math.PI * 2 * passes / windings
+        ReDim windingValues(2 * windings)
+        ReDim bandValues(2 * windings)
 
     End Sub
     Function SetConvergePoint(wp As WorkPoint) As WorkPoint
@@ -399,8 +401,8 @@ Public Class VortexRod
         End Try
 
     End Function
-    Public Function StampAllWireGuides(docu As PartDocument) As ExtrudeFeature
-        Dim ef As ExtrudeFeature = Nothing
+    Public Function StampAllWireGuides(docu As PartDocument) As Long
+        Dim ef As Long = Nothing
 
         Dim wpt1 As WorkPoint
         doku = DocUpdate(docu)
@@ -443,8 +445,8 @@ Public Class VortexRod
         End Try
 
     End Function
-    Public Function StampAllWireGuides(docu As PartDocument, cwi As Boolean) As CutFeature
-        Dim cf As CutFeature = Nothing
+    Public Function StampAllWireGuides(docu As PartDocument, cwi As Boolean) As Long
+        Dim cf As Long = Nothing
         CW = cwi
         rotationDirection = Math.Pow(-1, (2 + CInt(CW)))
         startAngle = Math.IEEERemainder(4 * Math.PI * DP.p / (DP.q), Math.PI * 2)
@@ -462,6 +464,7 @@ Public Class VortexRod
 
                 If GetRadiusPoint(GetStartWorkPoint().Point) >= freeRadius - 1 / 1024 Then
                     wpt1 = startWorkPoint
+
                 End If
             End Try
 
@@ -513,9 +516,9 @@ Public Class VortexRod
 
                 qValue = FindLastSW()
                 If qValue > 0 Then
-                    ef = StampNextWire(qValue + 1)
+                    '  ef = StampNextWire(qValue + 1)
                 Else
-                    ef = StampNextWire(1)
+                    '  ef = StampNextWire(1)
                 End If
 
             Catch ex As Exception
@@ -717,6 +720,17 @@ Public Class VortexRod
         Try
             lista = New ExcelInterface(path)
             lista.SaveArray(tans, rods)
+            Return 0
+        Catch ex As Exception
+
+        End Try
+
+    End Function
+    Function CreateExcelFile() As Integer
+        Dim path As String = projectManager.ActiveDesignProject.WorkspacePath
+        Try
+            excelFile = New ExcelInterface(path)
+            excelFile.SaveArray(windingValues, bandValues)
             Return 0
         Catch ex As Exception
 
@@ -1202,8 +1216,8 @@ Public Class VortexRod
 
 
     End Function
-    Function StampNextWire(q As Integer) As CutFeature
-        Dim cf As CutFeature = Nothing
+    Function StampNextWire(q As Integer) As Long
+        Dim cf As Long = Nothing
 
         Try
 
@@ -1217,7 +1231,7 @@ Public Class VortexRod
             While (q < windings + 1 And Not done)
                 comando.WireFrameView(doku)
                 currentWorkPlane = DrawReferences(q)
-                cf = StampLetters(q)
+                cf = GetBandValues(q)
                 If done Then
                     done = False
 
@@ -1235,6 +1249,9 @@ Public Class VortexRod
 
             End While
 
+            If q = windings Then
+                CreateExcelFile()
+            End If
 
             Return cf
         Catch ex As Exception
@@ -2176,31 +2193,31 @@ Public Class VortexRod
                                     Next
 
                                     For Each se As SketchEntity3D In ic.SketchEntities
-                                            se.Construction = True
-                                            If se.Type = ObjectTypeEnum.kSketchPoint3DObject Then
-                                                spt = se
-                                                pt = spt.Geometry
+                                        se.Construction = True
+                                        If se.Type = ObjectTypeEnum.kSketchPoint3DObject Then
+                                            spt = se
+                                            pt = spt.Geometry
                                             e = CalculateOutPostionFactor(pt) * Math.Pow(lMax, 1 / 2)
                                             If (e > dMax2) Then
-                                                    If (e > dMax1) Then
-                                                        dMax2 = dMax1
-                                                        dMax1 = e
-                                                        ptMax2 = ptMax1
-                                                        ptMax1 = pt
-                                                        f2 = f1
-                                                        f1 = tf
-                                                        ptRMin = GetRminPoint(ic, pt)
-                                                        lamp.LookAtFace(tf)
-                                                        lamp.HighLighFace(tf)
-                                                        dis2 = e
-                                                    Else
-                                                        dMax2 = e
-                                                        f2 = tf
-                                                        ptMax2 = pt
-                                                    End If
+                                                If (e > dMax1) Then
+                                                    dMax2 = dMax1
+                                                    dMax1 = e
+                                                    ptMax2 = ptMax1
+                                                    ptMax1 = pt
+                                                    f2 = f1
+                                                    f1 = tf
+                                                    ptRMin = GetRminPoint(ic, pt)
+                                                    lamp.LookAtFace(tf)
+                                                    lamp.HighLighFace(tf)
+                                                    dis2 = e
+                                                Else
+                                                    dMax2 = e
+                                                    f2 = tf
+                                                    ptMax2 = pt
                                                 End If
                                             End If
-                                        Next
+                                        End If
+                                    Next
 
 
                                 Catch ex As Exception
@@ -2422,6 +2439,31 @@ Public Class VortexRod
             Return Nothing
         End Try
     End Function
+    Function GetBandValues(q As Integer) As Long
+        Dim bv As Long = Nothing
+        Dim path As String = projectManager.ActiveDesignProject.WorkspacePath
+
+        Try
+            For i = 0 To 1
+                Try
+                    sk3D = compDef.Sketches3D.Item(String.Concat("sw", ((q * 2) - 1).ToString))
+                    If i = 0 Then
+                        Continue For
+                    Else
+                        bv = GetBendBand(q, 1 - i)
+
+                    End If
+
+                Catch ex As Exception
+                    bv = GetBendBand(q, 1 - i)
+                End Try
+            Next
+            Return bv
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+    End Function
     Function StampOneLetter(q As Integer, i As Integer) As CutFeature
         Dim cf As CutFeature = Nothing
         Dim skpt As SketchPoint3D
@@ -2455,6 +2497,40 @@ Public Class VortexRod
             End If
             done = estampa.done
             Return cf
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+    End Function
+
+    Function GetBendBand(q As Integer, i As Integer) As Long
+
+        Dim skpt As SketchPoint3D
+        Dim path As String = projectManager.ActiveDesignProject.WorkspacePath
+        Dim index As Long
+        Try
+            EstimateInletBandNumbers(q, CBool(i))
+            outlet = CBool(i)
+            skpt = GetSectionPoint(currentWorkPoint, currentWorkPlane)
+            qValue = q
+
+
+            If i = 1 Then
+                index = CLng((2 * q) - 2)
+                compDef.Sketches3D.Item(compDef.Sketches3D.Count).Name = String.Concat("sw", ((2 * q) - 1).ToString)
+
+            Else
+                index = CLng(((2 * q)) - 1)
+                compDef.Sketches3D.Item(compDef.Sketches3D.Count).Name = String.Concat("sw", ((2 * q)).ToString)
+            End If
+            windingValues(CInt(index)) = index
+            bandValues(CInt(index)) = CLng(sbValue)
+            If sbValue > 0 Then
+                done = True
+            End If
+            Return index
         Catch ex As Exception
             MsgBox(ex.ToString())
             Return Nothing

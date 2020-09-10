@@ -47,7 +47,7 @@ Public Class Starter
                 vortice = New VortexRod(oDoc)
                 vortice.iteration = iteration
                 monitor = New DesignMonitoring(vortice.doku)
-                If monitor.IsFeatureHealthy(vortice.StampAllWireGuides(vortice.doku, True)) Then
+                If vortice.StampAllWireGuides(vortice.doku, True) > 0 Then
                     b = vortice.done
                 End If
 

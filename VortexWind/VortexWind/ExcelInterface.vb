@@ -11,7 +11,7 @@ Public Class ExcelInterface
     Public Sub New(name As String)
         oExcel = CreateObject("Excel.Application")
         oExcel.Visible = False
-        path = name & "\keys.xlsx"
+        path = name & "\WindingValues.xlsx"
         If File.Exists(path) Then
             oBook = oExcel.Workbooks.Open(path)
         Else
@@ -30,10 +30,10 @@ Public Class ExcelInterface
             Try
                 oSheet = oBook.Worksheets.Add
                 r = oSheet.Cells(1, 1)
-                r.Value = "tans"
+                r.Value = "Winding"
                 WriteArray(tans, 1)
                 r = oSheet.Cells(1, 2)
-                r.Value = "rods"
+                r.Value = "Band"
                 WriteArray(rods, 2)
                 If File.Exists(path) Then
                     oBook.Save()
