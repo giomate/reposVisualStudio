@@ -291,7 +291,7 @@ Public Class TwistFold7
                                                 comando.UnfoldBand(doku)
                                                 If compDef.HasFlatPattern Then
                                                     comando.RefoldBand(doku)
-                                                    cl5 = constructionLines.Item(5)
+                                                    cl5 = constructionLines.Item(constructionLines.Count)
                                                     foldFeature = bender.folded
                                                     sk3D = compDef.Sketches3D.Add()
                                                     sk3D.Include(firstLine)
@@ -304,7 +304,7 @@ Public Class TwistFold7
                                                     sk3D.Include(nextLine)
                                                     sk3D.Name = "nextline"
                                                     sk3D = compDef.Sketches3D.Add()
-                                                    connectLine = nextSketch.constructionLines.Item(5)
+                                                    connectLine = nextSketch.constructionLines.Item(nextSketch.constructionLines.Count)
                                                     sk3D.Include(connectLine)
                                                     sk3D.Name = "kanteLine"
                                                     sk3D = compDef.Sketches3D.Add()
@@ -637,36 +637,36 @@ Public Class TwistFold7
 
         Dim inside As Boolean = IsFirstLineInside()
         Dim limit As Integer = 0
-        Dim dc As DimensionConstraint3D
-        Dim cl5 As SketchLine3D = nextSketch.constructionLines.Item(5)
+        Dim dc As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddTwoLineAngle(thirdLine, secondLine)
+        Dim cl5 As SketchLine3D = nextSketch.constructionLines.Item(nextSketch.constructionLines.Count)
         Try
 
-
+            dc.Driven = True
             gapFold.Driven = True
             nextSketch.CorrectFirstLine()
             Do
 
-                nextSketch.CorrectEntryGap()
+
                 'adjuster.AdjustDimensionConstraint3DSmothly(nextSketch.gapFold, nextSketch.gapFold.Parameter._Value * 15 / 16)
                 'nextSketch.gapFold.Driven = True
-                nextSketch.CorrectGap()
+                nextSketch.FitEntryGap()
 
                 CorrectGaptFold()
-                nextSketch.CorrectSecondLine()
-                TryPerpendicularGap(nextSketch.angleTangent, nextSketch.gapFold)
-                nextSketch.angleTangent.Driven = True
-                CorrectFoldAngle()
-                reduced = (TryPerpendicularGap(angleTangent, gapFold) Or reduced)
+                nextSketch.CorrectGapFold()
+                adjuster.AdjustDimConstrain3DSmothly(dc, dc.Parameter._Value * 65 / 64)
+                dc.Driven = True
+                reduced = nextSketch.CorrectEntryGap()
                 limit = limit + 1
-            Loop Until (limit > 16 Or (gapFold.Parameter._Value < 2 * gap1CM) Or (nextSketch.gapFold.Parameter._Value < gap1CM) Or (Math.Abs(angleTangent.Parameter._Value - Math.PI / 2) < 1 / 128))
-            dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(nextSketch.firstLine.StartPoint, cl5.StartPoint)
-            adjuster.AdjustDimensionConstraint3DSmothly(dc, 1 / 10)
+            Loop Until (limit > 16 Or (gapFold.Parameter._Value < 2 * gap1CM) Or (nextSketch.gapFold.Parameter._Value < gap1CM) Or (dc.Parameter._Value > Math.PI * 31 / 32))
+            dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(cl5.StartPoint, nextSketch.firstLine.StartPoint)
+            adjuster.AdjustDimConstrain3DSmothly(dc, 1 / 10)
             dc.Delete()
+            Return reduced
         Catch ex As Exception
             MsgBox(ex.ToString())
             Return Nothing
         End Try
-        Return reduced
+
     End Function
     Function CorrectFoldAngle() As Boolean
         Dim cl4 As SketchLine3D = constructionLines(4)
@@ -1606,7 +1606,7 @@ Public Class TwistFold7
             Do
                 hecho = adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 7 / 8)
                 nextSketch.CorrectFirstLine()
-                nextSketch.CorrectGap()
+                nextSketch.FitEntryGap()
                 d = CalculateEntryRodFactor()
                 limit = limit + 1
             Loop Until (d > e Or limit > 16)
@@ -1962,7 +1962,11 @@ Public Class TwistFold7
                 l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.StartPoint, radius.EndSketchPoint.Geometry, False)
                 sk3D.GeometricConstraints3D.AddCoincident(radius.EndPoint, l)
                 TryPerpendicular(radius, l)
-
+                sk3D.GeometricConstraints3D.AddGround(sptRFront)
+                dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(l.EndPoint, sptRFront)
+                adjuster.AdjustDimConstrain3DSmothly(dc, dc.Parameter._Value / 8)
+                dc.Delete()
+                sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
             Catch ex2 As Exception
 
             End Try
