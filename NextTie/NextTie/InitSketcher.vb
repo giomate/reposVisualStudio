@@ -22,7 +22,7 @@ Public Class InitSketcher
     Dim comando As Commands
     Dim nombrador As Nombres
     Dim dimConstrainBandLine2, gapFold, dcThirdLine As DimensionConstraint3D
-    Dim startPoint As GeometricConstraint3D
+    Dim startPoint, cl3Equal As GeometricConstraint3D
     Dim sheetMetalFeatures As SheetMetalFeatures
     Dim compDef As SheetMetalComponentDefinition
     Public ID1, ID2, qvalue As Integer
@@ -507,7 +507,7 @@ Public Class InitSketcher
             dc = sk3D.DimensionConstraints3D.AddLineLength(l)
             adjuster.AdjustDimConstrain3DSmothly(dc, 25 / 10)
             dc.Delete()
-            sk3D.GeometricConstraints3D.AddEqual(l, cl)
+            cl3Equal = sk3D.GeometricConstraints3D.AddEqual(l, cl)
             l.Construction = True
             sk3D.Solve()
             constructionLines.Add(l)
@@ -523,12 +523,15 @@ Public Class InitSketcher
     Function DrawFourthConstructionLine() As SketchLine3D
         Try
             Dim l, fl As SketchLine3D
-            Dim bl4, cl3 As SketchLine3D
-            Dim dc, dc2, ac As DimensionConstraint3D
+            Dim bl4, cl3, cl1 As SketchLine3D
+            Dim dc, dc2, dcaux, ac As DimensionConstraint3D
             Dim gcel As GeometricConstraint3D
             bl4 = bandLines.Item(4)
             cl3 = constructionLines.Item(3)
+            cl1 = constructionLines.Item(1)
             Dim ls As LineSegment = thirdLine.Geometry
+            Dim b As Double = GetParameter("b")._Value
+            AdjustThirdLine(2 * b)
             l = sk3D.SketchLines3D.AddByTwoPoints(secondLine.EndSketchPoint.Geometry, bl4.StartSketchPoint.Geometry, False)
             Try
                 sk3D.GeometricConstraints3D.AddCoincident(l.StartPoint, curve)
@@ -554,13 +557,41 @@ Public Class InitSketcher
             Else
                 dc2.Driven = True
             End If
+            dcaux = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
+            adjuster.AdjustDimConstrain3DSmothly(dcaux, 2 * b)
+            dcaux.Delete()
+            gapFold.Driven = True
             ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, bl4)
             adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2)
             ac.Driven = True
+            Try
+                sk3D.Solve()
+            Catch ex As Exception
+                Try
+                    cl3Equal.Delete()
+                    dcaux = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
+                    adjuster.AdjustDimConstrain3DSmothly(dcaux, 2 * b)
+                    dcaux.Delete()
+                    dcaux = sk3D.DimensionConstraints3D.AddLineLength(cl3)
+                    adjuster.AdjustDimConstrain3DSmothly(dcaux, b)
+                    dcaux.Delete()
+                    cl3Equal = sk3D.GeometricConstraints3D.AddEqual(cl1, cl3)
+                    sk3D.Solve()
+                Catch ex2 As Exception
+                    cl3Equal.Delete()
+                    dcaux = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
+                    adjuster.AdjustDimConstrain3DSmothly(dcaux, 2 * b)
+                    dcaux.Delete()
+                    dcaux = sk3D.DimensionConstraints3D.AddLineLength(cl3)
+                    adjuster.AdjustDimConstrain3DSmothly(dcaux, b)
+                    sk3D.Solve()
+                End Try
+            End Try
             sk3D.GeometricConstraints3D.AddPerpendicular(l, bl4)
             dc2.Driven = False
             adjuster.AdjustDimensionConstraint3DSmothly(dc2, GetParameter("b")._Value)
             dc2.Driven = True
+            gapFold.Driven = False
             Try
                 sk3D.GeometricConstraints3D.AddEqual(l, cl3)
             Catch ex2 As Exception
@@ -614,6 +645,17 @@ Public Class InitSketcher
             Return Nothing
         End Try
 
+    End Function
+    Function AdjustThirdLine(bi As Double) As DimensionConstraint3D
+        Dim dc As DimensionConstraint3D
+        Dim b As Double = GetParameter("b")._Value
+
+        If thirdLine.Length > 2 * b Or thirdLine.Length < 3 * b / 2 Then
+            dc = sk3D.DimensionConstraints3D.AddLineLength(thirdLine)
+            adjuster.AdjustDimensionConstraint3DSmothly(dc, bi)
+            dc.Delete()
+        End If
+        Return dc
     End Function
     Function DrawThirdLine() As SketchLine3D
         Try
@@ -707,6 +749,7 @@ Public Class InitSketcher
         Try
             Dim l, pl As SketchLine3D
             Dim dcl, acl As DimensionConstraint3D
+            Dim b As Double = GetParameter("b")._Value
 
             pl = firstLine
             l = sk3D.SketchLines3D.AddByTwoPoints(pl.StartPoint, lastLine.EndSketchPoint.Geometry, False)
@@ -726,6 +769,7 @@ Public Class InitSketcher
                 dcl.Delete()
                 sk3D.GeometricConstraints3D.AddCoincident(lastLine.EndPoint, l)
             End Try
+            AdjustThirdLine(2 * b)
             lastLine = l
             bandLines.Add(l)
             Return l

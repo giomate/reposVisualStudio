@@ -207,10 +207,7 @@ Public Class Nombres
         Return sn
     End Function
     Public Function MakeSkeletonFileName(ffn As String, n As Integer) As String
-        Dim s(), sn As String
-        Dim bn As String = "Skeleton"
-        s = Strings.Split(ffn, bn)
-        sn = String.Concat(s(0), bn, n.ToString, ".ipt")
+        Dim sn As String = String.Concat(ffn, "\Skeleton", n, ".ipt")
 
         Return sn
     End Function

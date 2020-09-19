@@ -175,6 +175,65 @@ Public Class SubinaStruct
 
         Return doku
     End Function
+    Public Function MakeSimpleNestStruct(i As Integer) As PartDocument
+        Dim p As String = projectManager.ActiveDesignProject.WorkspacePath
+        Dim q As Integer
+        Dim dn, rn, bn, sn As String
+        dn = String.Concat(p, "\Iteration", i.ToString)
+        Dim dpc As DerivedPartComponent
+        Dim t As PartDocument
+        Dim ws As WorkSurface
+        Dim partCounter As Integer = 0
+        Dim cf As CombineFeature
+
+        Try
+            If (Directory.Exists(dn)) Then
+                fullFileNames = Directory.GetFiles(dn, "*.ipt")
+                rn = nombrador.MakeSkeletonFileName(dn, i)
+                If System.IO.File.Exists(rn) Then
+                    t = app.Documents.Add(DocumentTypeEnum.kPartDocumentObject,, True)
+                    Conversions.SetUnitsToMetric(t)
+                    partCounter = 0
+                    t.Update2(True)
+                    doku = DocUpdate(t)
+                    fullFileNames = Directory.GetFiles(dn, "*.ipt")
+                    For i = 1 To DP.q
+                        rn = nombrador.MakeSkeletonFileName(dn, i)
+                        If System.IO.File.Exists(rn) Then
+                            dpc = DeriveRibBand(rn)
+                            lamp.FitView(doku)
+                            If monitor.IsDerivedPartHealthy(dpc) Then
+                                partCounter += 1
+                            Else
+                                Exit For
+                            End If
+                        End If
+
+                    Next
+
+
+                End If
+                If partCounter = DP.q Then
+                    cf = CombineBodies()
+                    If monitor.IsFeatureHealthy(cf) Then
+                        SaveAsSilent(String.Concat(dn, "\Subina.ipt"))
+                        done = True
+                    End If
+                Else
+                    done = False
+                End If
+
+            End If
+
+
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+        Return doku
+    End Function
     Public Function MakeCondesatorStruct(i As Integer) As PartDocument
         Dim p As String = projectManager.ActiveDesignProject.WorkspacePath
         Dim q As Integer

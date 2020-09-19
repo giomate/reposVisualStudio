@@ -52,7 +52,7 @@ Public Class MicroFold6
         constructionLines = app.TransientObjects.CreateObjectCollection
         lamp = New Highlithing(doku)
         thickness = compDef.Thickness._Value
-        bendGap = 2 * thickness
+        bendGap = 3 * thickness / 2
         bender = New Doblador(doku)
         nombrador = New Nombres(doku)
         gap1CM = 3 / 10

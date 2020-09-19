@@ -18,7 +18,7 @@ Public Class Form1
     Public Sub New()
         ' This call is required by the designer.
         InitializeComponent()
-        iteration = 15
+        iteration = 18
         ' Add any initialization after the InitializeComponent() call.
         Try
             oApp = Marshal.GetActiveObject("Inventor.Application")
@@ -56,7 +56,7 @@ Public Class Form1
     Private Sub Form1_Activated(sender As Object, e As EventArgs) Handles Me.Activated
         Try
 
-            done = MakeCondesator()
+            done = AssemblySimpleNestStruct()
             'done = AssemblyNestStruct()
 
             If done Then
@@ -81,7 +81,7 @@ Public Class Form1
                 invDoc = New InventorFile(oApp)
                 oDoc = invDoc.OpenFullFileName(ffn)
                 nido = New SubinaStruct(oDoc)
-                nido.MakeNestStruct(13)
+                nido.MakeNestStruct(iteration)
                 b = nido.done
             End If
             Return b
@@ -119,11 +119,32 @@ Public Class Form1
                 oDesignProjectMgr = oApp.DesignProjectManager
                 Dim p As String = oDesignProjectMgr.ActiveDesignProject.WorkspacePath
                 Dim ffn As String
-                ffn = String.Concat(p, "\Iteration13\Skeleton1.ipt")
+                ffn = String.Concat(p, "\Iteration", iteration.ToString, "\Band1.ipt")
                 invDoc = New InventorFile(oApp)
                 oDoc = invDoc.OpenFullFileName(ffn)
                 nido = New SubinaStruct(oDoc)
-                nido.AssemblyNest(13)
+                nido.AssemblyNest(iteration)
+                b = nido.done
+            End If
+            Return b
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return False
+        End Try
+
+    End Function
+    Public Function AssemblySimpleNestStruct() As Boolean
+        Dim b As Boolean
+        Try
+            If (started) Then
+                oDesignProjectMgr = oApp.DesignProjectManager
+                Dim p As String = oDesignProjectMgr.ActiveDesignProject.WorkspacePath
+                Dim ffn As String
+                ffn = String.Concat(p, "\Iteration", iteration.ToString, "\Band1.ipt")
+                invDoc = New InventorFile(oApp)
+                oDoc = invDoc.OpenFullFileName(ffn)
+                nido = New SubinaStruct(oDoc)
+                nido.MakeSimpleNestStruct(iteration)
                 b = nido.done
             End If
             Return b

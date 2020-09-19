@@ -32,8 +32,9 @@ Public Class Starter
     End Function
 
 
-    Public Function MakeTort() As Boolean
+    Public Function MakeTort(i As Integer) As Boolean
         Dim b As Boolean
+        iteration = i
         Try
             If (started) Then
                 oDesignProjectMgr = oApp.DesignProjectManager

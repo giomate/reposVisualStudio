@@ -113,7 +113,7 @@ Public Class Skeletons
 
         trobinaCurve = New Curves3D(doku)
         palitos = New RodMaker(doku)
-        DP.Dmax = 171 / 10 * (200 / 194)
+        DP.Dmax = 20
         DP.Dmin = 1 / 10
         Tr = (DP.Dmax + DP.Dmin) / 4
         Cr = (DP.Dmax - DP.Dmin) / 4
@@ -144,7 +144,7 @@ Public Class Skeletons
                             doku = MakeSingleSkeleton(s)
                             monitor = New DesignMonitoring(doku)
                             doku.Update2(True)
-                            If monitor.IsFeatureHealthy(MakeFrameLetters(s)) Then
+                            If monitor.IsFeatureHealthy(compDef.Features.ExtrudeFeatures(compDef.Features.ExtrudeFeatures.Count)) Then
 
                                 comando.RealisticView(doku)
                                 If monitor.IsFeatureHealthy(RemoveExcessMaterial(s)) Then
@@ -152,18 +152,18 @@ Public Class Skeletons
                                     ' If monitor.IsFeatureHealthy(MakeTwoHoles()) Then
                                     '  comando.RealisticView(doku)
                                     If compDef.SurfaceBodies(1).FaceShells.Count > 1 Then
-                                            n = barrido.CutSmallBodies()
-                                        Else
-                                            n = 1
-                                        End If
-                                        comando.RealisticView(doku)
-                                        If n = 1 Then
-                                            SaveAsSilent(s)
-                                            DokuClose()
-                                        Else
-                                            MsgBox(n.ToString)
-                                            Return Nothing
-                                        End If
+                                        n = barrido.CutSmallBodies()
+                                    Else
+                                        n = 1
+                                    End If
+                                    comando.RealisticView(doku)
+                                    If n = 1 Then
+                                        SaveAsSilent(s)
+                                        DokuClose()
+                                    Else
+                                        MsgBox(n.ToString)
+                                        Return Nothing
+                                    End If
 
                                     '  End If
                                 End If
@@ -422,7 +422,7 @@ Public Class Skeletons
                     End If
                 Next
             Next
-
+            compDef.Sketches3D.Item("curvas").Visible = False
             Return doku
         Catch ex As Exception
             MsgBox(ex.ToString())
@@ -454,6 +454,9 @@ Public Class Skeletons
         Return doku
     End Function
     Function GetConvergePoints(q As Integer) As Point
+        Dim rr, zz As Double
+        rr = 50
+        zz = 20
         Dim wpt As WorkPoint
         Dim pt As Point = tg.CreatePoint(Math.Cos(2 * Math.PI * DP.p * q / DP.q) * DP.Dmax / 2, Math.Sin(2 * Math.PI * DP.p * q / DP.q) * DP.Dmax / 2, 0)
         wpt = doku.ComponentDefinition.WorkPoints.AddFixed(pt)
@@ -462,12 +465,12 @@ Public Class Skeletons
         GetConvergePointHiLo(q)
         Dim wpl As WorkPlane = compDef.WorkPlanes.AddByThreePoints(wpt, skptHigh, skptLow)
         wpl.Visible = False
-        Dim seq As SketchEquationCurve3D = trobinaCurve.DrawXYPlaneRing(sk3D, 44 / 1, 16 / 1, q)
+        Dim seq As SketchEquationCurve3D = trobinaCurve.DrawXYPlaneRing(sk3D, rr, zz, q)
         sk3D.GeometricConstraints3D.AddGround(seq)
         wptHigh = compDef.WorkPoints.AddByCurveAndEntity(seq, wpl)
         wptHigh.Name = String.Concat("wptHigh")
         wptHigh.Visible = False
-        seq = trobinaCurve.DrawXYPlaneRing(sk3D, 44 / 1, -16 / 1, q)
+        seq = trobinaCurve.DrawXYPlaneRing(sk3D, rr, -zz, q)
         sk3D.GeometricConstraints3D.AddGround(seq)
         wptLow = compDef.WorkPoints.AddByCurveAndEntity(seq, wpl)
         wptLow.Name = "wptLow"
@@ -483,7 +486,7 @@ Public Class Skeletons
         sk3D.GeometricConstraints3D.AddGround(sc)
         skptHigh = sc.StartSketchPoint
         skptLow = sc.EndSketchPoint
-        sk3D.Visible = False
+        sk3D.Visible = True
         Return sc.StartSketchPoint.Geometry
     End Function
     Function GetInitialFace(ws As WorkSurface) As Face

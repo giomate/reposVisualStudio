@@ -364,7 +364,7 @@ Public Class MacroFold5
             lamp.HighLighObject(leadingEdge)
             lamp.HighLighObject(followEdge)
             v.AsUnitVector.AsVector()
-            v.ScaleBy(thicknessCM * 5 / 10)
+            v.ScaleBy(thicknessCM * 4 / 10)
             pt.TranslateBy(v)
             'lamp.HighLighObject(pt)
 
@@ -1057,16 +1057,24 @@ Public Class MacroFold5
             sixthLine = bandLines.Item(4)
             cl3 = constructionLines.Item(3)
             cl2 = constructionLines.Item(2)
-            ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
+            Try
+                ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
+            Catch ex As Exception
+                adjuster.AdjustDimConstrain3DSmothly(gapFold, gapFold.Parameter._Value * 17 / 16)
+                gapFold.Driven = True
+                ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(fourLine, sixthLine)
+                gapFold.Driven = False
+            End Try
+
             ac.Driven = True
             gapVertex.Driven = False
             d = CalculateRoof()
             If d > 0 Then
-                If adjuster.AdjustGapSmothly(gapFold, gap1CM * 2.2, ac) Then
+                If adjuster.AdjustGapSmothly(gapFold, gap1CM * 3, ac) Then
                     Try
                         While (ac.Parameter._Value < angleLimit And ac.Parameter._Value > angleLimit / 2) And counterLimit < 4
                             lastAngle = ac.Parameter._Value
-                            adjuster.AdjustGapSmothly(gapFold, gap1CM * 33 / 16, ac)
+                            adjuster.AdjustGapSmothly(gapFold, gap1CM * 41 / 16, ac)
                             If ac.Parameter._Value < lastAngle Then
                                 counterLimit = 4
                             End If
@@ -1080,7 +1088,7 @@ Public Class MacroFold5
                     b = True
                 Else
                     gapVertex.Driven = True
-                    adjuster.AdjustGapSmothly(gapFold, gap1CM * 2, ac)
+                    adjuster.AdjustGapSmothly(gapFold, gap1CM * 2.5, ac)
                     ac.Driven = True
                     gapFold.Delete()
                     gapFold = sk3D.DimensionConstraints3D.AddLineLength(cl3)
@@ -1139,7 +1147,7 @@ Public Class MacroFold5
             Catch ex As Exception
                 gapFold.Driven = True
                 Try
-                    gapVertex.Driven = False
+                    'gapVertex.Driven = False
                     counterLimit = 0
                     lastValue = 0
                     While (Math.Abs(gapVertex.Parameter._Value - lastValue) > gap1CM / 64) And counterLimit < 64
