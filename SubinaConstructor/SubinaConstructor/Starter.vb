@@ -44,7 +44,7 @@ Public Class Starter
                 invDoc = New InventorFile(oApp)
                 oDoc = invDoc.OpenFullFileName(ffn)
                 nido = New SubinaStruct(oDoc)
-                nido.MakeNestStruct(iteration)
+                nido.MakeSimpleNestStruct(iteration)
                 b = nido.done
             End If
             Return b

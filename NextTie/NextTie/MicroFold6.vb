@@ -521,14 +521,38 @@ Public Class MicroFold6
             Try
                 gc = sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
             Catch ex As Exception
-                dc = sk3D.DimensionConstraints3D.AddLineLength(l)
-                adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 2)
-                dc.Driven = True
-                gc = sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
+                Try
+                    dc = sk3D.DimensionConstraints3D.AddLineLength(l)
+                    adjuster.AdjustDimensionConstraint3DSmothly(dc, dc.Parameter._Value * 2)
+                    dc.Driven = True
+                    gc = sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
+                Catch ex2 As Exception
+                    ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, minorLine)
+                    adjuster.AdjustDimensionConstraint3DSmothly(ac, 3 * ac.Parameter._Value / 4)
+                    ac.Driven = True
+                    gc = sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
+                    If ac.Parameter._Value > Math.PI / 2 Then
+                        For i = 1 To 16
+                            adjuster.AdjustDimensionConstraint3DSmothly(ac, 15 * ac.Parameter._Value / 16)
+                            If ac.Parameter._Value < Math.PI / 16 Then
+                                Exit For
+                            End If
+                        Next
+                    End If
+                    ac.Delete()
+                End Try
+
             End Try
             Try
                 ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, minorLine)
-                adjuster.AdjustDimensionConstraint3DSmothly(ac, 1 / 32)
+                If ac.Parameter._Value > Math.PI / 2 Then
+                    For i = 1 To 16
+                        adjuster.AdjustDimensionConstraint3DSmothly(ac, 15 * ac.Parameter._Value / 16)
+                        If ac.Parameter._Value < Math.PI / 16 Then
+                            Exit For
+                        End If
+                    Next
+                End If
                 ac.Delete()
 
             Catch ex As Exception

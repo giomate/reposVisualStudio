@@ -25,7 +25,7 @@ Public Class RodMaker
     Public farPoint, point1, point2, point3, curvePoint As Point
     Dim tg As TransientGeometry
     Dim gap1CM, thicknessCM, angleRod As Double
-    Public partNumber, qNext, qLastTie As Integer
+    Public partNumber, qNext, qLastTie, cutside As Integer
     Dim bandLines, constructionLines As ObjectCollection
     Dim comando As Commands
     Public nombrador As Nombres
@@ -44,7 +44,7 @@ Public Class RodMaker
     Dim mainWorkPlane As WorkPlane
     Dim workAxis As WorkAxis
     Dim faceRod As Face
-    Dim adjacentFace, bendFace, frontBendFace, cutFace, twistFace As Face
+    Dim adjacentFace, bendFace, frontBendFace, cutFace, twistFace, endface, cutTipFace1, cutTipface2 As Face
     Dim minorEdge, majorEdge, bendEdge, adjacentEdge, cutEdge1, cutEdge2, CutEsge3, leadingEdge, followEdge As Edge
     Dim bendAngle As DimensionConstraint
     Dim gapFold, gapVertex As DimensionConstraint3D
@@ -56,7 +56,7 @@ Public Class RodMaker
     Dim di As System.IO.DirectoryInfo
     Dim fi As System.IO.File
     Dim nf As System.IO.Path
-    Public wp2Face As Face
+    Public wp2Face, wp1Face As Face
     Dim foldFeature As FoldFeature
     Public rodLines, esquinas, rails, caras, surfaceBodies, arcPoints As ObjectCollection
 
@@ -65,6 +65,9 @@ Public Class RodMaker
 
     Dim arrayFunctions As Collection
     Dim fullFileNames As String()
+    Dim extrudeRod As ExtrudeFeature
+    Dim tangentSurfaces As WorkSurface
+    Dim endFaceKey As Long
     Public Sub New(docu As Inventor.Document)
         doku = docu
         app = doku.Parent
@@ -225,6 +228,7 @@ Public Class RodMaker
                     If d < dMin Then
                         dMin = d
                         f1 = f
+
                     End If
                     e = f.GetClosestPointTo(wp2.Point).DistanceTo(wp2.Point)
                     If e < eMin Then
@@ -233,19 +237,22 @@ Public Class RodMaker
                     End If
                 End If
             Next
+            wp1Face = f1
             lamp.LookAtFace(f1)
-            pro = DrawOvalSketch(f1, fi)
+            pro = DrawOvalSketch(wp1Face, fi)
             If smallOval Then
 
                 ef = ExtrudeReverseOval(ChangeFaceOval(pro))
                 ef.Name = String.Concat("egg", cortoCounter)
                 rf.Name = String.Concat("shortRod", cortoCounter)
                 cortoCounter = cortoCounter + 1
-                Return ef
-            Else
-                Return ExtrudeOval(pro)
-            End If
 
+
+            Else
+                ef = ExtrudeOval(pro)
+            End If
+            extrudeRod = ef
+            Return ef
 
         Catch ex As Exception
             MsgBox(ex.ToString())
@@ -253,6 +260,204 @@ Public Class RodMaker
         End Try
 
     End Function
+    Public Function MakeTipCut(topSide As Integer) As RevolveFeature
+        Dim f As Face
+        Dim ed As Edge
+        Dim pro As Profile
+        cutside = topSide
+        Try
+            f = GetTipCutFace(topSide)
+            ed = GetTipCutEdge(f)
+            pro = DrawTipCutProfile(f, ed)
+            MakeTipCut = RevolveCutTip(pro)
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+        Return MakeTipCut
+    End Function
+
+    Public Function GetTipCutFace(side As Integer) As Face
+        Dim pl As Plane = GetCutTipEndFace().Geometry
+        Dim vnef As Vector = wp2.Point.VectorTo(wp1.Point)
+        Dim vnsf, vcp As Vector
+        Dim d, dMax, aMax1, aMax2, dis, minDis1, minDis2 As Double
+        minDis1 = 99999
+        dMax = -99999
+        minDis2 = 99999
+        cutTipface2 = extrudeRod.SideFaces.Item(1)
+        For Each f As Face In extrudeRod.SideFaces
+            If f.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                dis = f.PointOnFace.DistanceTo(endface.PointOnFace) / f.Evaluator.Area
+
+                If dis < minDis2 Then
+                    pl = f.Geometry
+                    vnsf = pl.Normal.AsVector
+                    vcp = vnef.CrossProduct(vnsf)
+                    d = vcp.Z * f.Evaluator.Area
+                    If d > dMax Then
+                        dMax = d
+                        GetTipCutFace = f
+                        cutTipface2 = cutTipFace1
+                        cutTipFace1 = f
+                        lamp.HighLighFace(f)
+
+                    Else
+                        cutTipface2 = f
+
+                    End If
+                    If dis < minDis1 Then
+                        minDis2 = minDis1
+                        minDis1 = dis
+
+                    Else
+                        minDis2 = dis
+
+                    End If
+
+
+                Else
+
+                End If
+
+            End If
+        Next
+        lamp.HighLighFace(cutTipface2)
+        lamp.HighLighFace(GetTipCutFace)
+
+        Return GetTipCutFace
+    End Function
+    Function GetTipCutEdge(fi As Face) As Edge
+        tangentSurfaces = compDef.WorkSurfaces.Item("tangents")
+        Dim vRod As Vector = wp2.Point.VectorTo(wp1.Point)
+        Dim pl As Plane
+        Dim ve, vpl, vfi, v As Vector
+        Dim d, dMax, eMax, dis, minDis As Double
+        pl = fi.Geometry
+        vfi = pl.Normal.AsVector
+        dMax = 0
+        eMax = 0
+        minDis = 9999
+        Dim sf As Face
+        For Each sb As SurfaceBody In tangentSurfaces.SurfaceBodies
+            For Each f As Face In sb.Faces
+                If f.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                    dis = f.PointOnFace.DistanceTo(fi.PointOnFace)
+                    If dis < minDis Then
+                        minDis = dis
+                        pl = f.Geometry
+                        vpl = pl.Normal.AsVector
+                        d = Math.Abs(vpl.DotProduct(vfi))
+                        If d > eMax Then
+                            eMax = d
+
+                            sf = f
+                        End If
+                    End If
+
+
+
+                End If
+            Next
+        Next
+        lamp.HighLighFace(sf)
+        dMax = 0
+        pl = sf.Geometry
+        vpl = pl.Normal.AsVector
+        For Each ed As Edge In sf.Edges
+            ve = ed.StartVertex.Point.VectorTo(ed.StopVertex.Point)
+            d = Math.Abs((ve.CrossProduct(vRod)).DotProduct(vpl))
+            If d > dMax Then
+                dMax = d
+                GetTipCutEdge = ed
+            End If
+        Next
+
+
+        lamp.HighLighObject(GetTipCutEdge)
+
+        Return GetTipCutEdge
+    End Function
+    Function DrawTipCutProfile(fi As Face, edi As Edge) As Profile
+        Dim ps As PlanarSketch
+        Dim sl, slRef As SketchLine
+        Dim spt, sptMid, sptVertex As SketchPoint
+        Dim gc As GeometricConstraint
+        Dim dc As DimensionConstraint
+        Dim see As SketchEntitiesEnumerator
+        '   Dim ve As Vector2d = edi.StartVertex.Point.VectorTo(edi.StopVertex.Point)
+        Dim pt, ptMid As Point2d
+        Dim m As Matrix2d = tg.CreateMatrix2d()
+        Dim sign As Integer
+        'Dim vePer = tg.CreateVector2d(ve.Y, -ve.X)
+        Try
+            lamp.LookAtFace(fi)
+
+            ps = compDef.Sketches.Add(fi)
+            slRef = ps.AddByProjectingEntity(edi)
+            slRef.Construction = True
+            spt = ps.AddByProjectingEntity(wp1)
+            sptVertex = ps.AddByProjectingEntity(GetClosestVertexCut(edi))
+            sl = ps.SketchLines.AddByTwoPoints(sptVertex, spt.Geometry)
+            gc = ps.GeometricConstraints.AddParallel(sl, slRef)
+            dc = ps.DimensionConstraints.AddTwoPointDistance(sl.StartSketchPoint, sl.EndSketchPoint, DimensionOrientationEnum.kAlignedDim, sl.Geometry.MidPoint, False)
+            adjuster.AdjustDimension2DSmothly(dc, 25 / 10)
+            sl.Construction = True
+            pt = sl.Geometry.StartPoint
+            If sptVertex.Geometry3d.Z > 0 Then
+                sign = 1
+            Else
+                sign = -1
+            End If
+
+            m.SetToRotation(sign * Math.PI / 2, pt)
+            ptMid = sl.Geometry.MidPoint
+            ptMid.TransformBy(m)
+            sptMid = ps.SketchPoints.Add(ptMid)
+            see = ps.SketchLines.AddAsThreePointRectangle(sptVertex, sl.EndSketchPoint, sptMid.Geometry)
+            DrawTipCutProfile = ps.Profiles.AddForSolid()
+            Return DrawTipCutProfile
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+
+    End Function
+    Function GetClosestVertexCut(edi As Edge) As Vertex
+        Dim f As Face = GetCutTipEndFace()
+        Dim d, e, dMin As Double
+        dMin = 999999999
+        Try
+            For Each v As Vertex In f.Vertices
+                d = v.Point.DistanceTo(edi.StartVertex.Point)
+                e = v.Point.DistanceTo(edi.StopVertex.Point)
+                If d < e Then
+                    If d < dMin Then
+                        dMin = d
+                        GetClosestVertexCut = v
+                    End If
+                Else
+                    If e < dMin Then
+                        dMin = e
+                        GetClosestVertexCut = v
+                    End If
+                End If
+
+            Next
+
+
+
+            Return GetClosestVertexCut
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+    End Function
+
     Function MakeBridge(f As Face) As ExtrudeFeature
         Dim wa As WorkAxis
         Dim le As SketchLine3D
@@ -586,7 +791,7 @@ Public Class RodMaker
         Dim ssl As SketchSpline
         Try
             comando.WireFrameView(doku)
-            Dim ro As Double = 1.5 / 10
+            Dim ro As Double = 2 / 10
             ps = compDef.Sketches.Add(fi)
             Dim c As Cylinder = fa.Geometry
             sk3D = compDef.Sketches3D.Add
@@ -643,7 +848,7 @@ Public Class RodMaker
             angleRod = angle
             d = wp1.Point.DistanceTo(wp2.Point)
             If (angle < 1.2 * 0.9) And (d < 45 / 10) Then
-                ro = 1.5 / 10
+                ro = 2 / 10
                 smallOval = True
             Else
                 smallOval = False
@@ -838,6 +1043,20 @@ Public Class RodMaker
 
         Return Math.Pow(Math.Pow(Math.Pow(Math.Pow(pt.X, 2) + Math.Pow(pt.Y, 2), 1 / 2) - 43 / 10, 2) + Math.Pow(pt.Z, 2), 1 / 2)
     End Function
+    Function RevolveCutTip(pro As Profile) As RevolveFeature
+
+        Try
+
+            RevolveCutTip = doku.ComponentDefinition.Features.RevolveFeatures.AddFull(pro, workAxis, PartFeatureOperationEnum.kCutOperation)
+            'RevolveCutTip = doku.ComponentDefinition.Features.RevolveFeatures.AddByFromToExtent(pro, workAxis, cutTipFace1, True, cutTipface2, True, PartFeatureExtentDirectionEnum.kNegativeExtentDirection, True, PartFeatureOperationEnum.kCutOperation)
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+        Return RevolveCutTip
+    End Function
     Function RevolveFace(pro As Profile) As RevolveFeature
         Dim rf As RevolveFeature
         Try
@@ -901,8 +1120,45 @@ Public Class RodMaker
             End Try
 
         End Try
+        If wp2.Point.DistanceTo(rf.SideFaces.Item(1).PointOnFace) < wp2.Point.DistanceTo(rf.SideFaces.Item(2).PointOnFace) Then
+            endface = rf.SideFaces.Item(1)
 
+        Else
+            endface = rf.SideFaces.Item(2)
+        End If
+        lamp.HighLighFace(endface)
+        endFaceKey = endface.TransientKey
         Return rf
+    End Function
+    Public Function GetCutTipEndFace() As Face
+        Dim pl As Plane = wp2Face.Geometry
+        Dim vef As Vector = pl.Normal.AsVector
+        Dim vplf As Vector
+        Dim d, dMax As Double
+        dMax = 0
+        For Each sb As SurfaceBody In compDef.SurfaceBodies
+            For Each f As Face In sb.Faces
+                If f.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                    Try
+                        pl = f.Geometry
+                        vplf = pl.Normal.AsVector
+                        d = vef.DotProduct(vplf)
+                        If d > dMax Then
+                            dMax = d
+                            lamp.HighLighFace(f)
+                            GetCutTipEndFace = f
+                        End If
+                    Catch ex As Exception
+
+                    End Try
+
+                End If
+
+            Next
+        Next
+        lamp.HighLighFace(GetCutTipEndFace)
+        endface = GetCutTipEndFace
+        Return GetCutTipEndFace
     End Function
     Function GetMajorEdge(f As Face) As Edge
         Dim e1, e2, e3 As Edge

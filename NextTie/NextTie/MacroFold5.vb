@@ -364,7 +364,7 @@ Public Class MacroFold5
             lamp.HighLighObject(leadingEdge)
             lamp.HighLighObject(followEdge)
             v.AsUnitVector.AsVector()
-            v.ScaleBy(thicknessCM * 4 / 10)
+            v.ScaleBy(thicknessCM * 3 / 10)
             pt.TranslateBy(v)
             'lamp.HighLighObject(pt)
 
@@ -1070,11 +1070,11 @@ Public Class MacroFold5
             gapVertex.Driven = False
             d = CalculateRoof()
             If d > 0 Then
-                If adjuster.AdjustGapSmothly(gapFold, gap1CM * 3, ac) Then
+                If adjuster.AdjustGapSmothly(gapFold, gap1CM * 2.1, ac) Then
                     Try
                         While (ac.Parameter._Value < angleLimit And ac.Parameter._Value > angleLimit / 2) And counterLimit < 4
                             lastAngle = ac.Parameter._Value
-                            adjuster.AdjustGapSmothly(gapFold, gap1CM * 41 / 16, ac)
+                            adjuster.AdjustGapSmothly(gapFold, gap1CM * 32 / 16, ac)
                             If ac.Parameter._Value < lastAngle Then
                                 counterLimit = 4
                             End If
@@ -1088,7 +1088,7 @@ Public Class MacroFold5
                     b = True
                 Else
                     gapVertex.Driven = True
-                    adjuster.AdjustGapSmothly(gapFold, gap1CM * 2.5, ac)
+                    adjuster.AdjustGapSmothly(gapFold, gap1CM * 2, ac)
                     ac.Driven = True
                     gapFold.Delete()
                     gapFold = sk3D.DimensionConstraints3D.AddLineLength(cl3)
@@ -1097,7 +1097,6 @@ Public Class MacroFold5
 
             Else
                 Try
-
                     ac.Driven = True
                     While ((d < 0 Or ac.Parameter._Value > Math.PI - limit / 1) And counterLimit < 32)
                         Try

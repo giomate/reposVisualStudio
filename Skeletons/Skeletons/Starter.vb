@@ -17,7 +17,7 @@ Public Class Starter
     Dim esqueleto As Skeletons
     Public Sub New(app As Inventor.Application)
         oApp = app
-        iteration = 14
+        iteration = 20
         oDesignProjectMgr = oApp.DesignProjectManager
         invDoc = New InventorFile(oApp)
         If oApp.Visible Then

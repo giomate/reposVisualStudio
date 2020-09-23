@@ -516,13 +516,13 @@ Public Class SketchAdjust
     End Function
     Function IsLastAngleOk(ac As DimensionConstraint3D, limit As Double) As Boolean
         If ac.Parameter._Value > Math.PI / 2 Then
-            If Math.Abs(ac.Parameter._Value - (Math.PI - limit)) < 1 / 32 Then
+            If Math.Abs(ac.Parameter._Value - (Math.PI - limit)) < 1 / 64 Then
                 Return True
             Else
                 Return False
             End If
         Else
-            If Math.Abs(ac.Parameter._Value - limit) < 1 / 32 Then
+            If Math.Abs(ac.Parameter._Value - limit) < 1 / 64 Then
                 Return True
             Else
                 Return False

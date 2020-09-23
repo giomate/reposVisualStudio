@@ -371,9 +371,12 @@ Public Class Skeletons
         Dim lf As LoftFeature
         Dim pt As Point
         Dim d, e As Double
+        Dim k, m As Integer
         Dim skt As Sketch3D
         Dim cc As Integer = 1
-
+        Dim ef As ExtrudeFeature
+        Dim f As Face
+        Dim sb As SurfaceBody
 
         Try
             p = app.Documents.Add(DocumentTypeEnum.kPartDocumentObject,, True)
@@ -397,11 +400,24 @@ Public Class Skeletons
             conos.lowPoints.Clear()
             conos.highPoints.Add(wptHigh.Point)
             conos.lowPoints.Add(wptLow.Point)
-            For Each sb As SurfaceBody In tangentSurfaces.SurfaceBodies
-                For Each f As Face In sb.Faces
+
+            For i = 1 To tangentSurfaces.SurfaceBodies.Count
+                sb = tangentSurfaces.SurfaceBodies.Item(i)
+                For n = 1 To sb.Faces.Count
+                    f = sb.Faces.Item(n)
                     If f.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
+                        m = n
+                    End If
+                Next
+                For j = 1 To sb.Faces.Count
+
+                    Math.DivRem(j + m - 2, sb.Faces.Count, k)
+                    k += 1
+                    f = sb.Faces.Item(k)
+                    If f.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
+                        ef = palitos.ExtrudeEgg(f)
                         'lamp.HighLighFace(fc.Item(i))
-                        If monitor.IsFeatureHealthy(palitos.ExtrudeEgg(f)) Then
+                        If monitor.IsFeatureHealthy(ef) Then
                             lamp.FitView(doku)
                             If palitos.smallOval Then
                                 skt = compDef.Sketches3D.Item("curvas")
@@ -413,6 +429,15 @@ Public Class Skeletons
                                 Else
                                     Exit For
                                 End If
+                            ElseIf IsInletRod(ef) Then
+                                rf = palitos.MakeTipCut(1)
+                                sb = tangentSurfaces.SurfaceBodies.Item(i)
+                                f = sb.Faces.Item(k)
+                            ElseIf IsOutletRod(ef) Then
+
+                                rf = palitos.MakeTipCut(-1)
+                                sb = tangentSurfaces.SurfaceBodies.Item(i)
+                                f = sb.Faces.Item(k)
                             End If
 
                         End If
@@ -420,8 +445,10 @@ Public Class Skeletons
 
 
                     End If
+
                 Next
             Next
+
             compDef.Sketches3D.Item("curvas").Visible = False
             Return doku
         Catch ex As Exception
@@ -429,6 +456,62 @@ Public Class Skeletons
             Return Nothing
         End Try
         Return p
+    End Function
+    Function IsInletRod(ef As ExtrudeFeature) As Boolean
+        Dim refface As Face = ef.SideFaces.Item(1)
+        IsInletRod = False
+        Dim d, dMax As Double
+        dMax = 0
+        For Each f As Face In ef.SideFaces
+            If f.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                d = f.Evaluator.Area
+                If d > dMax Then
+                    dMax = d
+                    lamp.HighLighFace(f)
+                    refface = f
+                End If
+            End If
+
+        Next
+
+        For Each v As Vertex In refface.Vertices
+                If v.Point.Z > 25 / 10 Then
+                IsInletRod = True
+            Else
+                IsInletRod = False
+                Return IsInletRod
+                End If
+            Next
+
+        Return IsInletRod
+    End Function
+    Function IsOutletRod(ef As ExtrudeFeature) As Boolean
+        Dim refface As Face = ef.SideFaces.Item(1)
+        IsOutletRod = False
+        Dim d, dMax As Double
+        dMax = 0
+        For Each f As Face In ef.SideFaces
+            If f.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
+                d = f.Evaluator.Area
+                If d > dMax Then
+                    dMax = d
+                    lamp.HighLighFace(f)
+                    refface = f
+                End If
+            End If
+
+        Next
+
+        For Each v As Vertex In refface.Vertices
+                If v.Point.Z < -25 / 10 Then
+                IsOutletRod = True
+            Else
+                IsOutletRod = False
+                Return IsOutletRod
+                End If
+            Next
+
+        Return IsOutletRod
     End Function
     Function MakeTwoHoles() As RevolveFeature
         Dim rf As RevolveFeature
