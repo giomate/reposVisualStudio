@@ -661,7 +661,7 @@ Public Class RodMaker
         Try
             Dim ls As LineSegment = tg.CreateLineSegment(cylinderCenter.Geometry, wp1.Point)
             Dim spt As SketchPoint3D = sk3D.SketchPoints3D.Add(wp1.Point)
-            Dim d As Double = spt.Geometry.DistanceTo(wp2.Point) * 7 / 8
+            Dim d As Double = spt.Geometry.DistanceTo(wp2.Point) * 15 / 16
             oExtrudeDef = doku.ComponentDefinition.Features.ExtrudeFeatures.CreateExtrudeDefinition(pro, PartFeatureOperationEnum.kJoinOperation)
             oExtrudeDef.SetDistanceExtent(d, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
 

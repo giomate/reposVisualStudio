@@ -12,7 +12,7 @@ Public Class Starter
 
     Public Sub New(app As Inventor.Application)
         oApp = app
-        iteration = 20
+        iteration = 21
         If oApp.Visible Then
             started = True
         End If

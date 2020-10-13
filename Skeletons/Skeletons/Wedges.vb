@@ -1914,6 +1914,7 @@ Public Class Wedges
         Dim skeq As SketchEquationCurve3D
         Dim wptt As WorkPoint
         Dim ls As LineSegment
+        Dim vp, vHigh, vLow As Vector
 
         Dim ptOpt As Point
         Try
@@ -1924,8 +1925,12 @@ Public Class Wedges
             lamp.LookAtPlane(wpl)
             dMin = 9999999
             Dim pt As Point = wpti.Point
-            d = pt.DistanceTo(wptHigh.Point)
-            e = pt.DistanceTo(wptLow.Point)
+            vp = wp2.Point.VectorTo(wp1.Point)
+            vHigh = wp2.Point.VectorTo(wptHigh.Point)
+            vLow = wp2.Point.VectorTo(wptLow.Point)
+            Dim rad As Integer = 2
+            d = pt.DistanceTo(wptHigh.Point) * Math.Pow(vp.CrossProduct(vHigh).Length, 1 / rad)
+            e = pt.DistanceTo(wptLow.Point) * Math.Pow(vp.CrossProduct(vLow).Length, 1 / rad)
             If d < e Then
                 skeq = curvesSketch.SketchEquationCurves3D.Item(2)
 
@@ -2183,7 +2188,7 @@ Public Class Wedges
                 End If
 
                 acz.Driven = True
-                If Math.Abs(Math.Cos(acn.Parameter._Value)) < 1 / 4 Then
+                If Math.Abs(Math.Cos(acn.Parameter._Value)) < 1 / 2 Then
                     If j > 15 Then
                         j = 16
                     Else
@@ -2212,14 +2217,14 @@ Public Class Wedges
             a = v1.AngleTo(v2)
             c = Math.Cos(a)
             If c > 0 Then
-                If c > k / (4) Then
+                If c > k / (2) Then
                     Exit For
 
                 Else
                     adjuster.AdjustDimensionConstraint3DSmothly(acn, acn.Parameter._Value * 15 / 16)
                 End If
             Else
-                If c < -1 * k / (4) Then
+                If c < -1 * k / (2) Then
                     Exit For
                 Else
                     If (c > -1 / 12) And i < 4 And k = 1 Then
