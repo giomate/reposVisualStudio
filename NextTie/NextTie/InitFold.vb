@@ -8,6 +8,7 @@ Public Class InitFold
     Dim refLine, firstLine, secondLine, thirdLine, lastLine, kanteLine As SketchLine3D
     Dim curve, refCurve As SketchEquationCurve3D
     Public done, healthy As Boolean
+    Public direction As Integer
     Dim curve3D As Curves3D
     Dim monitor As DesignMonitoring
     Dim medico As DesignDoctor
@@ -52,6 +53,7 @@ Public Class InitFold
         adjuster = New SketchAdjust(doku)
         medico = New DesignDoctor(doku)
         mainSketch = New InitSketcher(doku)
+        mainSketch.direction = direction
         lamp = New Highlithing(doku)
         tg = app.TransientGeometry
         bandLines = app.TransientObjects.CreateObjectCollection
@@ -74,7 +76,7 @@ Public Class InitFold
         End If
         Return cutFeature
     End Function
-    Public Function MakeFirstFold(refDoc As FindReferenceLine, q As Integer) As Boolean
+    Public Function MakeFirstFold(refDoc As FindReferenceLine, q As Integer, direction As Integer) As Boolean
         Dim b As Boolean
         Dim fp As FlatPattern
         Try
@@ -84,7 +86,7 @@ Public Class InitFold
                 cutFeature = MakeInitCut()
             Catch ex As Exception
 
-                sk3D = mainSketch.DrawMainSketch(refDoc, q)
+                sk3D = mainSketch.DrawMainSketch(refDoc, q, direction)
                 If mainSketch.done Then
                     doku.ComponentDefinition.Sketches3D.Item("s1").Visible = False
                     If DrawBandStripe().Count > 0 Then
@@ -204,13 +206,25 @@ Public Class InitFold
         Return oFaceFeature
     End Function
     Function CalculateFaceDirection() As Integer
-
+        Dim dir As Integer = GetParameter("direction")._Value
         Dim d As Double
         Dim s As Integer
+        Dim currentQ As Integer = GetParameter("currentQ")._Value
+        Dim oddQ As Integer
 
         Try
 
             d = (kanteLine.Geometry.Direction.AsVector).DotProduct(mainWorkPlane.Plane.Normal.AsVector)
+            If (doku.FullFileName.Contains("Band1.ipt")) Then
+                d = -1 * d
+            End If
+            If dir > 0 Then
+                d = -1 * d
+            End If
+            Math.DivRem(currentQ, 2, oddQ)
+            If oddQ = 1 Then
+                'd= -1 * d
+            End If
             If d < 0 Then
                 s = -1
             Else

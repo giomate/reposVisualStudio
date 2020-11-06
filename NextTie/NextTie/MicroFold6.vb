@@ -8,7 +8,7 @@ Public Class MicroFold6
     Dim refLine, firstLine, secondLine, thirdLine, lastLine, minorLine, majorLine As SketchLine3D
     Dim curve, refCurve As SketchEquationCurve3D
     Public done, healthy As Boolean
-
+    Public direction As Integer
     Dim monitor As DesignMonitoring
 
     Public wp1, wp2, wp3 As WorkPoint
@@ -23,7 +23,7 @@ Public Class MicroFold6
     Dim mainSketch As Sketcher3D
     Dim nombrador As Nombres
     Dim pro As Profile
-    Dim direction As Vector
+    Dim vectorDirection As Vector
     Dim feature As FaceFeature
     Dim bendLine As SketchLine
     Dim compDef As SheetMetalComponentDefinition
@@ -52,7 +52,7 @@ Public Class MicroFold6
         constructionLines = app.TransientObjects.CreateObjectCollection
         lamp = New Highlithing(doku)
         thickness = compDef.Thickness._Value
-        bendGap = 3 * thickness / 2
+        bendGap = 4 * thickness / 2
         bender = New Doblador(doku)
         nombrador = New Nombres(doku)
         gap1CM = 3 / 10
@@ -107,7 +107,7 @@ Public Class MicroFold6
         Try
             If GetWorkFace().SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
                 lamp.LookAtFace(workFace)
-                If mainSketch.DrawTrobinaCurve(nombrador.GetQNumber(doku), nombrador.GetNextSketchName(doku)).Construction Then
+                If mainSketch.DrawTrobinaCurve(nombrador.GetQNumber(doku), nombrador.GetNextSketchName(doku), direction).Construction Then
                     sk3D = mainSketch.sk3D
                     curve = mainSketch.curve
                     lamp.ZoomSelected(curve)
@@ -510,12 +510,12 @@ Public Class MicroFold6
         Try
             Dim dc, ac As DimensionConstraint3D
             Dim gc As GeometricConstraint3D
-            direction = lastLine.Geometry.Direction.AsVector()
-            direction.ScaleBy(thickness * 10)
+            vectorDirection = lastLine.Geometry.Direction.AsVector()
+            vectorDirection.ScaleBy(thickness * 10)
             Dim pt As Point
             Dim climit As Integer = 0
             pt = firstLine.StartSketchPoint.Geometry
-            pt.TranslateBy(direction)
+            pt.TranslateBy(vectorDirection)
             Dim l As SketchLine3D = Nothing
             l = sk3D.SketchLines3D.AddByTwoPoints(firstLine.StartPoint, pt, False)
             Try

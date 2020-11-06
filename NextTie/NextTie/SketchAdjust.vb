@@ -263,11 +263,11 @@ Public Class SketchAdjust
             gap.Driven = False
             pit = gap.Parameter
             calculateGain(setpoint, gap)
-            SetpointCorrector = AdjustResolution(gap, setpoint) * 4
+            SetpointCorrector = AdjustResolution(gap, setpoint)
             While (((Math.Abs(delta * resolution * SetpointCorrector)) > (setpoint / resolution)) And (monitor.IsSketch3DHealthy(oSk3D)) And (Not IsLastAngleOk(angle)) And (counter < Math.Pow(4 * 4, 4)))
-                gap.Parameter._Value = pit._Value * Math.Pow(calculateGain(setpoint, gap), 1 / 4)
+                gap.Parameter._Value = gap.Parameter._Value * Math.Pow(calculateGain(setpoint, gap), 1 / 16)
                 oSk3D.Solve()
-                AdjustResolution(gap, pit._Value)
+                AdjustResolution(gap, gap.Parameter._Value)
 
                 counter = counter + 1
             End While
@@ -510,7 +510,7 @@ Public Class SketchAdjust
 
     End Function
     Function IsLastAngleOk(ac As DimensionConstraint3D) As Boolean
-        Dim limit As Double = 0.16
+        Dim limit As Double = 0.08
 
         Return IsLastAngleOk(ac, limit)
     End Function

@@ -9,7 +9,7 @@ Public Class MacroFold5
     Dim refLine, firstLine, secondLine, thirdLine, lastLine, bendLine3D As SketchLine3D
     Dim curve, refCurve As SketchEquationCurve3D
     Public done, healthy As Boolean
-
+    Public direction As Integer
     Dim monitor As DesignMonitoring
 
     Public wp1, wp2, wp3 As WorkPoint
@@ -25,7 +25,6 @@ Public Class MacroFold5
     Dim nombrador As Nombres
     Dim curvas3D As Curves3D
     Dim pro As Profile
-    Dim direction As Vector
     Dim feature As FaceFeature
     Dim bendLine As SketchLine
     Dim compDef As SheetMetalComponentDefinition
@@ -94,7 +93,7 @@ Public Class MacroFold5
         Try
             If GetWorkFace().SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
                 lamp.LookAtFace(workFace)
-                If mainSketch.DrawTrobinaCurve(nombrador.GetQNumber(doku), nombrador.GetNextSketchName(doku)).Construction Then
+                If mainSketch.DrawTrobinaCurve(nombrador.GetQNumber(doku), nombrador.GetNextSketchName(doku), direction).Construction Then
                     sk3D = mainSketch.sk3D
                     curve = mainSketch.curve
                     lamp.ZoomSelected(curve)
@@ -1035,8 +1034,20 @@ Public Class MacroFold5
         End Try
     End Function
     Function AdjustLastAngle() As Boolean
-
+        Dim currentQ As Integer = GetParameter("currentQ")._Value
+        Dim oddQ As Integer
+        Dim tensionFactor As Double = 2
         Try
+
+            If sheetMetalFeatures.FoldFeatures.Count > 3 Then
+                Math.DivRem(currentQ, 2, oddQ)
+                If oddQ = 0 Then
+                    tensionFactor = 1
+                Else
+                    tensionFactor = 3
+                End If
+            End If
+
             Dim fourLine, sixthLine, cl3, cl2 As SketchLine3D
             Dim ac As TwoLineAngleDimConstraint3D
             Dim limit As Double = 0.16
@@ -1070,11 +1081,11 @@ Public Class MacroFold5
             gapVertex.Driven = False
             d = CalculateRoof()
             If d > 0 Then
-                If adjuster.AdjustGapSmothly(gapFold, gap1CM * 2.1, ac) Then
+                If adjuster.AdjustGapSmothly(gapFold, gap1CM * tensionFactor, ac) Then
                     Try
                         While (ac.Parameter._Value < angleLimit And ac.Parameter._Value > angleLimit / 2) And counterLimit < 4
                             lastAngle = ac.Parameter._Value
-                            adjuster.AdjustGapSmothly(gapFold, gap1CM * 32 / 16, ac)
+                            adjuster.AdjustGapSmothly(gapFold, gap1CM * tensionFactor, ac)
                             If ac.Parameter._Value < lastAngle Then
                                 counterLimit = 4
                             End If
@@ -1088,7 +1099,7 @@ Public Class MacroFold5
                     b = True
                 Else
                     gapVertex.Driven = True
-                    adjuster.AdjustGapSmothly(gapFold, gap1CM * 2, ac)
+                    adjuster.AdjustGapSmothly(gapFold, gap1CM * tensionFactor, ac)
                     ac.Driven = True
                     gapFold.Delete()
                     gapFold = sk3D.DimensionConstraints3D.AddLineLength(cl3)

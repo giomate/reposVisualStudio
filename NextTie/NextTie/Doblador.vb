@@ -107,9 +107,6 @@ Public Class Doblador
     End Function
     Public Function FoldBand(i As Integer) As FoldFeature
         Try
-
-
-
             Dim oFoldFeature As FoldFeature
             oFoldFeature = features.FoldFeatures.Add(AdjustFoldDefinition(i))
             folded = oFoldFeature

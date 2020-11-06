@@ -24,7 +24,7 @@ Public Class TieMaker1
     Public farPoint, point1, point2, point3, curvePoint As Point
     Dim tg As TransientGeometry
     Dim gap1CM, thicknessCM As Double
-    Public partNumber, qNext, qLastTie As Integer
+    Public partNumber, qNext, qLastTie, direction As Integer
     Dim bandLines, constructionLines As ObjectCollection
     Dim comando As Commands
     Public nombrador As Nombres
@@ -32,7 +32,7 @@ Public Class TieMaker1
     Dim cutProfile As Profile
 
     Dim pro As Profile
-    Dim direction As Vector
+
     Dim feature As FaceFeature
     Dim cutfeature As CutFeature
     Dim bendLine, cutLine As SketchLine
@@ -95,7 +95,7 @@ Public Class TieMaker1
         nombrador = New Nombres(doku)
         manager = New FoldingEvaluator(doku)
         trobinaCurve = New Curves3D(doku)
-
+        direction = -1
 
         done = False
     End Sub
@@ -109,7 +109,7 @@ Public Class TieMaker1
             If i < 1 Then
                 If GetInitialConditions() > 0 Then
 
-                    If doblez1.MakeFirstFold(refDoc, qNext) Then
+                    If doblez1.MakeFirstFold(refDoc, qNext, direction) Then
                         doku = doblez1.doku
 
                         doku.Activate()
@@ -165,6 +165,7 @@ Public Class TieMaker1
             Select Case i
                 Case 1
                     doblez2 = New MicroFold6(doblez1.doku)
+                    doblez2.direction = direction
                     If doblez2.MakeSecondFold() Then
                         doku = doblez2.doku
                         MakeRestTie(i + 1)
@@ -172,6 +173,7 @@ Public Class TieMaker1
                     End If
                 Case 2
                     doblez3 = New MacroFold5(doblez2.doku)
+                    doblez3.direction = direction
                     If doblez3.MakeThirdFold() Then
                         doku = doblez3.doku
                         MakeRestTie(i + 1)
@@ -179,18 +181,21 @@ Public Class TieMaker1
                     End If
                 Case 3
                     doblez4 = New MicroFold6(doblez3.doku)
+                    doblez4.direction = direction
                     If doblez4.MakeFourthFold() Then
                         doku = doblez4.doku
                         MakeRestTie(i + 1)
                     End If
                 Case 4
                     doblez5 = New MacroFold5(doblez4.doku)
+                    doblez5.direction = direction
                     If doblez5.MakeFifthFold() Then
                         doku = doblez5.doku
                         MakeRestTie(i + 1)
                     End If
                 Case 5
                     doblez6 = New MicroFold6(doblez5.doku)
+                    doblez6.direction = direction
                     If doblez6.MakeSixthFold() Then
                         doku = doblez6.doku
                         MakeRestTie(i + 1)
@@ -210,11 +215,13 @@ Public Class TieMaker1
                     End If
                 Case 7
                     giro = New TwistFold7(doblez7.doku)
+                    giro.direction = direction
                     If giro.MakeFinalTwist() Then
                         Return doku
                     End If
                 Case 8
                     giro = New TwistFold7(doblez8.doku)
+                    giro.direction = direction
                     If giro.MakeFinalTwist() Then
                         Return doku
                     End If
@@ -227,8 +234,10 @@ Public Class TieMaker1
                 Case 10
                     Try
                         giro = New TwistFold7(doblez8.doku)
+                        giro.direction = direction
                     Catch ex As Exception
                         giro = New TwistFold7(doblez6.doku)
+                        giro.direction = direction
                     End Try
 
                     If giro.MakeFinalTwist() Then
@@ -248,33 +257,40 @@ Public Class TieMaker1
         Select Case i
             Case 1
                 doblez1 = New InitFold(doku)
+                doblez1.direction = direction
                 Return doku
             Case 2
                 CreateFoldObjects(i - 1)
                 doblez2 = New MicroFold6(doblez1.doku)
-
+                doblez2.direction = direction
             Case 3
                 CreateFoldObjects(i - 1)
                 doblez3 = New MacroFold5(doblez2.doku)
-
+                doblez3.direction = direction
             Case 4
                 CreateFoldObjects(i - 1)
                 doblez4 = New MicroFold6(doblez3.doku)
+                doblez4.direction = direction
             Case 5
                 CreateFoldObjects(i - 1)
                 doblez5 = New MacroFold5(doblez4.doku)
+                doblez5.direction = direction
             Case 6
                 CreateFoldObjects(i - 1)
                 doblez6 = New MicroFold6(doblez5.doku)
+                doblez6.direction = direction
             Case 7
                 CreateFoldObjects(i - 1)
                 doblez7 = New MacroFold5(doblez6.doku)
+                doblez7.direction = direction
             Case 8
                 CreateFoldObjects(i - 1)
                 doblez8 = New MicroFold6(doblez7.doku)
+                doblez8.direction = direction
             Case 9
                 CreateFoldObjects(i - 1)
                 giro = New TwistFold7(doblez8.doku)
+                giro.direction = direction
             Case Else
                 Return doku
         End Select
@@ -286,8 +302,10 @@ Public Class TieMaker1
             doblez1 = New InitFold(invDoc.CreateSheetMetalFile(nombrador.MakeNextFileName(refDoc.oDoc)))
             doku = doblez1.doku
             trobinaCurve = New Curves3D(doblez1.doku)
+            trobinaCurve.direction = direction
             trobinaCurve.DefineTrobinaParameters(doku)
             q = nombrador.GetQNumber(doku)
+            doku.ComponentDefinition.Parameters.ReferenceParameters.AddByValue(q - 1, UnitsTypeEnum.kUnitlessUnits, "currentQ")
             qNext = q
             Return q
         Catch ex As Exception

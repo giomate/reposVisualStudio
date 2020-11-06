@@ -11,7 +11,7 @@ Public Class TwistFold7
     Public done, healthy As Boolean
 
     Dim monitor As DesignMonitoring
-
+    Public direction As Integer
     Public wp1, wp2, wp3 As WorkPoint
     Public farPoint, point1, point2, point3, curvePoint, startPoint, centroPoint As Point
     Dim tg As TransientGeometry
@@ -28,7 +28,6 @@ Public Class TwistFold7
     Dim cutProfile As Profile
 
     Dim pro As Profile
-    Dim direction As Vector
     Dim feature As FaceFeature
     Dim cutfeature As CutFeature
     Dim bendLine, cutLine As SketchLine
@@ -634,15 +633,22 @@ Public Class TwistFold7
 
     Function ReduceGap(ng As DimensionConstraint3D) As Boolean
         Dim reduced As Boolean = False
-
+        Dim correctionFactor As Double = 2
         Dim inside As Boolean = IsFirstLineInside()
         Dim limit As Integer = 0
         Dim dc As DimensionConstraint3D
         Dim cl5 As SketchLine3D = nextSketch.constructionLines.Item(nextSketch.constructionLines.Count)
+        Dim currentQ As Integer = GetParameter("currentQ")._Value
+        Dim oddQ As Integer
         Try
-
-
+            Math.DivRem(currentQ, 2, oddQ)
+            If oddQ = 0 Then
+                correctionFactor = 7 / 4
+            Else
+                correctionFactor = 9 / 4
+            End If
             nextSketch.CorrectFirstLine()
+            CorrectFoldAngle()
             dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(cl5.StartPoint, nextSketch.firstLine.StartPoint)
             adjuster.AdjustDimConstrain3DSmothly(dc, 1 / 10)
             dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(thirdLine, secondLine)
@@ -662,9 +668,17 @@ Public Class TwistFold7
                 nextSketch.CorrectGapFold()
                 adjuster.AdjustDimConstrain3DSmothly(dc, dc.Parameter._Value * 65 / 64)
                 dc.Driven = True
+                If gapFold.Parameter._Value > 5 * gap1CM / 2 Or gapFold.Parameter._Value < 3 * gap1CM / 2 Then
+                    adjuster.AdjustDimensionConstraint3DSmothly(gapFold, 2 * gap1CM)
+                    gapFold.Driven = True
+                End If
                 reduced = nextSketch.CorrectEntryGap()
+
+
+
+
                 limit = limit + 1
-            Loop Until (limit > 16 Or (gapFold.Parameter._Value < 2 * gap1CM) Or (nextSketch.gapFold.Parameter._Value < gap1CM) Or (dc.Parameter._Value > Math.PI * 31 / 32))
+            Loop Until (limit > 4 Or (gapFold.Parameter._Value < correctionFactor * gap1CM) Or (nextSketch.gapFold.Parameter._Value < gap1CM / 2) Or (dc.Parameter._Value > Math.PI * 31 / 32))
 
             Return reduced
         Catch ex As Exception
@@ -674,23 +688,34 @@ Public Class TwistFold7
 
     End Function
     Function CorrectFoldAngle() As Boolean
-        Dim cl4 As SketchLine3D = constructionLines(4)
-        Dim vcl4 As Vector = cl4.Geometry.Direction.AsVector
+        Dim cl3 As SketchLine3D = constructionLines(3)
+        Dim vcl3 As Vector = cl3.Geometry.Direction.AsVector
+        Dim vbl2 As Vector = secondLine.Geometry.Direction.AsVector
+        Dim dc As DimensionConstraint3D
 
         Dim vpl As Vector = initialPlane.Normal.AsVector
-        Dim d As Double = vcl4.DotProduct(vpl)
-        If d > 0 Then
-            angleTangent.Driven = True
+        Dim d As Double = vcl3.DotProduct(vpl)
+        If d < 0 Then
+            dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(secondLine.StartPoint, sptRFront)
+            Try
+                angleTangent.Driven = True
+            Catch ex As Exception
+
+            End Try
+
             For i = 1 To 16
-                CorrectFoldAngle = adjuster.AdjustDimConstrain3DSmothly(gapFold, gap1CM * 3)
-                vcl4 = cl4.Geometry.Direction.AsVector
-                d = vcl4.DotProduct(vpl)
-                If d < 0 Then
+                CorrectFoldAngle = adjuster.AdjustDimConstrain3DSmothly(dc, dc.Parameter._Value * 15 / 16)
+                vcl3 = cl3.Geometry.Direction.AsVector
+                d = vcl3.DotProduct(vpl)
+                If d > 0 Then
+                    dc.Driven = True
+                    adjuster.AdjustDimensionConstraint3DSmothly(gapFold, 2 * gap1CM)
                     gapFold.Driven = True
                     Return CorrectFoldAngle
                 End If
 
             Next
+            dc.Delete()
         Else
             Return True
         End If
@@ -1313,7 +1338,7 @@ Public Class TwistFold7
                             If ed.GetClosestPointTo(o).DistanceTo(opt) < minOpt Then
                                 'lamp.HighLighObject(ed)
                                 minOpt = ed.GetClosestPointTo(o).DistanceTo(opt)
-                                If ed.GetClosestPointTo(o).DistanceTo(bendEdge.GetClosestPointTo(o)) < bendLine3D.Length + gap1CM * 2 Then
+                                If ed.GetClosestPointTo(o).DistanceTo(bendEdge.GetClosestPointTo(o)) < 2 * bendLine3D.Length Then
                                     If ed.GetClosestPointTo(opt).DistanceTo(opt) < minEdge Then
                                         minEdge = ed.GetClosestPointTo(opt).DistanceTo(opt)
                                         followEdge = leadingEdge

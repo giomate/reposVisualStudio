@@ -128,15 +128,15 @@ Public Class Sketcher3D
         Return line
     End Function
     Function DrawTrobinaCurve(q As Integer) As SketchEquationCurve3D
+        Dim dir As Integer = GetParameter("direction")._Value
 
-
-        Return DrawTrobinaCurve(q, "s1")
+        Return DrawTrobinaCurve(q, "s1", dir)
     End Function
-    Function DrawTrobinaCurve(q As Integer, s As String) As SketchEquationCurve3D
+    Function DrawTrobinaCurve(q As Integer, s As String, direction As Integer) As SketchEquationCurve3D
 
         sk3D = doku.ComponentDefinition.Sketches3D.Add()
         sk3D.Name = s
-        curve = curve3D.DrawTrobinaCurve(sk3D, q)
+        curve = curve3D.DrawTrobinaCurve(sk3D, q, direction)
         sk3D.GeometricConstraints3D.AddGround(curve)
         Return curve
     End Function

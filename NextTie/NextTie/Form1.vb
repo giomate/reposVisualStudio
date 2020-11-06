@@ -13,7 +13,8 @@ Public Class Form1
     Dim started, running, done As Boolean
     Dim oDesignProjectMgr As DesignProjectManager
     Dim invDoc As InventorFile
-    Dim iteration As Integer
+    Dim iteration, direction As Integer
+
 
     Dim tie1, tie0, nextTie As TieMaker1
 
