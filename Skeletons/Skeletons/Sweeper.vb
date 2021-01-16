@@ -4,6 +4,7 @@ Imports System
 Imports System.IO
 Imports System.Text
 Imports System.IO.Directory
+Imports Subina_Design_Helpers
 Public Class Sweeper
 
     Public doku As PartDocument
@@ -66,7 +67,7 @@ Public Class Sweeper
     Dim PreviousFaceKeys(), combinedKeys() As Long
 
     Dim arrayFunctions As Collection
-    Dim garras As VortexRod
+
     Dim fullFileNames As String()
     Structure DesignParam
         Public p As Integer

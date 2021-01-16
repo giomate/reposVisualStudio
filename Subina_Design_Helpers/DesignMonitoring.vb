@@ -92,5 +92,52 @@ Public Class DesignMonitoring
         End If
         Return b
     End Function
+    Function IsSketch3dhHealthy(sk3D As Sketch3D) As Boolean
+        Dim b As Boolean
+        If sk3D.HealthStatus = HealthStatusEnum.kOutOfDateHealth Or
+     sk3D.HealthStatus = HealthStatusEnum.kUpToDateHealth Then
+            If AreDimensionsHealthy(sk3D) Then
+                b = True
+
+            Else
+                b = False
+
+            End If
+        Else
+            b = False
+        End If
+        Return b
+    End Function
+    Function IsSketch2DhHealthy(ps As PlanarSketch) As Boolean
+        Dim b As Boolean
+        If ps.HealthStatus = HealthStatusEnum.kOutOfDateHealth Or
+     ps.HealthStatus = HealthStatusEnum.kUpToDateHealth Then
+            If AreDimensions2DHealthy(ps) Then
+                b = True
+
+            Else
+                b = False
+
+            End If
+        Else
+            b = False
+        End If
+        Return b
+    End Function
+    Public Function AreDimensions2DHealthy(ps As PlanarSketch) As Boolean
+
+        For Each dimension As DimensionConstraint In ps.DimensionConstraints
+            If dimension.Parameter.HealthStatus <> HealthStatusEnum.kUpToDateHealth And
+               dimension.Parameter.HealthStatus <> HealthStatusEnum.kBeyondStopNodeHealth And
+               dimension.Parameter.HealthStatus <> HealthStatusEnum.kSuppressedHealth Then
+                sickDimension = dimension
+                AreDimensions2DHealthy = False
+                Exit Function
+
+            End If
+        Next
+        AreDimensions2DHealthy = True
+    End Function
+
 
 End Class

@@ -159,4 +159,28 @@ Public Class Curves3D
 
         Return p
     End Function
+    Public Function DrawXYPlaneRing(sk As Sketch3D, rr As Double, zz As Double, q As Integer) As SketchEquationCurve3D
+
+
+        Dim r, z As String
+        Dim t As Double = 2 * Math.PI * (q * DP.p / (DP.q))
+        r = String.Concat(rr.ToString())
+        z = String.Concat(zz.ToString())
+        curve = sk.SketchEquationCurves3D.Add(CoordinateSystemTypeEnum.kCylindrical, r, " t * 1rad", z, -1 * Math.PI / 2 + t, t + Math.PI / 2)
+        curve.Construction = True
+
+
+        Return curve
+    End Function
+    Public Function DrawHalfTrobinaCurve(sk As Sketch3D, q As Integer) As SketchEquationCurve3D
+
+        Dim r, z As String
+        Dim t As Double = 2 * Math.PI * (q / (DP.q))
+        r = String.Concat(Tr.ToString() & " + " & Cr.ToString() & "mm * cos( t * q * 1rad )")
+        z = String.Concat("- " & Cr.ToString() & "mm * sin( t * q * 1rad )")
+        curve = sk.SketchEquationCurves3D.Add(CoordinateSystemTypeEnum.kCylindrical, r, " t * 1rad * p", z, -1 * Math.PI / (DP.p * 4) + t, 1 * Math.PI / (DP.p * 4) + t)
+        curve.Construction = True
+
+        Return curve
+    End Function
 End Class

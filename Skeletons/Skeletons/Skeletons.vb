@@ -4,6 +4,7 @@ Imports System
 Imports System.IO
 Imports System.Text
 Imports System.IO.Directory
+Imports Subina_Design_Helpers
 Public Class Skeletons
     Public doku As PartDocument
     Public projectManager As DesignProjectManager
@@ -16,6 +17,7 @@ Public Class Skeletons
 
     Dim monitor As DesignMonitoring
     Dim invFile As InventorFile
+    Private converter As Conversions
 
     Dim trobinaCurve As Curves3D
     Dim palitos As RodMaker
@@ -70,7 +72,6 @@ Public Class Skeletons
 
 
     Dim arrayFunctions As Collection
-    Dim garras As VortexRod
     Dim fullFileNames As String()
     Structure DesignParam
         Public p As Integer
@@ -89,6 +90,7 @@ Public Class Skeletons
         comando = New Commands(app)
         monitor = New DesignMonitoring(doku)
         invFile = New InventorFile(app)
+        converter = New Conversions(app)
         projectManager = app.DesignProjectManager
 
         compDef = doku.ComponentDefinition
@@ -380,7 +382,7 @@ Public Class Skeletons
 
         Try
             p = app.Documents.Add(DocumentTypeEnum.kPartDocumentObject,, True)
-            Conversions.SetUnitsToMetric(p)
+            converter.SetUnitsToMetric(p)
             derivedDefinition = p.ComponentDefinition.ReferenceComponents.DerivedPartComponents.CreateDefinition(s)
             derivedDefinition.DeriveStyle = DerivedComponentStyleEnum.kDeriveAsWorkSurface
             newComponent = p.ComponentDefinition.ReferenceComponents.DerivedPartComponents.Add(derivedDefinition)

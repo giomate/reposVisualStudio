@@ -6,7 +6,7 @@ Imports System.IO
 Imports System.Text
 Imports System.IO.Directory
 Imports Inventor
-Imports NextTie
+Imports Subina_Design_Helpers
 
 Public Class Form1
     Dim oApp As Inventor.Application

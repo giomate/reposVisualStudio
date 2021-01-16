@@ -1,6 +1,12 @@
 ﻿Imports Inventor
 
-Module Conversions
+Public Class Conversions
+    Dim app As Application
+    Dim doku As Document
+
+    Public Sub New(App As Inventor.Application)
+        App = App
+    End Sub
 
     Public Sub SetUnitsToMetric(Document As Inventor.Document)
         'Get Units of Measure
@@ -16,4 +22,4 @@ Module Conversions
 
 
     End Sub
-End Module
+End Class

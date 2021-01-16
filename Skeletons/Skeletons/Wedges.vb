@@ -1,6 +1,6 @@
 ﻿Imports System.IO
 Imports Inventor
-
+Imports Subina_Design_Helpers
 Public Class Wedges
     Public doku As PartDocument
     Public projectManager As DesignProjectManager
@@ -16,6 +16,7 @@ Public Class Wedges
 
     Dim monitor As DesignMonitoring
     Dim invFile As InventorFile
+    Private converter As Conversions
 
     Public trobinaCurve As Curves3D
     Dim palito As RodMaker
@@ -85,6 +86,7 @@ Public Class Wedges
         comando = New Commands(app)
         monitor = New DesignMonitoring(doku)
         invFile = New InventorFile(app)
+        converter = New Conversions(app)
         projectManager = app.DesignProjectManager
 
         compDef = doku.ComponentDefinition
@@ -1342,7 +1344,7 @@ Public Class Wedges
         Dim newComponent As DerivedPartComponent
         Try
             p = app.Documents.Add(DocumentTypeEnum.kPartDocumentObject,, True)
-            Conversions.SetUnitsToMetric(p)
+            converter.SetUnitsToMetric(p)
             derivedDefinition = p.ComponentDefinition.ReferenceComponents.DerivedPartComponents.CreateDefinition(s)
             derivedDefinition.DeriveStyle = DerivedComponentStyleEnum.kDeriveAsWorkSurface
             newComponent = p.ComponentDefinition.ReferenceComponents.DerivedPartComponents.Add(derivedDefinition)

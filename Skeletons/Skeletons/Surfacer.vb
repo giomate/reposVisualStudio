@@ -1,5 +1,7 @@
 ﻿
 Imports Inventor
+Imports Subina_Design_Helpers
+
 Public Class Surfacer
     Public doku, reference As PartDocument
     Public projectManager As DesignProjectManager
@@ -8,7 +10,7 @@ Public Class Surfacer
     Dim comando As Commands
     Public nombrador As Nombres
     Dim monitor As DesignMonitoring
-    Dim invFile As InventorFile
+
     Public compDef As PartComponentDefinition
     Dim tg As TransientGeometry
     Dim tangentials, sticks, cylinders As ObjectCollection
@@ -17,7 +19,7 @@ Public Class Surfacer
         app = doku.Parent
         comando = New Commands(app)
         monitor = New DesignMonitoring(doku)
-        invFile = New InventorFile(app)
+
         projectManager = app.DesignProjectManager
 
         compDef = doku.ComponentDefinition

@@ -4,6 +4,7 @@ Imports System
 Imports System.IO
 Imports System.Text
 Imports System.IO.Directory
+Imports Subina_Design_Helpers
 
 Public Class Stanzer
     Public doku As PartDocument
@@ -29,6 +30,7 @@ Public Class Stanzer
     Dim bandLines, constructionLines As ObjectCollection
     Dim comando As Commands
     Public nombrador As Nombres
+    Private converter As Conversions
 
     Dim cutProfile As Profile
 
@@ -64,7 +66,7 @@ Public Class Stanzer
     Dim twistPlane As WorkPlane
 
     Dim arrayFunctions As Collection
-    Dim garras As VortexRod
+
     Dim fullFileNames As String()
     Structure DesignParam
         Public p As Integer
@@ -84,6 +86,7 @@ Public Class Stanzer
         comando = New Commands(app)
         monitor = New DesignMonitoring(doku)
         invFile = New InventorFile(app)
+        converter = New Conversions(app)
 
         projectManager = app.DesignProjectManager
 
@@ -1468,7 +1471,7 @@ Public Class Stanzer
         Dim newComponent As DerivedPartComponent
         Try
             p = app.Documents.Add(DocumentTypeEnum.kPartDocumentObject,, True)
-            Conversions.SetUnitsToMetric(p)
+            converter.SetUnitsToMetric(p)
             derivedDefinition = p.ComponentDefinition.ReferenceComponents.DerivedPartComponents.CreateDefinition(s)
             derivedDefinition.DeriveStyle = DerivedComponentStyleEnum.kDeriveAsWorkSurface
             newComponent = p.ComponentDefinition.ReferenceComponents.DerivedPartComponents.Add(derivedDefinition)

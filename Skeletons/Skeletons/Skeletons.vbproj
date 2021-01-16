@@ -103,13 +103,10 @@
     </Compile>
     <Compile Include="RodMaker.vb" />
     <Compile Include="Skeletons.vb" />
-    <Compile Include="SketchAdjust.vb" />
     <Compile Include="Stanzer.vb" />
     <Compile Include="Starter.vb" />
-    <Compile Include="SubinaStruct.vb" />
     <Compile Include="Surfacer.vb" />
     <Compile Include="Sweeper.vb" />
-    <Compile Include="VortexRod.vb" />
     <Compile Include="Wedges.vb" />
   </ItemGroup>
   <ItemGroup>

@@ -106,6 +106,24 @@ Public Class Commands
 
 
     End Sub
+    Public Sub WireFrameView(docu As PartDocument)
+
+        doku = docu
+        app = doku.Parent
+        app.ActiveView.DisplayMode = DisplayModeEnum.kWireframeWithHiddenEdgesRendering
+        doku.Update2(True)
+
+
+    End Sub
+    Public Sub RealisticView(docu As PartDocument)
+
+        doku = docu
+        app = doku.Parent
+        app.ActiveView.DisplayMode = DisplayModeEnum.kRealisticRendering
+        doku.Update2(True)
+
+
+    End Sub
 
 
 End Class

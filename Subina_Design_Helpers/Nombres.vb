@@ -137,4 +137,59 @@ Public Class Nombres
 
         Return sn
     End Function
+    Public Function GetQNumberString(ffn As String) As Integer
+        Dim s() As String
+        s = Strings.Split(ffn, "Band")
+        s = Strings.Split(s(1), ".ipt")
+
+        Return CInt(s(0))
+    End Function
+    Public Function ConvertQNumberLetter(q As Integer) As String
+        Dim c As Char
+        Dim m As Integer
+        Dim s As String
+        Math.DivRem(q, 94, m)
+        c = ChrW(m + 33)
+        s = c.ToString
+        Return s
+    End Function
+    Public Function ContainBand(s As String) As Boolean
+        Dim b As Boolean
+        Dim pattern = String.Concat("Band")
+        b = Regex.IsMatch(s, pattern)
+        Return b
+    End Function
+    Public Function MakeSkeletonFileName(ffn As String) As String
+        Dim s(), sn As String
+        Dim bn As String = "Band"
+        s = Strings.Split(ffn, bn)
+        sn = String.Concat(s(0), "Skeleton", s(1))
+
+        Return sn
+    End Function
+    Public Function MakeRibFileName(dn As String, i As Integer) As String
+
+        Dim sn As String = String.Concat(dn, "\Rib", i, ".ipt")
+
+        Return sn
+    End Function
+    Public Function ContainCorto(s As String) As Boolean
+        Dim b As Boolean
+        Dim pattern = String.Concat("shortRod")
+        b = Regex.IsMatch(s, pattern)
+        Return b
+    End Function
+    Public Function GetRodNumber(rf As RevolveFeature) As Integer
+        Dim s() As String
+        s = Strings.Split(rf.Name, "shortRod")
+        Return CInt(s(1))
+    End Function
+    Public Function MakeWedgeFileName(ffn As String) As String
+        Dim s(), sn As String
+        Dim bn As String = "Band"
+        s = Strings.Split(ffn, bn)
+        sn = String.Concat(s(0), "Wedge", s(1))
+
+        Return sn
+    End Function
 End Class

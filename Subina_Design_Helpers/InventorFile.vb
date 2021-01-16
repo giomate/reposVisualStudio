@@ -8,6 +8,7 @@ Public Class InventorFile
     Public manager As DesignProjectManager
     Public archivador As FileManager
     Public Doblez As PartDocument
+    Private converter As Conversions
 
 
 
@@ -27,6 +28,7 @@ Public Class InventorFile
         manager = applicacion.DesignProjectManager
         documento = applicacion.ActiveDocument
         archivador = applicacion.FileManager
+        converter = New Conversions(App)
 
         DP.Dmax = 200
         DP.Dmin = 1
@@ -185,7 +187,7 @@ Public Class InventorFile
             documento.Close(True)
         End If
         Doblez = CreateSheetMetalFile()
-        Conversions.SetUnitsToMetric(Doblez)
+        converter.SetUnitsToMetric(Doblez)
         Doblez.SaveAs(CreateFullFileName(shortname), True)
         Doblez.Close(True)
         Doblez = OpenFullFileName(CreateFullFileName(shortname))
