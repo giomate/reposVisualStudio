@@ -262,14 +262,27 @@ Public Class RodMaker
     End Function
     Public Function MakeTipCut(topSide As Integer) As RevolveFeature
         Dim f As Face
+        Dim pl As Plane
         Dim ed As Edge
         Dim pro As Profile
+        Dim ved, vfc As Vector
+        Dim pt As Point
         cutside = topSide
         Try
             f = GetTipCutFace(topSide)
+            pl = f.Geometry
+            vfc = wp2.Point.VectorTo(wp1.Point)
+
             ed = GetTipCutEdge(f)
-            pro = DrawTipCutProfile(f, ed)
-            MakeTipCut = RevolveCutTip(pro)
+            pt = GetClosestVertexCut(ed).Point
+            ved = pt.VectorTo(GetFarestVertexEdge(ed, pt).Point)
+            If vfc.DotProduct(ved) > 0 Then
+                pro = DrawTipCutProfile(f, ed)
+                MakeTipCut = RevolveCutTip(pro)
+            Else
+                MakeTipCut = Nothing
+            End If
+
         Catch ex As Exception
             MsgBox(ex.ToString())
             Return Nothing
@@ -343,18 +356,23 @@ Public Class RodMaker
         For Each sb As SurfaceBody In tangentSurfaces.SurfaceBodies
             For Each f As Face In sb.Faces
                 If f.SurfaceType = SurfaceTypeEnum.kPlaneSurface Then
-                    dis = f.PointOnFace.DistanceTo(fi.PointOnFace)
-                    If dis < minDis Then
-                        minDis = dis
-                        pl = f.Geometry
-                        vpl = pl.Normal.AsVector
-                        d = Math.Abs(vpl.DotProduct(vfi))
-                        If d > eMax Then
-                            eMax = d
+                    If f.PointOnFace.Z * fi.PointOnFace.Z > 0 Then
+                        dis = f.PointOnFace.DistanceTo(fi.PointOnFace)
+                        v = f.PointOnFace.VectorTo(fi.PointOnFace)
+                        dis = dis * Math.Pow(Math.Abs(v.DotProduct(vfi)), 1 / 2)
+                        If dis < minDis Then
+                            minDis = dis
+                            pl = f.Geometry
+                            vpl = pl.Normal.AsVector
+                            d = Math.Abs(vpl.DotProduct(vfi))
+                            If (d > eMax) Then
+                                eMax = d
 
-                            sf = f
+                                sf = f
+                            End If
                         End If
                     End If
+
 
 
 
@@ -397,8 +415,13 @@ Public Class RodMaker
             ps = compDef.Sketches.Add(fi)
             slRef = ps.AddByProjectingEntity(edi)
             slRef.Construction = True
-            spt = ps.AddByProjectingEntity(wp1)
+
+
+
+
             sptVertex = ps.AddByProjectingEntity(GetClosestVertexCut(edi))
+            spt = ps.AddByProjectingEntity(GetFarestVertexEdge(edi, sptVertex.Geometry3d))
+
             sl = ps.SketchLines.AddByTwoPoints(sptVertex, spt.Geometry)
             gc = ps.GeometricConstraints.AddParallel(sl, slRef)
             dc = ps.DimensionConstraints.AddTwoPointDistance(sl.StartSketchPoint, sl.EndSketchPoint, DimensionOrientationEnum.kAlignedDim, sl.Geometry.MidPoint, False)
@@ -451,6 +474,38 @@ Public Class RodMaker
 
 
             Return GetClosestVertexCut
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+    End Function
+    Function GetFarestVertexEdge(edi As Edge, pt As Point) As Vertex
+
+        Dim d, e, dMax As Double
+        dMax = 0
+        GetFarestVertexEdge = edi.StopVertex
+        Try
+
+            d = edi.StartVertex.Point.DistanceTo(pt)
+            e = edi.StopVertex.Point.DistanceTo(pt)
+            If d > e Then
+                If d > dMax Then
+                    dMax = d
+                    GetFarestVertexEdge = edi.StartVertex
+                End If
+            Else
+                If e > dMax Then
+                    dMax = e
+                    GetFarestVertexEdge = edi.StopVertex
+                End If
+            End If
+
+
+
+
+
+            Return GetFarestVertexEdge
         Catch ex As Exception
             MsgBox(ex.ToString())
             Return Nothing

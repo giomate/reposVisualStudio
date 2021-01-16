@@ -6,6 +6,8 @@ Imports System.IO
 Imports System.Text
 Imports System.IO.Directory
 Imports Inventor
+Imports NextTie
+
 Public Class Form1
     Dim oApp As Inventor.Application
     Dim oDoc As Inventor.Document
@@ -19,7 +21,7 @@ Public Class Form1
     Public Sub New()
         ' This call is required by the designer.
         InitializeComponent()
-        iteration = 20
+        iteration = 21
         ' Add any initialization after the InitializeComponent() call.
         Try
             oApp = Marshal.GetActiveObject("Inventor.Application")

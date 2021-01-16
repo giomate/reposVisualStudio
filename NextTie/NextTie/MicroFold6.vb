@@ -1,4 +1,5 @@
 ﻿Imports Inventor
+Imports Subina_Design_Helpers
 
 Public Class MicroFold6
     Public doku As PartDocument

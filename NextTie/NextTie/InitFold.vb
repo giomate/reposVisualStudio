@@ -1,4 +1,5 @@
 ﻿Imports Inventor
+Imports Subina_Design_Helpers
 
 Public Class InitFold
     Public doku As PartDocument

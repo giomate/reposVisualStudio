@@ -1,7 +1,7 @@
 ﻿Imports Inventor
 Imports System
-Imports GetInitialConditions
-Imports DrawInitialSketch
+
+Imports Subina_Design_Helpers
 
 Public Class Sketcher3D
     Dim doku As PartDocument

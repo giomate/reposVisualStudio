@@ -5,13 +5,12 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{68BC1545-94BC-41FB-8825-A37674815B4D}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <StartupObject>
-    </StartupObject>
+    <OutputType>WinExe</OutputType>
+    <StartupObject>Skeletons.My.MyApplication</StartupObject>
     <RootNamespace>Skeletons</RootNamespace>
     <AssemblyName>Skeletons</AssemblyName>
     <FileAlignment>512</FileAlignment>
-    <MyType>Windows</MyType>
+    <MyType>WindowsForms</MyType>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
@@ -79,11 +78,6 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Commands.vb" />
-    <Compile Include="Conversions.vb" />
-    <Compile Include="Curves3D.vb" />
-    <Compile Include="DesignMonitoring.vb" />
-    <Compile Include="ExcelInterface.vb" />
     <Compile Include="Form1.vb">
       <SubType>Form</SubType>
     </Compile>
@@ -91,8 +85,6 @@
       <DependentUpon>Form1.vb</DependentUpon>
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="Highlithing.vb" />
-    <Compile Include="InventorFile.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
@@ -109,7 +101,6 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
-    <Compile Include="Nombres.vb" />
     <Compile Include="RodMaker.vb" />
     <Compile Include="Skeletons.vb" />
     <Compile Include="SketchAdjust.vb" />
@@ -172,6 +163,12 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Skeleton.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Subina_Design_Helpers\Subina_Design_Helpers.vbproj">
+      <Project>{55ca21af-6c9d-4135-a8f0-ccdae1e6ef74}</Project>
+      <Name>Subina_Design_Helpers</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.VisualBasic.targets" />
 </Project>

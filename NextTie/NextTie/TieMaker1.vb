@@ -4,6 +4,7 @@ Imports System
 Imports System.IO
 Imports System.Text
 Imports System.IO.Directory
+Imports Subina_Design_Helpers
 
 Public Class TieMaker1
     Public doku As PartDocument

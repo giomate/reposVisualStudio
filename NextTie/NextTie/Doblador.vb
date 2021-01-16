@@ -1,4 +1,5 @@
 ﻿Imports Inventor
+Imports Subina_Design_Helpers
 Public Class Doblador
     Dim doku As PartDocument
     Dim app As Application

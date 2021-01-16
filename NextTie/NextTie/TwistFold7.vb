@@ -1,4 +1,5 @@
 ﻿Imports Inventor
+Imports Subina_Design_Helpers
 
 
 Public Class TwistFold7
@@ -48,7 +49,7 @@ Public Class TwistFold7
     Dim foldFeature As FoldFeature
     Dim sections, esquinas, rails As ObjectCollection
     Dim manager As FoldingEvaluator
-    Dim cilindro As RodMaker
+
 
     Dim edgeColl As EdgeCollection
     Dim twistPlane As WorkPlane
@@ -76,7 +77,7 @@ Public Class TwistFold7
         bender = New Doblador(doku)
         nombrador = New Nombres(doku)
         manager = New FoldingEvaluator(doku)
-        cilindro = New RodMaker(doku)
+
 
         diff1 = Math.PI / 2 - 1.64
         diff2 = Math.PI / 2 - 1.43
