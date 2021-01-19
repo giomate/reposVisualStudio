@@ -29,7 +29,7 @@ Public Class Skeletons
     Dim skptHigh, skptLow As SketchPoint3D
     Dim tg As TransientGeometry
     Dim gap1CM, thicknessCM As Double
-    Public partNumber, qNext, qLastTie, qvalue As Integer
+    Public partNumber, qNext, qLastTie, qvalue, direction As Integer
     Dim bandLines, constructionLines As ObjectCollection
     Dim comando As Commands
     Public nombrador As Nombres
@@ -41,7 +41,7 @@ Public Class Skeletons
 
 
     Dim pro As Profile
-    Dim direction As Vector
+
     Dim feature As FaceFeature
     Dim cutfeature As CutFeature
     Dim bendLine, cutLine As SketchLine
@@ -114,6 +114,7 @@ Public Class Skeletons
         nombrador = New Nombres(doku)
 
         trobinaCurve = New Curves3D(doku)
+        trobinaCurve.direction = direction
         palitos = New RodMaker(doku)
         DP.Dmax = 20
         DP.Dmin = 1 / 10
@@ -124,6 +125,7 @@ Public Class Skeletons
         DP.b = 25
 
         done = False
+        direction = -1
     End Sub
     Public Function MakeSkeletonIteration(i As Integer) As PartDocument
         Try
@@ -379,6 +381,8 @@ Public Class Skeletons
         Dim ef As ExtrudeFeature
         Dim f As Face
         Dim sb As SurfaceBody
+        Dim lastradius As Double = 2 / 10
+        Dim entranceSide
 
         Try
             p = app.Documents.Add(DocumentTypeEnum.kPartDocumentObject,, True)
@@ -417,27 +421,30 @@ Public Class Skeletons
                     k += 1
                     f = sb.Faces.Item(k)
                     If f.SurfaceType = SurfaceTypeEnum.kCylinderSurface Then
+                        palitos.radius = lastradius
                         ef = palitos.ExtrudeEgg(f)
+                        lastradius = palitos.radius
                         'lamp.HighLighFace(fc.Item(i))
                         If monitor.IsFeatureHealthy(ef) Then
                             lamp.FitView(doku)
-                            If palitos.smallOval Then
+                            If palitos.shortlOval Then
                                 skt = compDef.Sketches3D.Item("curvas")
                                 lf = conos.MakeSingleSupport(palitos, skt)
                                 If monitor.IsFeatureHealthy(lf) Then
                                     lf.Name = String.Concat("cone", cc.ToString)
                                     cc = cc + 1
-                                    palitos.smallOval = False
+                                    palitos.shortlOval = False
                                 Else
                                     Exit For
                                 End If
                             ElseIf IsInletRod(ef) Then
-                                rf = palitos.MakeTipCut(1)
+                                entranceSide = Math.Pow(-1, qvalue + 1)
+                                rf = palitos.MakeTipCut(entranceSide)
                                 sb = tangentSurfaces.SurfaceBodies.Item(i)
                                 f = sb.Faces.Item(k)
                             ElseIf IsOutletRod(ef) Then
-
-                                rf = palitos.MakeTipCut(-1)
+                                entranceSide = Math.Pow(-1, qvalue + 1)
+                                rf = palitos.MakeTipCut(entranceSide)
                                 sb = tangentSurfaces.SurfaceBodies.Item(i)
                                 f = sb.Faces.Item(k)
                             End If
@@ -543,7 +550,7 @@ Public Class Skeletons
         rr = 50
         zz = 20
         Dim wpt As WorkPoint
-        Dim pt As Point = tg.CreatePoint(Math.Cos(2 * Math.PI * DP.p * q / DP.q) * DP.Dmax / 2, Math.Sin(2 * Math.PI * DP.p * q / DP.q) * DP.Dmax / 2, 0)
+        Dim pt As Point = tg.CreatePoint(Math.Cos(direction* 2 * Math.PI * DP.p * q / DP.q) * DP.Dmax / 2, Math.Sin(direction*2 * Math.PI * DP.p * q / DP.q) * DP.Dmax / 2, 0)
         wpt = doku.ComponentDefinition.WorkPoints.AddFixed(pt)
         wpt.Visible = False
         wpConverge = wpt

@@ -21,7 +21,7 @@ Public Class Wedges
     Public trobinaCurve As Curves3D
     Dim palito As RodMaker
 
-    Public wp1, wp2, wp3, wpConverge, wptHigh, wptLow As WorkPoint
+    Public wp1, wp2, wp3, wpConverge, wptHigh, wptLow, wptConeBase As WorkPoint
     Public farPoint, curvePoint, convergePoint As Point
     Dim tg As TransientGeometry
     Dim freeCollisionAngle As Double
@@ -2059,7 +2059,8 @@ Public Class Wedges
             sk3D.GeometricConstraints3D.AddGround(ln)
             Dim a, c As Double
             Dim acn As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, ln)
-            acn = AdjustNormal(ln, l, acn, 1)
+            acn = AdjustNormal(ln, l, acn, Math.Cos(Math.PI / 4) * 2)
+
 
             acn.Driven = True
             Dim vc As Vector = compDef.WorkPoints(1).Point.VectorTo(l.EndSketchPoint.Geometry)
@@ -2611,7 +2612,8 @@ Public Class Wedges
         Try
             Dim pr As Profile
             Dim ps As PlanarSketch
-
+            wptConeBase = compDef.WorkPoints.AddByPoint(spt)
+            wptConeBase.Visible = False
             sk3D = compDef.Sketches3D.Add
             'ringLine = sk3D.SketchLines3D.AddByTwoPoints(compDef.WorkPoints.Item(1), spt)
             Dim skpt As SketchPoint3D = sk3D.SketchPoints3D.Add(tg.CreatePoint(0, 0, 1))
@@ -2702,7 +2704,13 @@ Public Class Wedges
             ' oLoftDefinition.Closed = True
 
             Dim lf As LoftFeature
-            lf = compDef.Features.LoftFeatures.Add(oLoftDefinition)
+            Try
+                lf = compDef.Features.LoftFeatures.Add(oLoftDefinition)
+            Catch ex As Exception
+                lf = CorrectLoftSingleSpike()
+            End Try
+
+
             Return lf
         Catch ex As Exception
             MsgBox(ex.ToString())
@@ -2711,6 +2719,23 @@ Public Class Wedges
 
 
     End Function
+    Function CorrectLoftSingleSpike() As LoftFeature
+
+        sections.Remove(sections.Count)
+
+        sections.Add(wptConeBase)
+        Dim oLoftDefinition As LoftDefinition
+        oLoftDefinition = compDef.Features.LoftFeatures.CreateLoftDefinition(sections, PartFeatureOperationEnum.kJoinOperation)
+        Try
+            Return compDef.Features.LoftFeatures.Add(oLoftDefinition)
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+        Return Nothing
+    End Function
+
     Function LoftSingleCone(wpti As WorkPoint) As LoftFeature
         Try
             Dim oLoftDefinition As LoftDefinition

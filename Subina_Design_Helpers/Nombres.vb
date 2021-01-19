@@ -5,7 +5,7 @@ Public Class Nombres
     Dim newName, currentName, oldName, datei As String
     Dim doku As PartDocument
     Dim app As Application
-    Dim compDef As SheetMetalComponentDefinition
+    Dim compDef As ComponentDefinition
 
     Public Sub New()
         newName = "noname"
@@ -14,7 +14,12 @@ Public Class Nombres
     Public Sub New(docu As Inventor.Document)
         doku = docu
         app = doku.Parent
+        'get the document sub-type
+
+
         compDef = doku.ComponentDefinition
+
+
     End Sub
     Public Function IncrementLabel(name As String, pattern As String) As String
         Dim p() As String
@@ -176,6 +181,12 @@ Public Class Nombres
     Public Function ContainCorto(s As String) As Boolean
         Dim b As Boolean
         Dim pattern = String.Concat("shortRod")
+        b = Regex.IsMatch(s, pattern)
+        Return b
+    End Function
+    Public Function ContainEgg(s As String) As Boolean
+        Dim b As Boolean
+        Dim pattern = String.Concat("egg")
         b = Regex.IsMatch(s, pattern)
         Return b
     End Function

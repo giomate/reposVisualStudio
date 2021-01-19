@@ -56,7 +56,7 @@ Public Class Sweeper
     Dim di As System.IO.DirectoryInfo
     Dim fi As System.IO.File
     Dim nf As System.IO.Path
-    Dim bandsurfaces, tangentSurfaces As WorkSurface
+    Dim bandsurfaces, tangentSurfaces, currentWorkSurface As WorkSurface
     Dim surfacesScuplt, facesToDelete As ObjectCollection
     Dim foldFeature As FoldFeature
     Public sections, endPoints, rails, caras, surfaceBodies, coneAxes, highPoints, lowPoints As ObjectCollection
@@ -380,8 +380,15 @@ Public Class Sweeper
             surfacesScuplt.Add(ss)
             Try
                 sf = compDef.Features.SculptFeatures.Add(surfacesScuplt, PartFeatureOperationEnum.kCutOperation)
+                If monitor.IsFeatureHealthy(sf) Then
+                Else
+                    currentWorkSurface = wsi
+                    sf.Delete()
+                    sf = CorrectUnhealthySculpt()
+                End If
             Catch ex As Exception
-                sf = CorrectSculpt(ss)
+                currentWorkSurface = wsi
+                sf = CorrectUndoableSculpt()
             End Try
             If monitor.IsFeatureHealthy(sf) Then
                 CombineBodies()
@@ -458,6 +465,167 @@ Public Class Sweeper
         End Try
         CombineBodies()
         Return sf
+    End Function
+    Function CorrectUnhealthySculpt() As SculptFeature
+
+        Dim pf As PartFeature = compDef.Features(1)
+        Dim sf As SculptFeature
+        Dim n As Integer = compDef.Features.ExtrudeFeatures.Count
+
+        Dim ef As ExtrudeFeature
+
+        Try
+            ef = compDef.Features.ExtrudeFeatures.Item("egg2")
+            sf = AdjustExtrudeExtenstion(ef)
+            If monitor.IsFeatureHealthy(sf) Then
+            Else
+
+                For i = 1 To n
+                    ef = compDef.Features.ExtrudeFeatures(n)
+                    If nombrador.ContainEgg(ef.Name) Then
+                        If ef.Name.Equals("egg2") Then
+                        Else
+                            Try
+                                sf = AdjustExtrudeExtenstion(ef)
+
+                            Catch ex2 As Exception
+                                MsgBox(ex2.ToString())
+                                Return Nothing
+                            End Try
+                        End If
+
+                    End If
+
+
+                Next
+
+            End If
+
+
+
+        Catch ex As Exception
+            MsgBox(ex.ToString() & n.ToString)
+            Return Nothing
+        End Try
+        CombineBodies()
+        Return sf
+    End Function
+    Function CorrectUndoableSculpt() As SculptFeature
+
+        Dim sf As SculptFeature
+        Dim n As Integer = compDef.Features.ExtrudeFeatures.Count
+
+        Dim ef As ExtrudeFeature
+        Dim ed As ExtrudeDefinition
+        Dim de As Double
+
+        Try
+            ef = compDef.Features.ExtrudeFeatures.Item("egg2")
+            ed = ef.Definition
+            de = 17 / 10
+
+            sf = AdjustExtrudeExtenstion(ef, de)
+            If monitor.IsFeatureHealthy(sf) Then
+            Else
+
+                For i = 1 To n
+                    ef = compDef.Features.ExtrudeFeatures(n)
+                    If nombrador.ContainEgg(ef.Name) Then
+                        If ef.Name.Equals("egg2") Then
+                        Else
+                            Try
+                                sf = AdjustExtrudeExtenstion(ef, de)
+
+                            Catch ex2 As Exception
+                                MsgBox(ex2.ToString())
+                                Return Nothing
+                            End Try
+                        End If
+
+                    End If
+
+
+                Next
+
+            End If
+
+
+
+        Catch ex As Exception
+            MsgBox(ex.ToString() & n.ToString)
+            Return Nothing
+        End Try
+        CombineBodies()
+        Return sf
+    End Function
+    Function AdjustExtrudeExtenstion(ef As ExtrudeFeature) As SculptFeature
+        Dim sf As SculptFeature
+        Dim edef As ExtrudeDefinition
+        Dim extend As Double = 17 / 10
+
+        For i = 1 To 32
+            sf = MakeSimpleSculpting()
+            If monitor.IsFeatureHealthy(sf) Then
+                Exit For
+            Else
+                sf.Delete()
+                edef = ef.Definition
+                edef.SetDistanceExtent(extend, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
+                extend *= 15 / 16
+
+
+            End If
+        Next
+
+
+        Return sf
+    End Function
+    Function AdjustExtrudeExtenstion(ef As ExtrudeFeature, dis As Double) As SculptFeature
+        Dim sf As SculptFeature
+        Dim edef As ExtrudeDefinition
+        Dim extend As Double = dis
+        edef = ef.Definition
+        For i = 1 To 32
+            Try
+
+                edef.SetDistanceExtent(extend, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
+                extend *= 15 / 16
+                sf = MakeSimpleSculpting()
+                If monitor.IsFeatureHealthy(sf) Then
+                    Exit For
+                Else
+                    sf.Delete()
+
+
+
+                End If
+
+            Catch ex As Exception
+                Try
+                    sf.Delete()
+                Catch ex2 As Exception
+
+                End Try
+            End Try
+
+
+        Next
+
+
+        Return sf
+    End Function
+    Function MakeSimpleSculpting() As SculptFeature
+        Dim ss As SculptSurface
+        Try
+            surfacesScuplt.Clear()
+            ss = compDef.Features.SculptFeatures.CreateSculptSurface(currentWorkSurface, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
+            surfacesScuplt.Add(ss)
+            MakeSimpleSculpting = compDef.Features.SculptFeatures.Add(surfacesScuplt, PartFeatureOperationEnum.kCutOperation)
+            Return MakeSimpleSculpting
+        Catch ex As Exception
+            Return Nothing
+        End Try
+
     End Function
     Function GetExtendEggDistance(ef As ExtrudeFeature) As Double
         Dim d, dmin, dMax, Amin As Double
