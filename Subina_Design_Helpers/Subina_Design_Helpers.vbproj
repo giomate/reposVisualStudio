@@ -96,6 +96,7 @@
     </Compile>
     <Compile Include="Nombres.vb" />
     <Compile Include="SketchAdjust.vb" />
+    <Compile Include="Surfacer.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="My Project\Resources.resx">

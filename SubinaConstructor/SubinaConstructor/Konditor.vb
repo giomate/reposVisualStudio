@@ -4,6 +4,7 @@ Imports System.IO
 
 Imports System.Text
 Imports System.IO.Directory
+Imports Subina_Design_Helpers
 Public Class Konditor
     Public doku As PartDocument
     Public projectManager As DesignProjectManager

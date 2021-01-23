@@ -873,15 +873,16 @@ Public Class InitSketcher
 
         Try
             ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(bl, l)
+            Try
+                adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2)
+                ac.Delete()
+            Catch ex As Exception
+
+            End Try
         Catch ex As Exception
 
         End Try
-        Try
-            adjuster.AdjustDimensionConstraint3DSmothly(ac, Math.PI / 2)
-            ac.Delete()
-        Catch ex As Exception
 
-        End Try
         Try
             gc = sk3D.GeometricConstraints3D.AddPerpendicular(l, bl)
         Catch ex As Exception
@@ -1145,13 +1146,62 @@ Public Class InitSketcher
                         For index = 1 To 16
                             adjuster.AdjustDimConstrain3DSmothly(gapFold, gapFold.Parameter._Value * 17 / 16)
                             adjuster.AdjustDimConstrain3DSmothly(dc, dc.Parameter._Value * 15 / 16)
-                            If Not adjuster.IsLastAngleOk(dc, limit) Then
+                            If (Not adjuster.IsLastAngleOk(dc, limit)) Or (gapFold.Parameter._Value > 6 * gapFoldCM) Then
                                 Exit For
                             End If
                         Next
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                     End If
                     dc.Driven = True
+                    If Not monitor.IsSketch3DHealthy(sk3D) Then
+                        adjuster.RecoverUnhealthy3DSketch(sk3D)
+                    End If
                     dc = AdjustPositiveAngle(dc, limit)
                     Try
                         counterLimit = 0

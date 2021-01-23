@@ -4,6 +4,7 @@ Imports System.IO
 
 Imports System.Text
 Imports System.IO.Directory
+Imports Subina_Design_Helpers
 Public Class SubinaStruct
     Public doku As PartDocument
     Public projectManager As DesignProjectManager
@@ -14,7 +15,7 @@ Public Class SubinaStruct
     Dim monitor As DesignMonitoring
     Dim invFile As InventorFile
     Dim adjuster As SketchAdjust
-    Dim mezclador As Sweeper
+
     Dim scaleFactor As Double
 
 
@@ -89,7 +90,7 @@ Public Class SubinaStruct
 
 
         nombrador = New Nombres(doku)
-        mezclador = New Sweeper(doku)
+
         scaleFactor = 1.01
         sequence = {21, 19, 17, 15, 13, 11, 9, 7, 5, 3, 1, 22, 20, 18, 16, 14, 12, 10, 8, 6, 4, 2, 23}
 

@@ -541,6 +541,7 @@ Public Class OriginSketch
                 End If
             End If
             FitEntryGap()
+            CorrectAngleFirstLine()
             dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(secondLine.StartPoint, doblezline.EndPoint)
             adjuster.AdjustDimConstrain3DSmothly(dc, tangentLine.Length * 3 / 4)
             dc.Delete()
@@ -604,6 +605,8 @@ Public Class OriginSketch
             dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(secondLine.StartPoint, doblezline.EndPoint)
             adjuster.AdjustDimConstrain3DSmothly(dc, tangentLine.Length * 3 / 4)
             dc.Delete()
+            CorrectEntryGap()
+            CorrectAngleFirstLine()
             Return l
         Catch ex As Exception
             MsgBox(ex.ToString())
@@ -1005,7 +1008,10 @@ Public Class OriginSketch
             adjuster.AdjustDimConstrain3DSmothly(dc, tangentLine.Length * 3 / 4)
             dc.Delete()
             AdjustThirdLine(2 * b)
+            CorrectEntryGap()
+            CorrectAngleFirstLine()
             CorrectSecondLine()
+
             lastLine = l
             Return l
         Catch ex As Exception
@@ -1163,6 +1169,48 @@ Public Class OriginSketch
             adjuster.AdjustDimConstrain3DSmothly(gapFold, gapFoldCM * 2)
             'AdjustFourLine()
             Return l
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+    End Function
+    Function CorrectAngleFirstLine() As Double
+        Dim b As Double = GetParameter("b")._Value
+        Dim l, fl As SketchLine3D
+        Dim acl As DimensionConstraint3D
+
+
+        CorrectAngleFirstLine = 0
+        Try
+            If firstLine.Equals(Nothing) Then
+            Else
+                fl = firstLine
+                l = sk3D.SketchLines3D.AddByTwoPoints(fl.StartPoint, curve.EndSketchPoint, False)
+                Try
+                    acl = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, firstLine)
+                    For i = 1 To 8
+                        adjuster.AdjustDimensionConstraint3DSmothly(acl, acl.Parameter._Value * 7 / 8)
+                        If acl.Parameter._Value < Math.PI / 128 Then
+                            Exit For
+                        End If
+                        CorrectAngleFirstLine = acl.Parameter._Value
+                    Next
+                    acl.Delete()
+
+                Catch ex As Exception
+                    Try
+                        acl.Delete()
+                    Catch ex2 As Exception
+
+                    End Try
+                End Try
+
+
+                l.Delete()
+            End If
+
+
+            Return CorrectAngleFirstLine
         Catch ex As Exception
             MsgBox(ex.ToString())
             Return Nothing
@@ -1384,13 +1432,24 @@ Public Class OriginSketch
         Dim dc As DimensionConstraint3D
         Dim b As Double = GetParameter("b")._Value
 
+        Dim currentQ As Integer = GetParameter("currentQ")._Value
+        Dim oddQ As Integer
+
+        Dim factor As Double
+        Math.DivRem(currentQ + 1, 2, oddQ)
+        If oddQ = 0 Then
+            factor = 4 / 3
+        Else
+            factor = 5 / 6
+        End If
+
         If secondLine.Length < b Or secondLine.Length > 2 * b Then
             dc = sk3D.DimensionConstraints3D.AddLineLength(secondLine)
             CorrectSecondLine = adjuster.AdjustDimConstrain3DSmothly(dc, b)
             dc.Delete()
             dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(secondLine.StartPoint, doblezline.EndPoint)
             '  dc2 = sk3D.DimensionConstraints3D.AddTwoPointDistance(intersectionPoint, doblezline.EndPoint)
-            If dc.Parameter._Value > (intersectionPoint.Geometry.DistanceTo(doblezline.EndSketchPoint.Geometry)) * 4 / 3 Then
+            If dc.Parameter._Value > (intersectionPoint.Geometry.DistanceTo(doblezline.EndSketchPoint.Geometry)) * factor Then
                 Try
                     gapFold.Driven = True
                     adjuster.AdjustDimConstrain3DSmothly(dc, tangentLine.Length * 7 / 8)

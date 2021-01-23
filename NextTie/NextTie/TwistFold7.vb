@@ -669,7 +669,7 @@ Public Class TwistFold7
                 nextSketch.CorrectGapFold()
                 adjuster.AdjustDimConstrain3DSmothly(dc, dc.Parameter._Value * 65 / 64)
                 dc.Driven = True
-                If gapFold.Parameter._Value > 5 * gap1CM / 2 Or gapFold.Parameter._Value < 3 * gap1CM / 2 Then
+                If gapFold.Parameter._Value > 9 * gap1CM / 4 Or gapFold.Parameter._Value < 7 * gap1CM / 4 Then
                     adjuster.AdjustDimensionConstraint3DSmothly(gapFold, 2 * gap1CM)
                     gapFold.Driven = True
                 End If

@@ -166,6 +166,24 @@ Public Class SketchAdjust
 
         Return gain
     End Function
+    Function calculateGainForMinimun(setValue As Double, dc As DimensionConstraint3D) As Double
+        Try
+            p = dc.Parameter
+            Dim k As Double
+            delta = (setValue - p._Value) / (resolution)
+            If dc.Type = ObjectTypeEnum.kTwoLineAngleDimConstraint3DObject Then
+                k = 4
+            Else
+                k = 2
+            End If
+            gain = Math.Pow(Math.Exp(delta), 1 / k)
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            MsgBox("Fail Calculating " & p.Name)
+        End Try
+
+        Return gain
+    End Function
     Function calculateGainForMaximun(setValue As Double, name As String) As Double
         Try
             p = getParameter(name)
@@ -726,6 +744,64 @@ Public Class SketchAdjust
         b = AdjustDimension2DSmothly(dc, v)
 
         Return b
+    End Function
+    Function RecoveryUnhealthySketch(p As Parameter) As Parameter
+        Try
+            oPartDoc = p.Parent
+            While Not monitor.IsSketch3DHealthy(oSk3D)
+                comando.UndoCommand(oPartDoc)
+
+                If Not monitor.IsSketch3DHealthy(oSk3D) Then
+                    oPartDoc.Update()
+                    comando.UndoCommand()
+                End If
+                posible = p
+
+            End While
+            Return p
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            MsgBox("Fail Recovering " & p.Name & " ...last value:" & p.Value.ToString)
+            Return RecoveryUnhealthySketch(p)
+        End Try
+
+
+
+    End Function
+    Public Function RecoveryUnhealthySketch(sk As Sketch3D) As Sketch3D
+        Try
+            compDef = sk.Parent
+            oPartDoc = compDef.Document
+            Dim skerror As Integer = skcounter
+            While Not monitor.IsSketch3DHealthy(sk)
+                For index = 1 To skerror + 1
+                    comando.UndoCommand()
+                Next
+                sk.Solve()
+                ' oPartDoc.Update()
+
+                If Not monitor.IsSketch3DHealthy(sk) Then
+                    skcounter = skcounter + 1
+                    RecoveryUnhealthySketch(sk)
+                Else
+                    skerror = 0
+                End If
+
+
+
+
+            End While
+            skcounter = 0
+
+            Return sk
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            MsgBox("Fail Recovering " & sk.Name)
+            Return RecoveryUnhealthySketch(sk)
+        End Try
+
+
+
     End Function
 
 End Class

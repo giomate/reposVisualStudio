@@ -203,4 +203,81 @@ Public Class Nombres
 
         Return sn
     End Function
+    Public Function ConstructFileName(dn As String, fn As String, i As Integer) As String
+
+        Dim sn As String = String.Concat(dn, "\", fn, i, ".ipt")
+
+        Return sn
+    End Function
+    Public Function MakeBandFileName(ffn As String, i As Integer) As String
+        Dim s(), sn As String
+
+        Dim bn As String
+        If ffn.Contains("Skeleton") Then
+            bn = "Skeleton"
+        ElseIf ffn.Contains("Rib") Then
+            bn = "Rib"
+        ElseIf ffn.Contains("Band") Then
+            bn = "Band"
+        End If
+        s = Strings.Split(ffn, bn)
+        sn = String.Concat(s(0), "Band", i.ToString, ".ipt")
+
+        Return sn
+    End Function
+    Public Function MakeRibFileName(ffn As String) As String
+        Dim s(), sn As String
+
+        Dim bn As String
+        If ffn.Contains("Skeleton") Then
+            bn = "Skeleton"
+        ElseIf ffn.Contains("Band") Then
+            bn = "Band"
+        End If
+        s = Strings.Split(ffn, bn)
+        sn = String.Concat(s(0), "Rib", s(1))
+
+        Return sn
+    End Function
+    Public Function MakeBandFileName(ffn As String) As String
+        Dim s(), sn As String
+
+        Dim bn As String
+        If ffn.Contains("Skeleton") Then
+            bn = "Skeleton"
+        ElseIf ffn.Contains("Rib") Then
+            bn = "Rib"
+        ElseIf ffn.Contains("Band") Then
+            bn = "Band"
+        End If
+        s = Strings.Split(ffn, bn)
+        sn = String.Concat(s(0), "Band", s(1))
+
+        Return sn
+    End Function
+    Public Function GetQNumberString(ffn As String, p As String) As Integer
+        Dim s() As String
+        s = Strings.Split(ffn, p)
+        s = Strings.Split(s(1), ".ipt")
+
+        Return CInt(s(0))
+    End Function
+    Public Function MakeSkeletonFileName(ffn As String, n As Integer) As String
+        Dim sn As String = String.Concat(ffn, "\Skeleton", n, ".ipt")
+
+        Return sn
+    End Function
+    Public Function ContainSkeleton(s As String) As Boolean
+        Dim b As Boolean
+        Dim pattern = String.Concat("Skeleton")
+        b = Regex.IsMatch(s, pattern)
+        Return b
+    End Function
+    Public Function ContainWedge(s As String) As Boolean
+        Dim b As Boolean
+        Dim pattern = String.Concat("Wedge")
+        b = Regex.IsMatch(s, pattern)
+        Return b
+    End Function
+
 End Class
