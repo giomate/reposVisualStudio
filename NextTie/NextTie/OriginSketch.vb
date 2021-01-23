@@ -1356,7 +1356,7 @@ Public Class OriginSketch
 
 
         Dim b As Double = GetParameter("b")._Value
-        Dim factor As Double = Math.Exp((18.4 / 10 - outletGap.Parameter._Value) / (outletGap.Parameter._Value * 2))
+        Dim factor As Double = Math.Exp((17.482 / 10 - outletGap.Parameter._Value) / (outletGap.Parameter._Value * 1))
         Dim d As Double = Math.Abs(inletGap.Parameter._Value - outletGap.Parameter._Value * factor)
 
         If d > 1 / 16 Then

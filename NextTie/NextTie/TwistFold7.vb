@@ -664,17 +664,33 @@ Public Class TwistFold7
                 'adjuster.AdjustDimensionConstraint3DSmothly(nextSketch.gapFold, nextSketch.gapFold.Parameter._Value * 15 / 16)
                 'nextSketch.gapFold.Driven = True
                 'nextSketch.FitEntryGap()
-                nextSketch.CorrectSecondLine()
+                'nextSketch.CorrectSecondLine()
                 CorrectGaptFold()
-                nextSketch.CorrectGapFold()
+                'nextSketch.CorrectGapFold()
                 adjuster.AdjustDimConstrain3DSmothly(dc, dc.Parameter._Value * 65 / 64)
                 dc.Driven = True
                 If gapFold.Parameter._Value > 9 * gap1CM / 4 Or gapFold.Parameter._Value < 7 * gap1CM / 4 Then
                     adjuster.AdjustDimensionConstraint3DSmothly(gapFold, 2 * gap1CM)
                     gapFold.Driven = True
                 End If
-                reduced = nextSketch.CorrectEntryGap()
+                Try
+                    gapFold.Driven = False
 
+                Catch ex As Exception
+                    gapFold.Driven = True
+                End Try
+                If Not monitor.IsSketch3DHealthy(sk3D) Then
+                    adjuster.RecoverUnhealthy3DSketch(sk3D)
+                End If
+                reduced = nextSketch.CorrectEntryGap()
+                Try
+                    gapFold.Driven = True
+                Catch ex As Exception
+
+                End Try
+                If Not monitor.IsSketch3DHealthy(sk3D) Then
+                    adjuster.RecoverUnhealthy3DSketch(sk3D)
+                End If
 
 
 

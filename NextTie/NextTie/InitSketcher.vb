@@ -965,7 +965,7 @@ Public Class InitSketcher
     End Function
     Function DrawSixthLine() As SketchLine3D
         Try
-            Dim l, cl3, ml, bl4 As SketchLine3D
+            Dim l, cl3, ml, bl4, l2 As SketchLine3D
             Dim v As Vector
             Dim p As Plane
             Dim minDis, d As Double
@@ -998,13 +998,22 @@ Public Class InitSketcher
             bl4 = bandLines.Item(4)
             Try
                 gapFold.Driven = False
-                dc = sk3D.DimensionConstraints3D.AddTwoPointDistance(bl4.EndPoint, curve.EndSketchPoint)
-                adjuster.AdjustDimConstrain3DSmothly(dc, dc.Parameter._Value / 2)
+
+                l2 = sk3D.SketchLines3D.AddByTwoPoints(bl4.EndSketchPoint, curve.EndSketchPoint.Geometry, False)
+                gc = sk3D.GeometricConstraints3D.AddCoincident(l2.EndPoint, curve)
+                dc = sk3D.DimensionConstraints3D.AddLineLength(l2)
+                For index = 1 To 32
+                    adjuster.AdjustDimConstrain3DSmothly(dc, dc.Parameter._Value * 15 / 16)
+                Next
+
                 dc.Delete()
-                gc = sk3D.GeometricConstraints3D.AddCoincident(bl4.EndPoint, curve)
                 gc.Delete()
+                l2.Delete()
                 dc = sk3D.DimensionConstraints3D.AddLineLength(bl4)
-                adjuster.AdjustDimConstrain3DSmothly(dc, dc.Parameter._Value * 3 / 4)
+                For index = 1 To 4
+                    adjuster.AdjustDimConstrain3DSmothly(dc, dc.Parameter._Value * 15 / 16)
+                Next
+
                 dc.Delete()
             Catch ex As Exception
 
@@ -1150,51 +1159,6 @@ Public Class InitSketcher
                                 Exit For
                             End If
                         Next
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
                     End If
