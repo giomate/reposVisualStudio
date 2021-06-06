@@ -214,11 +214,16 @@ Public Class InitFold
         Dim oddQ As Integer
 
         Try
-
+#If Entry_Type = "Unilateral" Then
+            d = -1
+#Else
             d = (kanteLine.Geometry.Direction.AsVector).DotProduct(mainWorkPlane.Plane.Normal.AsVector)
-            If (doku.FullFileName.Contains("Band1.ipt")) Then
+             If (doku.FullFileName.Contains("Band1.ipt")) Then
                 d = -1 * d
             End If
+#End If
+
+
             If dir > 0 Then
                 d = -1 * d
             End If

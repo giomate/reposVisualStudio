@@ -190,7 +190,7 @@ Public Class SubinaStruct
         Try
             If (Directory.Exists(dn)) Then
                 fullFileNames = Directory.GetFiles(dn, "*.ipt")
-                rn = nombrador.MakeSkeletonFileName(dn, i)
+                rn = nombrador.MakeSkeletonFileName(dn, 1)
                 If System.IO.File.Exists(rn) Then
                     t = app.Documents.Add(DocumentTypeEnum.kPartDocumentObject,, True)
                     Conversions.SetUnitsToMetric(t)

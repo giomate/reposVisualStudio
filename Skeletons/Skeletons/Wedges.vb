@@ -47,7 +47,7 @@ Public Class Wedges
     Dim workFace, adjacentFace, bendFace, closestFace, corteFace, cylinderFace, sideMajorFace, sideMinorFace As Face
     Dim workFaces As FaceCollection
     Dim bendAngle As DimensionConstraint
-    Dim gapFold, gapVertex As DimensionConstraint3D
+    Dim gapFold, gapVertex, angleConeLineTangent, angleConeNormalLine As DimensionConstraint3D
     Dim folded As FoldFeature
     Public foldFeatures As FoldFeatures
     Dim features As PartFeatures
@@ -1685,7 +1685,7 @@ Public Class Wedges
             ovalLine = palito.ovalLine
 
 
-            Dim lf As LoftFeature
+            Dim lf As LoftFeature = Nothing
             If compDef.Features.LoftFeatures.Count > 0 Then
                 lf = compDef.Features.LoftFeatures.Item(compDef.Features.LoftFeatures.Count)
             End If
@@ -1695,6 +1695,11 @@ Public Class Wedges
 
             If Not IsFeatureSimilar(wp2, skpt) Then
                 lf = MakeLoftCone(palito.wp2Face, skpt)
+#If Entry_Type = "Unilateral" Then
+                If monitor.IsFeatureHealthy(lf) Then
+                    Return lf
+                End If
+#Else
                 If IsConeFree(lf, skpt) Then
                     If monitor.IsFeatureHealthy(lf) Then
                         Return lf
@@ -1702,7 +1707,10 @@ Public Class Wedges
                 Else
                     Return CorrectLoftCone(lf, palito.wp2Face)
                 End If
+#End If
+
             End If
+            Return lf
         Catch ex As Exception
             MsgBox(ex.ToString())
             Return Nothing
@@ -2059,6 +2067,7 @@ Public Class Wedges
             sk3D.GeometricConstraints3D.AddGround(ln)
             Dim a, c As Double
             Dim acn As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, ln)
+            FirstConeLineAdjust(ln, l, acn)
             acn = AdjustNormal(ln, l, acn, Math.Cos(Math.PI / 4) * 2)
 
 
@@ -2073,6 +2082,7 @@ Public Class Wedges
             pt.TranslateBy(vz)
             Dim lz As SketchLine3D = sk3D.SketchLines3D.AddByTwoPoints(l.EndPoint, pt, False)
             sk3D.GeometricConstraints3D.AddParallelToZAxis(lz)
+            lz.Construction = True
             Dim acz As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddTwoLineAngle(lz, l)
             acz = AdjustZetaAngle(l, ln, acn, acz, 1)
             Dim lc As SketchLine3D = sk3D.SketchLines3D.AddByTwoPoints(l.EndPoint, compDef.WorkPoints.Item(1), False)
@@ -2093,8 +2103,8 @@ Public Class Wedges
             Dim dc As DimensionConstraint3D = sk3D.DimensionConstraints3D.AddLineLength(l)
             dc = AdjustLineLength(lz, l, ln, acr, acn, acz, dc)
 
-
-
+            angleConeLineTangent = acr
+            angleConeNormalLine = acn
             coneLine = l
             coneAxes.Add(l)
             Return l
@@ -2103,6 +2113,18 @@ Public Class Wedges
             Return Nothing
         End Try
 
+    End Function
+    Function FirstConeLineAdjust(ln As SketchLine3D, l As SketchLine3D, acn As DimensionConstraint3D) As Integer
+        Dim b As Double = 25 / 10
+
+        For i = 1 To 32
+            If l.Length > b / 2 And l.Length < 2 * b Then
+                adjuster.AdjustDimConstrain3DSmothly(acn, acn.Parameter._Value * 15 / 16)
+            Else
+                Exit For
+            End If
+        Next
+        Return 0
     End Function
     Function AdjustLineLength(lz As SketchLine3D, l As SketchLine3D, ln As SketchLine3D, acr As DimensionConstraint3D,
                   acn As DimensionConstraint3D, acz As DimensionConstraint3D, dc As DimensionConstraint3D) As DimensionConstraint3D
@@ -2614,16 +2636,16 @@ Public Class Wedges
             Dim ps As PlanarSketch
             wptConeBase = compDef.WorkPoints.AddByPoint(spt)
             wptConeBase.Visible = False
-            sk3D = compDef.Sketches3D.Add
+            ' sk3D = compDef.Sketches3D.Add
             'ringLine = sk3D.SketchLines3D.AddByTwoPoints(compDef.WorkPoints.Item(1), spt)
-            Dim skpt As SketchPoint3D = sk3D.SketchPoints3D.Add(tg.CreatePoint(0, 0, 1))
-            Dim wpl As WorkPlane = compDef.WorkPlanes.AddByThreePoints(compDef.WorkPoints.Item(1), skpt, spt)
-
+            'Dim skpt As SketchPoint3D = sk3D.SketchPoints3D.Add(tg.CreatePoint(0, 0, 1))
+            'Dim wpl As WorkPlane = compDef.WorkPlanes.AddByThreePoints(compDef.WorkPoints.Item(1), skpt, spt)
+            Dim wpl As WorkPlane = compDef.WorkPlanes.AddByNormalToCurve(coneLine, spt)
             ps = doku.ComponentDefinition.Sketches.Add(wpl)
             lamp.LookAtPlane(wpl)
             pr = DrawSingleCircle(ps, 6 / 10)
             ps.Visible = False
-            sk3D.Visible = False
+            'sk3D.Visible = False
             wpl.Visible = False
             Return pr
         Catch ex As Exception
@@ -2634,10 +2656,11 @@ Public Class Wedges
     Function DrawSingleCircle(ps As Sketch, r As Double) As Profile
         Dim pro As Profile
 
-        Dim sl As SketchLine = ps.AddByProjectingEntity(coneLine)
+        ' Dim sl As SketchLine = ps.AddByProjectingEntity(coneLine)
+        Dim spt As SketchPoint = ps.AddByProjectingEntity(wptConeBase)
         Try
-            sl.Construction = True
-            ps.SketchCircles.AddByCenterRadius(sl.EndSketchPoint, r)
+            '  sl.Construction = True
+            ps.SketchCircles.AddByCenterRadius(spt, r)
             pro = ps.Profiles.AddForSolid
 
             Return pro
@@ -2722,7 +2745,8 @@ Public Class Wedges
     Function CorrectLoftSingleSpike() As LoftFeature
 
         sections.Remove(sections.Count)
-
+        wptConeBase = TryStraigthSpike()
+        doku.Update()
         sections.Add(wptConeBase)
         Dim oLoftDefinition As LoftDefinition
         oLoftDefinition = compDef.Features.LoftFeatures.CreateLoftDefinition(sections, PartFeatureOperationEnum.kJoinOperation)
@@ -2734,6 +2758,43 @@ Public Class Wedges
         End Try
 
         Return Nothing
+    End Function
+    Function TryTangentSpike() As DimensionConstraint3D
+        Dim d As Double = angleConeLineTangent.Parameter._Value
+        For i = 1 To 32
+            adjuster.AdjustDimConstrain3DSmothly(angleConeLineTangent, angleConeLineTangent.Parameter._Value * 15 / 16)
+            If Math.Abs(d - angleConeLineTangent.Parameter._Value) < Math.PI / 256 Then
+                Exit For
+            Else
+                d = angleConeLineTangent.Parameter._Value
+            End If
+        Next
+        angleConeLineTangent.Driven = True
+        Return angleConeLineTangent
+    End Function
+    Function TryStraigthSpike() As WorkPoint
+        Dim d As Double = angleConeNormalLine.Parameter._Value
+        Dim pt As Point
+        Dim wptStraigth As WorkPoint
+        Dim skpt As SketchPoint3D
+        Dim v As Vector
+        For i = 1 To 32
+            adjuster.AdjustDimConstrain3DSmothly(angleConeNormalLine, angleConeNormalLine.Parameter._Value * 15 / 16)
+            If Math.Abs(d - angleConeNormalLine.Parameter._Value) < Math.PI / 256 Then
+                Exit For
+            Else
+                d = angleConeNormalLine.Parameter._Value
+            End If
+        Next
+        angleConeNormalLine.Driven = True
+        v = coneLine.Geometry.Direction.AsVector()
+        v.ScaleBy(coneLine.Length)
+        pt = coneLine.EndSketchPoint.Geometry
+        pt.TranslateBy(v)
+        skpt = sk3D.SketchPoints3D.Add(pt)
+        wptStraigth = compDef.WorkPoints.AddByPoint(skpt)
+        wptStraigth.Visible = False
+        Return wptStraigth
     End Function
 
     Function LoftSingleCone(wpti As WorkPoint) As LoftFeature

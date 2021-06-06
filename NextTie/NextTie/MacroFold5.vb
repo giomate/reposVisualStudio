@@ -1039,8 +1039,9 @@ Public Class MacroFold5
         Dim oddQ As Integer
         Dim tensionFactor As Double = 2
         Try
-
-            If sheetMetalFeatures.FoldFeatures.Count > 3 Then
+#If Entry_Type = "Unilateral" Then
+#Else
+ If sheetMetalFeatures.FoldFeatures.Count > 3 Then
                 Math.DivRem(currentQ, 2, oddQ)
                 If oddQ = 0 Then
                     tensionFactor = 1
@@ -1048,6 +1049,8 @@ Public Class MacroFold5
                     tensionFactor = 3
                 End If
             End If
+#End If
+
 
             Dim fourLine, sixthLine, cl3, cl2 As SketchLine3D
             Dim ac As TwoLineAngleDimConstraint3D

@@ -32,6 +32,8 @@ Public Class Sweeper
     Public nombrador As Nombres
 
     Dim cutProfile As Profile
+    Dim pane As BrowserPane
+    Dim lastNode As BrowserNode
 
 
     Dim pro As Profile
@@ -477,34 +479,50 @@ Public Class Sweeper
         Try
             ef = compDef.Features.ExtrudeFeatures.Item("egg2")
             sf = AdjustExtrudeExtenstion(ef)
-            If monitor.IsFeatureHealthy(sf) Then
+            If sf Is Nothing Then
+                sf = CheckOtherTwoCones()
             Else
+                Try
+                    If monitor.IsFeatureHealthy(sf) Then
+                    Else
 
-                For i = 1 To n
-                    ef = compDef.Features.ExtrudeFeatures(n)
-                    If nombrador.ContainEgg(ef.Name) Then
-                        If ef.Name.Equals("egg2") Then
-                        Else
-                            Try
-                                sf = AdjustExtrudeExtenstion(ef)
+                        For i = 1 To n
+                            ef = compDef.Features.ExtrudeFeatures(n)
+                            If nombrador.ContainEgg(ef.Name) Then
+                                If ef.Name.Equals("egg2") Then
+                                Else
+                                    Try
+                                        sf = AdjustExtrudeExtenstion(ef)
 
-                            Catch ex2 As Exception
-                                MsgBox(ex2.ToString())
-                                Return Nothing
-                            End Try
-                        End If
+                                    Catch ex2 As Exception
+                                        MsgBox(ex2.ToString())
+                                        Return Nothing
+                                    End Try
+                                End If
+
+                            End If
+
+
+                        Next
 
                     End If
 
-
-                Next
+                Catch ex As Exception
+                    Try
+                        sf.Delete()
+                        sf = CheckOtherTwoCones()
+                    Catch ex3 As Exception
+                        sf = CheckOtherTwoCones()
+                    End Try
+                End Try
 
             End If
 
 
 
+
         Catch ex As Exception
-            MsgBox(ex.ToString() & n.ToString)
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
         CombineBodies()
@@ -513,7 +531,7 @@ Public Class Sweeper
     Function CorrectUndoableSculpt() As SculptFeature
 
         Dim sf As SculptFeature
-        Dim n As Integer = compDef.Features.ExtrudeFeatures.Count
+
 
         Dim ef As ExtrudeFeature
         Dim ed As ExtrudeDefinition
@@ -525,37 +543,97 @@ Public Class Sweeper
             de = 17 / 10
 
             sf = AdjustExtrudeExtenstion(ef, de)
-            If monitor.IsFeatureHealthy(sf) Then
+            If sf Is Nothing Then
+                sf = CheckOtherTwoCones()
             Else
-
-                For i = 1 To n
-                    ef = compDef.Features.ExtrudeFeatures(n)
-                    If nombrador.ContainEgg(ef.Name) Then
-                        If ef.Name.Equals("egg2") Then
-                        Else
-                            Try
-                                sf = AdjustExtrudeExtenstion(ef, de)
-
-                            Catch ex2 As Exception
-                                MsgBox(ex2.ToString())
-                                Return Nothing
-                            End Try
-                        End If
-
-                    End If
-
-
-                Next
-
+                If monitor.IsFeatureHealthy(sf) Then
+                    Return sf
+                Else
+                    sf = CheckOtherTwoCones()
+                End If
             End If
 
 
 
+
         Catch ex As Exception
-            MsgBox(ex.ToString() & n.ToString)
+            MsgBox(ex.ToString())
             Return Nothing
         End Try
         CombineBodies()
+        Return sf
+    End Function
+
+    Function CheckOtherTwoCones() As SculptFeature
+        Dim sf As SculptFeature
+        Dim n As Integer = compDef.Features.ExtrudeFeatures.Count
+        Dim ef As ExtrudeFeature
+        Dim de As Double = 17 / 10
+        For i = 1 To n
+            ef = compDef.Features.ExtrudeFeatures(n - i + 1)
+            If nombrador.ContainEgg(ef.Name) Then
+                If ef.Name.Equals("egg2") Then
+                Else
+                    Try
+                        sf = AdjustExtrudeExtenstion(ef, de)
+                        If sf Is Nothing Then
+                        Else
+                            Try
+                                If monitor.IsFeatureHealthy(sf) Then
+                                    Exit For
+                                Else
+
+                                End If
+                            Catch ex As Exception
+                                Try
+                                    sf.Delete()
+                                Catch ex2 As Exception
+
+                                End Try
+                            End Try
+                        End If
+                    Catch ex2 As Exception
+                        MsgBox(ex2.ToString())
+                        Return Nothing
+                    End Try
+                End If
+
+            End If
+        Next
+        If sf Is Nothing Then
+
+            Try
+                sf = ReorderConeFeatures()
+
+            Catch ex3 As Exception
+                MsgBox(ex3.ToString())
+                Return Nothing
+            End Try
+        Else
+            Try
+                If monitor.IsFeatureHealthy(sf) Then
+                Else
+
+                    Try
+                        sf = ReorderConeFeatures()
+
+                    Catch ex4 As Exception
+                        MsgBox(ex4.ToString())
+                        Return Nothing
+                    End Try
+                End If
+            Catch ex5 As Exception
+
+                Try
+                    sf = ReorderConeFeatures()
+
+                Catch ex6 As Exception
+                    MsgBox(ex6.ToString())
+                    Return Nothing
+                End Try
+            End Try
+
+        End If
         Return sf
     End Function
     Function AdjustExtrudeExtenstion(ef As ExtrudeFeature) As SculptFeature
@@ -563,18 +641,25 @@ Public Class Sweeper
         Dim edef As ExtrudeDefinition
         Dim extend As Double = 17 / 10
 
-        For i = 1 To 32
+        For i = 1 To 64
             sf = MakeSimpleSculpting()
-            If monitor.IsFeatureHealthy(sf) Then
-                Exit For
-            Else
-                sf.Delete()
+            If sf Is Nothing Then
+                extend *= 15 / 16
                 edef = ef.Definition
                 edef.SetDistanceExtent(extend, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
-                extend *= 15 / 16
+            Else
+                If monitor.IsFeatureHealthy(sf) Then
+                    Exit For
+                Else
+                    sf.Delete()
+                    edef = ef.Definition
+                    edef.SetDistanceExtent(extend, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
+                    extend *= 15 / 16
 
 
+                End If
             End If
+
         Next
 
 
@@ -585,20 +670,24 @@ Public Class Sweeper
         Dim edef As ExtrudeDefinition
         Dim extend As Double = dis
         edef = ef.Definition
-        For i = 1 To 32
+        For i = 1 To 64
             Try
-
-                edef.SetDistanceExtent(extend, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
                 extend *= 15 / 16
+                edef.SetDistanceExtent(extend, PartFeatureExtentDirectionEnum.kNegativeExtentDirection)
+
                 sf = MakeSimpleSculpting()
-                If monitor.IsFeatureHealthy(sf) Then
-                    Exit For
+                If sf Is Nothing Then
                 Else
-                    sf.Delete()
+                    If monitor.IsFeatureHealthy(sf) Then
+                        Exit For
+                    Else
+                        sf.Delete()
 
 
 
+                    End If
                 End If
+
 
             Catch ex As Exception
                 Try
@@ -660,7 +749,7 @@ Public Class Sweeper
     Function ReorderPane(rf As RevolveFeature, sf As SculptFeature) As Integer
         Dim m As Integer
         Dim pf As PartFeature
-        Dim pane As BrowserPane
+
 
         Dim dependantNode As BrowserNode
         Dim lastNode As BrowserNode
@@ -695,6 +784,168 @@ Public Class Sweeper
         Catch ex As Exception
             MsgBox(ex.ToString())
             Return Nothing
+        End Try
+
+    End Function
+    Function PutPartAtEndOfPane(pfi As PartFeature) As Integer
+        Dim m As Integer
+
+
+
+
+
+
+        Dim moveNode As BrowserNode
+
+        Try
+            m = compDef.Features.Count
+            pane = doku.BrowserPanes("Model")
+            ' nodeDef = doku.BrowserPanes.GetNativeBrowserNodeDefinition(rf)
+
+            moveNode = pane.GetBrowserNodeFromObject(pfi)
+            lastNode = pane.GetBrowserNodeFromObject(compDef.Features.Item(m))
+            ReorderNodes(moveNode)
+
+
+
+
+
+
+            Return m
+        Catch ex As Exception
+        MsgBox(ex.ToString())
+        Return Nothing
+        End Try
+
+    End Function
+    Function ReorderNodes(ni As BrowserNode) As BrowserNode
+        Dim m As Integer = compDef.Features.Count
+        Dim iNode As BrowserNode
+        Dim nodes As BrowserNodesEnumerator = ni.AllReferencedNodes(ni.BrowserNodeDefinition)
+        lastNode = pane.GetBrowserNodeFromObject(compDef.Features.Item(m))
+        If nodes.Count > 0 Then
+            For Each n As BrowserNode In nodes
+                iNode = FindIndependatNode(n)
+                If iNode.Equals(n) Then
+                    pane.Reorder(lastNode, False, iNode)
+                Else
+                    ReorderNodes(n)
+
+                End If
+            Next
+        Else
+            pane.Reorder(ni, False, lastNode)
+            iNode = ni
+        End If
+
+        Return iNode
+    End Function
+    Function FindIndependatNode(dn As BrowserNode) As BrowserNode
+        Dim nodes As BrowserNodesEnumerator = dn.AllReferencedNodes(dn.BrowserNodeDefinition)
+        Dim indNode As BrowserNode
+
+        If nodes.Count > 0 Then
+            indNode = FindIndependatNode(nodes.Item(1))
+        Else
+            indNode = dn
+        End If
+        Return indNode
+    End Function
+    Function ReorderConeFeatures() As SculptFeature
+        Dim k As Integer
+        Dim l As Integer = compDef.Features.LoftFeatures.Count
+        Dim e As Integer = compDef.Features.ExtrudeFeatures.Count
+        Dim r As Integer = compDef.Features.RevolveFeatures.Count
+        Dim lf As LoftFeature
+        Dim ef As ExtrudeFeature
+        Dim rf As RevolveFeature
+        Dim pf As PartFeature
+        Dim cone As String = "cone"
+        Dim egg As String = "egg"
+        Dim shortRod As String = "shortRod"
+        Dim name As String
+        Dim coneDone, eggdone, rodDone As Boolean
+        Try
+            For i = 1 To 3
+                k = 4 - i
+                coneDone = False
+                name = String.Concat(cone, k.ToString())
+                For j = 1 To l
+                    lf = compDef.Features.LoftFeatures.Item(l - j + 1)
+                    If (lf.Name.Contains(name)) Then
+                        pf = lf
+                        If k < 3 Then
+                            lf.Suppressed = True
+                            'PutPartAtEndOfPane(pf)
+                        Else
+                            lf.SetEndOfPart(True)
+                        End If
+
+
+                        coneDone = True
+                        Exit For
+                    End If
+                Next
+                If coneDone Then
+                    eggdone = False
+                    name = String.Concat(egg, k.ToString())
+                    For j = 1 To e
+                        ef = compDef.Features.ExtrudeFeatures.Item(e - j + 1)
+                        If (ef.Name.Contains(name)) Then
+                            pf = ef
+                            If k < 3 Then
+                                ef.Suppressed = True
+                                'PutPartAtEndOfPane(pf)
+                            Else
+                                ef.SetEndOfPart(True)
+                            End If
+
+
+                            eggdone = True
+                            Exit For
+                        End If
+                    Next
+                    If eggdone Then
+                        rodDone = False
+                        name = String.Concat(shortRod, k.ToString())
+                        For j = 1 To r
+                            rf = compDef.Features.RevolveFeatures.Item(r - j + 1)
+                            If (rf.Name.Contains(name)) Then
+                                pf = rf
+                                If k < 3 Then
+                                    rf.Suppressed = True
+                                    ' PutPartAtEndOfPane(pf)
+                                Else
+                                    rf.SetEndOfPart(True)
+                                End If
+
+
+                                rodDone = True
+                                Exit For
+                            End If
+                        Next
+                    End If
+
+                End If
+                If rodDone Then
+                    ReorderConeFeatures = MakeSimpleSculpting()
+                    If monitor.IsFeatureHealthy(ReorderConeFeatures) Then
+                        Return ReorderConeFeatures
+                    Else
+                        l = compDef.Features.LoftFeatures.Count
+                        e = compDef.Features.ExtrudeFeatures.Count
+                        r = compDef.Features.RevolveFeatures.Count
+                    End If
+
+                End If
+
+
+            Next
+
+
+            Return ReorderConeFeatures
+        Catch ex As Exception
+
         End Try
 
     End Function

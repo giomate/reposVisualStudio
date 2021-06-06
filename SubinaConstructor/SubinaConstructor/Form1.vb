@@ -19,7 +19,7 @@ Public Class Form1
     Public Sub New()
         ' This call is required by the designer.
         InitializeComponent()
-        iteration = 21
+        iteration = 24
         ' Add any initialization after the InitializeComponent() call.
         Try
             oApp = Marshal.GetActiveObject("Inventor.Application")
@@ -82,7 +82,7 @@ Public Class Form1
                 invDoc = New InventorFile(oApp)
                 oDoc = invDoc.OpenFullFileName(ffn)
                 nido = New SubinaStruct(oDoc)
-                nido.MakeNestStruct(iteration)
+                nido.MakeSimpleNestStruct(iteration)
                 b = nido.done
             End If
             Return b

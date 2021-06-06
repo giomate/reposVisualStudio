@@ -270,7 +270,12 @@ Public Class TwistFold7
                             connectLine = nextSketch.DrawNextStartSketch(refLine, tl, firstLine, zAxisLine, sptRFront, outletGap)
                             If connectLine.Length > 0 Then
                                 centroLine = nextSketch.centroLine
-                                If ReduceGap(nextSketch.gapFold) Then
+#If Entry_Mode = "STIFT" Then
+                                If AlignStiftFace(nextSketch.gapFold) Then
+#Else
+ If ReduceGap(nextSketch.gapFold) Then
+#End If
+
                                     Dim sl As SketchLine3D
                                     sl = bandLines(1)
                                     If bender.GetBendLine(workFace, sl).Length > 0 Then
@@ -704,6 +709,92 @@ Public Class TwistFold7
         End Try
 
     End Function
+
+    Function AlignStiftFace(ng As DimensionConstraint3D) As Boolean
+        Dim reduced As Boolean = False
+        Dim had_reduced As Boolean = False
+        Dim correctionFactor As Double = 2
+        Dim inside As Boolean = IsFirstLineInside()
+        Dim limit As Integer = 0
+        Dim dc, ac As DimensionConstraint3D
+        Dim gc As GeometricConstraint3D
+        Dim l As SketchLine3D
+        Dim cl5 As SketchLine3D = nextSketch.constructionLines.Item(nextSketch.constructionLines.Count)
+        Dim currentQ As Integer = GetParameter("currentQ")._Value
+        Dim oddQ As Integer
+        Try
+            CorrectFoldAngle()
+            adjuster.AdjustDimensionConstraint3DSmothly(gapFold, 2 * gap1CM)
+            gapFold.Driven = False
+            nextSketch.CorrectGapFold()
+            adjuster.AdjustDimensionConstraint3DSmothly(nextSketch.gapFold, 2 * gap1CM)
+            nextSketch.gapFold.Driven = False
+
+
+#If Entry_Type = "Unilateral" Then
+            oddQ = 0
+#Else
+             Math.DivRem(currentQ, 2, oddQ)
+#End If
+            If oddQ = 0 Then
+                For i = 1 To 32
+                    reduced = nextSketch.CorrectEntryGap()
+
+                    If reduced Then
+                        had_reduced = True
+                        Exit For
+                    End If
+
+
+
+                Next
+            Else
+                l = sk3D.SketchLines3D.AddByTwoPoints(nextSketch.firstLine.EndSketchPoint, curve.EndSketchPoint.Geometry, False)
+                gc = sk3D.GeometricConstraints3D.AddCoincident(l.EndPoint, curve)
+                TryPerpendicular(l, nextSketch.secondLine)
+
+                ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, nextSketch.firstLine)
+
+                For i = 1 To 32
+                    reduced = nextSketch.CorrectEntryGap()
+                    If reduced Then
+                        If ac.Parameter._Value > Math.PI / 2 Then
+                            reduced = adjuster.AdjustDimConstrain3DSmothly(ac, ac.Parameter._Value * 33 / 32)
+                            If ac.Parameter._Value > Math.PI * (1 - 1 / 128) Then
+                                Exit For
+                            End If
+                        Else
+                            reduced = adjuster.AdjustDimConstrain3DSmothly(ac, ac.Parameter._Value * 31 / 32)
+                            If ac.Parameter._Value < Math.PI * (1 / 128) Then
+                                Exit For
+                            End If
+                        End If
+
+                        If reduced Then
+                            had_reduced = True
+                        Else
+                            i += 1
+                        End If
+                    Else
+                        i += 1
+                    End If
+
+
+                Next
+            End If
+
+
+
+
+
+            Return had_reduced
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+    End Function
+
     Function CorrectFoldAngle() As Boolean
         Dim cl3 As SketchLine3D = constructionLines(3)
         Dim vcl3 As Vector = cl3.Geometry.Direction.AsVector
@@ -792,6 +883,7 @@ Public Class TwistFold7
         Else
             Return True
         End If
+        Return False
 
     End Function
     Function CorrectGaptFold(dc As DimensionConstraint3D) As Boolean
@@ -2048,7 +2140,13 @@ Public Class TwistFold7
                 sk3D.GeometricConstraints3D.AddCoincident(radius.StartPoint, zAxisLine)
                 dc = sk3D.DimensionConstraints3D.AddLineLength(radius)
                 adjuster.AdjustDimensionConstraint3DSmothly(dc, r)
+#If Entry_Mode = "STIFT" Then
+                dc.Driven = True
+#Else
                 dc.Parameter._Value = r
+#End If
+
+
                 outletGap = sk3D.DimensionConstraints3D.AddTwoPointDistance(firstLine.EndPoint, sptRBack)
                 outletGap.Driven = True
                 TryPerpendicular(zAxisLine, radius)

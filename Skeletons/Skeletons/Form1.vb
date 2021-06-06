@@ -21,7 +21,7 @@ Public Class Form1
     Public Sub New()
         ' This call is required by the designer.
         InitializeComponent()
-        iteration = 21
+        iteration = 24
         ' Add any initialization after the InitializeComponent() call.
         Try
             oApp = Marshal.GetActiveObject("Inventor.Application")

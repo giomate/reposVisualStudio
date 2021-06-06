@@ -427,6 +427,11 @@ Public Class Skeletons
                         'lamp.HighLighFace(fc.Item(i))
                         If monitor.IsFeatureHealthy(ef) Then
                             lamp.FitView(doku)
+#If Entry_Type = "Unilateral" Then
+                            entranceSide = -1
+#Else
+                              entranceSide = Math.Pow(-1, qvalue + 1)
+#End If
                             If palitos.shortlOval Then
                                 skt = compDef.Sketches3D.Item("curvas")
                                 lf = conos.MakeSingleSupport(palitos, skt)
@@ -438,12 +443,12 @@ Public Class Skeletons
                                     Exit For
                                 End If
                             ElseIf IsInletRod(ef) Then
-                                entranceSide = Math.Pow(-1, qvalue + 1)
+
                                 rf = palitos.MakeTipCut(entranceSide)
                                 sb = tangentSurfaces.SurfaceBodies.Item(i)
                                 f = sb.Faces.Item(k)
                             ElseIf IsOutletRod(ef) Then
-                                entranceSide = Math.Pow(-1, qvalue + 1)
+
                                 rf = palitos.MakeTipCut(entranceSide)
                                 sb = tangentSurfaces.SurfaceBodies.Item(i)
                                 f = sb.Faces.Item(k)

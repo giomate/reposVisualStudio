@@ -29,6 +29,7 @@ Public Class InitSketcher
     Dim k1(), k2() As Byte
     Dim backwards As Boolean
     Dim lamp As Highlithing
+    Private Const MINIMUN_ANGLE As Double = Math.PI / 64
 
 
 
@@ -125,6 +126,9 @@ Public Class InitSketcher
                     CorrectLastAngle(ac)
                 End If
                 If gapFold.Parameter._Value < gapFoldCM * 4 Then
+#If Entry_Mode = "STIFT" Then
+                    AlignEntryFace(ac)
+#End If
                     Return sk3D
                 Else
                     Return Nothing
@@ -133,6 +137,77 @@ Public Class InitSketcher
         End If
         Return Nothing
 
+    End Function
+
+
+    Function AlignEntryFace(aci As DimensionConstraint3D) As DimensionConstraint3D
+        Dim ac As DimensionConstraint3D = aci
+        Dim lz As SketchLine3D = sk3D.SketchLines3D.AddByTwoPoints(firstLine.EndSketchPoint, secondLine.EndSketchPoint.Geometry, False)
+        Dim l As SketchLine3D
+        Dim d As Double
+        Dim v1 As Vector = firstLine.Geometry.Direction.AsVector
+        Dim v2 As Vector = secondLine.Geometry.Direction.AsVector
+        Dim v As Vector = v1.CrossProduct(v2)
+        Dim pt As Point = firstLine.EndSketchPoint.Geometry
+        Dim currentQ As Integer = GetParameter("currentQ")._Value
+        Dim oddQ As Integer
+
+        Dim cl7 As SketchLine3D = constructionLines(constructionLines.Count)
+
+        Try
+            Math.DivRem(currentQ, 2, oddQ)
+#If Entry_Type = "Unilateral" Then
+            oddQ = 1
+#End If
+            If oddQ = 0 Then
+                aci.Driven = True
+                ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(cl7, firstLine)
+                For i = 1 To 32
+                    If ac.Parameter._Value < MINIMUN_ANGLE / 2 Then
+                        Exit For
+                    End If
+                    adjuster.AdjustDimConstrain3DSmothly(ac, ac.Parameter._Value * 15 / 16)
+                Next
+            Else
+                aci.Driven = False
+                v.ScaleBy(-1)
+                pt.TranslateBy(v)
+                l = sk3D.SketchLines3D.AddByTwoPoints(firstLine.EndSketchPoint, pt, False)
+                sk3D.GeometricConstraints3D.AddParallelToZAxis(lz)
+                lz.Construction = True
+                TryPerpendicular(l, firstLine)
+                TryPerpendicular(l, secondLine)
+                aci.Driven = True
+
+                ac = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, lz)
+                For i = 1 To 16
+                    If aci.Parameter._Value > Math.PI / 2 Then
+                        If aci.Parameter._Value > Math.PI - MINIMUN_ANGLE Then
+                            Exit For
+                        End If
+                    Else
+                        If aci.Parameter._Value < MINIMUN_ANGLE Then
+                            Exit For
+
+                        End If
+
+                    End If
+                    d = Math.Exp((Math.PI / 2 - ac.Parameter._Value) / (Math.PI * 32))
+                    adjuster.AdjustDimConstrain3DSmothly(ac, ac.Parameter._Value * d)
+
+                Next
+
+            End If
+
+            ac.Driven = True
+            aci.Driven = False
+        Catch ex As Exception
+            MsgBox(ex.ToString())
+            Return Nothing
+        End Try
+
+
+        Return aci
     End Function
     Function DrawReferenceCurve(sk As Sketch3D) As SketchEquationCurve3D
 
@@ -222,11 +297,12 @@ Public Class InitSketcher
         Dim r1, r2 As Double
         Dim dc As DimensionConstraint3D
         Dim dir As Integer = GetParameter("direction")._Value
+        Dim l As SketchLine3D
+        Dim gc, gpc As GeometricConstraint3D
+        Dim pt1, pt2 As Point
         Try
 
-            Dim l As SketchLine3D
-            Dim gc, gpc As GeometricConstraint3D
-            Dim pt1, pt2 As Point
+
             r1 = TorusRadius(refLine.StartSketchPoint.Geometry)
             r2 = TorusRadius(refLine.EndSketchPoint.Geometry)
             If r1 > r2 Then
@@ -619,7 +695,7 @@ Public Class InitSketcher
             dc2.Driven = True
             gapFold.Driven = False
             Try
-                sk3D.GeometricConstraints3D.AddEqual(l, cl3)
+                gcel = sk3D.GeometricConstraints3D.AddEqual(l, cl3)
             Catch ex2 As Exception
                 adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM * 4)
                 gapFold.Driven = True
@@ -658,6 +734,11 @@ Public Class InitSketcher
                 adjuster.AdjustDimensionConstraint3DSmothly(gapFold, gapFoldCM)
             End Try
             gapFold.Driven = True
+#If Entry_Type = "Unilateral" Then
+            ' gcel.Delete()
+            adjuster.AdjustDimConstrain3DSmothly(dc, 5 / 100)
+
+#End If
             l.Construction = True
 
             constructionLines.Add(l)
@@ -768,8 +849,18 @@ Public Class InitSketcher
                 v3.ScaleBy(gapFoldCM)
                 endPoint.TranslateBy(v3)
             Else
+#If Entry_Type = "Unilateral" Then
+                v1 = firstLine.Geometry.Direction.AsVector()
+                v2 = secondLine.Geometry.Direction.AsVector()
+                v3 = v1.CrossProduct(v2).AsUnitVector().AsVector()
+                v3.ScaleBy(gapFoldCM)
+                endPoint.TranslateBy(v3)
+#Else
                 vk.ScaleBy(-1)
                 endPoint.TranslateBy(vk)
+
+#End If
+
 
             End If
 
@@ -1337,14 +1428,18 @@ Public Class InitSketcher
             dc.Driven = True
             l = sk3D.SketchLines3D.AddByTwoPoints(bl4.StartPoint, bl6.EndPoint)
             l.Construction = True
+
             acCl7Bl4 = sk3D.DimensionConstraints3D.AddTwoLineAngle(l, bl4)
             ' dc = RecoverGapFold(dc)
             '  adjuster.AdjustDimConstrain3DSmothly(acCl7Bl4, acCl7Bl4.Parameter._Value / 4)
             Math.DivRem(currentQ, 2, oddQ)
+#If Entry_Type = "Unilateral" Then
+            oddQ = 1
+#End If
             If oddQ = 0 Then
                 adjuster.AdjustDimConstrain3DSmothly(acCl7Bl4, acCl7Bl4.Parameter._Value * 3 / 2)
             Else
-                adjuster.AdjustDimConstrain3DSmothly(acCl7Bl4, acCl7Bl4.Parameter._Value / 2)
+                adjuster.AdjustDimConstrain3DSmothly(acCl7Bl4, acCl7Bl4.Parameter._Value * 3 / 4)
             End If
             dimConstrainBandLine2.Driven = False
             If secondLine.Length < b Then
@@ -1424,7 +1519,7 @@ Public Class InitSketcher
             dimConstrainBandLine2.Driven = True
             gapFold.Driven = True
             sk3D.Solve()
-
+            constructionLines.Add(l)
             TryVerticalEntrance(dc, l)
 
 
@@ -1448,7 +1543,9 @@ Public Class InitSketcher
             acCl7Bl4.Driven = True
             adjuster.AdjustDimConstrain3DSmothly(gapFold, 2 * gapFoldCM)
             Math.DivRem(currentQ, 2, oddQ)
-            If oddQ = 0 Then
+#If Entry_Type = "Unilateral" Then
+#Else
+  If oddQ = 0 Then
 
                 dc = sk3D.DimensionConstraints3D.AddTwoLineAngle(firstLine, skli)
                 For index = 1 To 32
@@ -1475,6 +1572,8 @@ Public Class InitSketcher
                     End If
                 Next
             End If
+#End If
+
             acCl7Bl4.Driven = True
             Return acCl7Bl4
 
@@ -1535,6 +1634,9 @@ Public Class InitSketcher
                 d = -1 * d
             End If
             Math.DivRem(currentQ, 2, oddQ)
+#If Entry_Type = "Unilateral" Then
+            oddQ = 1
+#End If
             If oddQ = 0 Then
                 d = -1 * d
             End If
