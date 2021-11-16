@@ -6,6 +6,6 @@
     "name": ""
   },
   "dependencies": {
-    "aws-sdk": "^2.339.0"
+    "aws-sdk": "^2.814.0"
   }
 }
